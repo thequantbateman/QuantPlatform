@@ -18,7 +18,10 @@ const platformSearchItems = [
   ...demoMarketQuotes.map((quote) => ({ title: quote.displaySymbol, description: quote.name, meta: `${quote.assetClass} · ${quote.status}`, href: marketDetailPath(quote.symbol), keywords: `${quote.symbol} ${quote.name} ${quote.assetClass} market quote` })),
   { title: "European option pricer", description: "BSM, Garman–Kohlhagen and Black-76", meta: "ANALYTICS · LAB", href: "/lab?lab=vanilla", keywords: "price option bsm black scholes garman kohlhagen black 76 analytics lab" },
   { title: "Greeks dashboard", description: "Delta, Gamma, Vega, Theta and Rho", meta: "ANALYTICS · LAB", href: "/lab?lab=greeks", keywords: "greeks delta gamma vega theta rho analytics lab" },
-  { title: "Prediction markets", description: "Public read-only macro probabilities", meta: "MARKETS · LIVE PUBLIC", href: "/markets/predictions", keywords: "polymarket predictions probability macro market intelligence" },
+  { title: "Prediction workstation", description: "Live events, L2 books, trades and public analytics", meta: "MARKETS · LIVE PUBLIC", href: "/markets/predictions", keywords: "polymarket predictions probability events order book trades screener" },
+  { title: "Prediction Data Explorer", description: "Persisted quotes, history, coverage and normalized schema", meta: "INTELLIGENCE · DATA", href: "/intelligence/data", keywords: "polymarket prediction data explorer database history quotes coverage d1" },
+  { title: "Cross-asset Event Study", description: "Curated prediction-versus-market comparisons", meta: "INTELLIGENCE · EVENT STUDY", href: "/intelligence/event-study", keywords: "polymarket prediction event study cross asset correlation probability" },
+  { title: "Prediction pipeline health", description: "Provider latency, stream topology and database lag", meta: "DEVELOPER · HEALTH", href: "/dev/data", keywords: "polymarket prediction pipeline websocket database health lag coverage" },
   { title: "Market intelligence", description: "Returns, realized volatility, z-scores and range", meta: "INTELLIGENCE", href: "/intelligence", keywords: "market intelligence return realized volatility z score range analytics" },
   { title: "Quant research", description: "Frontier models and implementation notes", meta: "RESEARCH", href: "/research", keywords: "research rough volatility differentiable pricing monte carlo" },
 ];

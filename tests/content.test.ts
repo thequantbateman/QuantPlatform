@@ -19,5 +19,5 @@ test("Spanish localization preserves identifiers and mathematics", () => {
 });
 
 test("market-to-model bridge concepts remain in the knowledge graph", () => {
-  for (const slug of ["bid-ask-and-mid", "market-price-vs-model-price", "streaming-quotes-and-staleness", "reference-vs-real-time-data", "prediction-market-probabilities", "realized-vs-implied-volatility"]) assert.ok(contentCatalog.some((entry) => entry.slug === slug), slug);
+  for (const slug of ["bid-ask-and-mid", "market-price-vs-model-price", "streaming-quotes-and-staleness", "reference-vs-real-time-data", "prediction-market-probabilities", "prediction-event-market-outcome-and-token", "prediction-market-order-books", "prediction-market-resolution-and-negative-risk", "prediction-market-liquidity-open-interest-and-volume", "realized-vs-implied-volatility"]) assert.ok(contentCatalog.some((entry) => entry.slug === slug), slug);
 });

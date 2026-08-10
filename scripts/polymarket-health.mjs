@@ -1,0 +1,1 @@
+const base = process.env.TQB_BASE_URL || "http://localhost:3000"; const response = await fetch(`${base}/api/predictions/health`); const payload = await response.json(); process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`); if (!response.ok) process.exitCode = 1;

@@ -11,3 +11,5 @@ export function getDb() {
 
   return drizzle(env.DB, { schema });
 }
+
+export function getD1(): D1Database | null { return env.DB ?? null; }
