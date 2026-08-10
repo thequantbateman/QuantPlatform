@@ -11,10 +11,11 @@ const record = (value: unknown): UnknownRecord => value !== null && typeof value
 const numberOrNull = (value: unknown): number | null => Number.isFinite(Number(value)) ? Number(value) : null;
 const text = (value: unknown): string => value === null || value === undefined ? "" : String(value);
 
-async function publicJson(url: string, timeoutMs = 7_500): Promise<unknown> {
+async function publicJson(url: string, timeoutMs = 7_500, init: RequestInit = {}): Promise<unknown> {
   const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(url, { signal: controller.signal, headers: { accept: "application/json", "user-agent": "TheQuantBateman/0.1 public-read-only" } });
+    const headers = new Headers(init.headers); headers.set("accept", "application/json"); headers.set("user-agent", "TheQuantBateman/0.1 public-read-only");
+    const response = await fetch(url, { ...init, signal: controller.signal, headers });
     if (!response.ok) throw new Error(`${new URL(url).hostname} returned ${response.status}`);
     return await response.json() as unknown;
   } finally { clearTimeout(timer); }
@@ -60,6 +61,12 @@ export async function getPredictionHistory(tokenId: string, range = "7d"): Promi
 }
 
 export async function getPredictionBook(tokenId: string): Promise<PredictionBook> { return normalizeRestBook(await publicJson(`${CLOB}/book?token_id=${encodeURIComponent(tokenId)}`)); }
+
+export async function getPredictionBooks(tokenIds: string[]): Promise<PredictionBook[]> {
+  const selected = tokenIds.filter((tokenId) => /^\d{20,90}$/.test(tokenId)).slice(0, 30); if (!selected.length) return [];
+  const payload = await publicJson(`${CLOB}/books`, 7_500, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(selected.map((tokenId) => ({ token_id: tokenId }))) });
+  return Array.isArray(payload) ? payload.map(normalizeRestBook) : [];
+}
 
 export async function getPredictionTrades(market: PredictionMarket, limit = 50): Promise<PredictionTrade[]> {
   const payload = await publicJson(`${DATA}/trades?market=${encodeURIComponent(market.conditionId)}&limit=${Math.min(100, Math.max(1, limit))}`);

@@ -8,7 +8,7 @@ Reviewed 2026-08-10 against the current official [API introduction](https://docs
 | --- | --- | --- | --- |
 | Discovery | Gamma events, markets, public search, tags, series | Events, nested markets, search-ready API, categories, series identifiers and metadata sync | UI uses current offset listing for volume ranking; keyset is the next pagination upgrade |
 | Identity | Gamma event/market/outcome/token metadata | Distinct event, condition market, outcome and CLOB token models | Never infer that every event is a single Yes/No market |
-| Live prices | Public Market WebSocket | Server WebSocket, dynamic multi-token subscription, heartbeat, reconnect, normalized SSE | User/wallet channel intentionally excluded |
+| Live prices | Public Market WebSocket and batch books | Server WebSocket, dynamic multi-token subscription, heartbeat, reconnect and normalized SSE; batch-book polling takes over when a hosting edge buffers SSE | User/wallet channel intentionally excluded |
 | Order books | CLOB REST and Market WebSocket | Full L2 state, top of book, midpoint, spread, depth and imbalance | Midpoint is analytical, not necessarily executable |
 | Trades | Data API plus `last_trade_price` stream | Public tape, deduplication and D1 persistence | No wallet attribution analytics in the product UX |
 | History | CLOB `prices-history` | 1H/1D/7D/30D/ALL backfill, checkpoint and D1 query path | Vendor points are persisted as observations; live OHLC aggregates are maintained separately |
