@@ -22,7 +22,7 @@ export async function persistPredictionDiscovery(events: PredictionEvent[]): Pro
     for (const market of event.markets) {
       statements.push(db.prepare(marketSql).bind(market.id, market.eventId, market.conditionId, market.slug, market.question, market.description, bool(market.active), bool(market.closed), bool(market.acceptingOrders), bool(market.negativeRisk), market.minTickSize, market.minOrderSize, market.volume, market.volume24h, market.liquidity, market.bid, market.ask, market.lastTradePrice, market.change1d, market.change1w, at(market.endDate), at(market.updatedAt) ?? persistedAt, persistedAt));
       for (const outcome of market.outcomes) statements.push(db.prepare(outcomeSql).bind(market.id, outcome.index, outcome.label, outcome.tokenId, outcome.price, persistedAt));
-      statements.push(db.prepare(statSql).bind(market.id, persistedAt, market.volume, market.volume24h, market.liquidity, market.openInterest));
+      statements.push(db.prepare(statSql).bind(market.id, at(market.updatedAt) ?? persistedAt, market.volume, market.volume24h, market.liquidity, market.openInterest));
     }
   }
   const rows = await runBatches(db, statements);

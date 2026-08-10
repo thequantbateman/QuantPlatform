@@ -24,6 +24,8 @@ D1 is selected because this application is hosted with Sites and D1 is its suppo
 
 The schema separates events, markets, outcomes/tokens, quotes, trades, market-stat snapshots, sampled order-book depth, probability bars, curated cross-asset links and ingestion checkpoints. Live callbacks only normalize and enqueue patches. A two-second writer drains up to 250 patches and sends prepared statements in bounded D1 batches. Duplicate quote timestamps, trade identities, history coordinates and book timestamps are ignored. Live midpoint/last updates maintain 1m, 5m, 15m, 1h and 1d OHLC aggregates.
 
+Interactive discovery persists the compact market subset rendered by the client so a high-cardinality event cannot block the page on thousands of writes. Event detail persists the full selected event, while the resumable backfill remains the path for exhaustive coverage.
+
 Current retention is conservative: durable metadata and deduplicated history are retained, while order books store only the top ten levels per normalized snapshot rather than unbounded raw payloads. Automated age-based deletion is not enabled yet; it should be added with measured dataset growth. A future Timescale deployment should use hypertable retention/compression and continuous aggregates.
 
 ## Public-use and paid-function findings
