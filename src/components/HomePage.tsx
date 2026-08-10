@@ -1,7 +1,7 @@
 "use client";
+/* eslint-disable @next/next/no-html-link-for-pages */
 
 import { Avatar } from "./avatar/Avatar";
-import Link from "next/link";
 import { pick, useI18n } from "@/src/i18n";
 
 const assetCards = [
@@ -44,7 +44,7 @@ export function HomePage() {
           <p className="hero-sub">{copy.sub}</p>
           <div className="hero-actions">
             <a className="button button-primary" href="/lab">{copy.lab} <span>↗</span></a>
-            <Link className="button button-secondary" href="/learn">{copy.learn} <span>→</span></Link>
+            <a className="button button-secondary" href="/learn">{copy.learn} <span>→</span></a>
           </div>
           <div className="hero-proof">
             <div><strong>04</strong><span>{copy.labs}</span></div>

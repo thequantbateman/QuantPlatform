@@ -1,7 +1,7 @@
 "use client";
+/* eslint-disable @next/next/no-html-link-for-pages */
 
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { assetPath, contentCatalog } from "@/src/content/catalog";
 import { Avatar } from "@/src/components/avatar/Avatar";
@@ -60,9 +60,9 @@ function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="site-shell">
       <header className="topbar">
-        <Link href="/" className="wordmark" aria-label="TheQuantBateman home"><span className="wordmark-mark">TQB</span><span>THEQUANTBATEMAN</span></Link>
+        <a href="/" className="wordmark" aria-label="TheQuantBateman home"><span className="wordmark-mark">TQB</span><span>THEQUANTBATEMAN</span></a>
         <nav className={menuOpen ? "primary-nav is-open" : "primary-nav"} aria-label="Primary navigation">
-          {navigation.map(([key, href]) => <Link className={activeRoot === href ? "active" : ""} aria-current={activeRoot === href ? "page" : undefined} key={href} href={href} onClick={() => setMenuOpen(false)}>{t(key)}</Link>)}
+          {navigation.map(([key, href]) => <a className={activeRoot === href ? "active" : ""} aria-current={activeRoot === href ? "page" : undefined} key={href} href={href} onClick={() => setMenuOpen(false)}>{t(key)}</a>)}
         </nav>
         <div className="nav-actions">
           <button className="search-trigger" type="button" onClick={() => setPaletteOpen(true)} aria-label={t("shell.search")}><span>{t("shell.search")}</span><kbd>⌘K</kbd></button>
@@ -72,7 +72,7 @@ function Shell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {pathname !== "/" && <div className="context-nav"><Link href="/">TQB</Link>{crumbs.map((crumb, index) => <span key={crumb}>/ <Link href={`/${crumbs.slice(0, index + 1).join("/")}`}>{crumb.replaceAll("-", " ")}</Link></span>)}<i /><b>{locale.toUpperCase()} · {dark ? "DARK" : "LIGHT"}</b></div>}
+      {pathname !== "/" && <div className="context-nav"><a href="/">TQB</a>{crumbs.map((crumb, index) => <span key={crumb}>/ <a href={`/${crumbs.slice(0, index + 1).join("/")}`}>{crumb.replaceAll("-", " ")}</a></span>)}<i /><b>{locale.toUpperCase()} · {dark ? "DARK" : "LIGHT"}</b></div>}
       <main>{children}</main>
 
       <button className="assistant-launcher" type="button" onClick={() => setAssistantOpen(true)} aria-label={t("assistant.title")}><span>∂</span><b>{t("assistant.title")}</b></button>
@@ -85,7 +85,7 @@ function Shell({ children }: { children: ReactNode }) {
 
       <footer className="site-footer"><div className="footer-brand"><span className="wordmark-mark">TQB</span><div><strong>THEQUANTBATEMAN</strong><span>{t("shell.footer")}</span></div></div><p>{t("shell.disclaimer")}</p><span className="footer-meta">© 2026 · {t("shell.demo")} · {locale.toUpperCase()}</span></footer>
 
-      {paletteOpen && <div className="palette-backdrop"><button className="palette-dismiss" type="button" onClick={() => setPaletteOpen(false)} aria-label={t("shell.close")} /><section className="command-palette" role="dialog" aria-modal="true" aria-label={t("shell.search")}><div className="palette-input-row"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("shell.searchPlaceholder")} aria-label={t("shell.search")} /><kbd>ESC</kbd></div><div className="palette-results"><span className="eyebrow">{query ? `${results.length} ${t("shell.results")}` : t("shell.suggested")}</span>{results.map((entry) => <Link key={`${entry.assetClass}-${entry.slug}`} href={`/learn/${assetPath(entry.assetClass)}/${entry.slug}`} onClick={() => setPaletteOpen(false)}><span className={`asset-dot asset-${entry.assetClass.toLowerCase()}`} /><div><strong>{entry.title}</strong><small>{entry.description}</small></div><span className="result-meta">{entry.assetClass} · {entry.difficulty}</span></Link>)}{!results.length && <p className="empty-state">{t("shell.noResults")}</p>}</div></section></div>}
+      {paletteOpen && <div className="palette-backdrop"><button className="palette-dismiss" type="button" onClick={() => setPaletteOpen(false)} aria-label={t("shell.close")} /><section className="command-palette" role="dialog" aria-modal="true" aria-label={t("shell.search")}><div className="palette-input-row"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("shell.searchPlaceholder")} aria-label={t("shell.search")} /><kbd>ESC</kbd></div><div className="palette-results"><span className="eyebrow">{query ? `${results.length} ${t("shell.results")}` : t("shell.suggested")}</span>{results.map((entry) => <a key={`${entry.assetClass}-${entry.slug}`} href={`/learn/${assetPath(entry.assetClass)}/${entry.slug}`} onClick={() => setPaletteOpen(false)}><span className={`asset-dot asset-${entry.assetClass.toLowerCase()}`} /><div><strong>{entry.title}</strong><small>{entry.description}</small></div><span className="result-meta">{entry.assetClass} · {entry.difficulty}</span></a>)}{!results.length && <p className="empty-state">{t("shell.noResults")}</p>}</div></section></div>}
     </div>
   );
 }
