@@ -1,0 +1,241 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { LineChart } from "@/src/components/charts/LineChart";
+import { SurfaceCanvas } from "@/src/components/charts/SurfaceCanvas";
+import { blackScholes, type BlackScholesInput } from "@/src/quant/models/blackScholes";
+import { bootstrapCurve, type CurveNode } from "@/src/quant/curves/rates";
+import { syntheticVolatility, type SurfaceParameters } from "@/src/quant/volatility/syntheticSurface";
+
+type LabId = "black-scholes" | "greeks" | "surface" | "curve";
+
+const labTabs: { id: LabId; index: string; label: string; description: string }[] = [
+  { id: "black-scholes", index: "01", label: "Black-Scholes", description: "Price + Greeks" },
+  { id: "greeks", index: "02", label: "Greeks Explorer", description: "Sensitivity geometry" },
+  { id: "surface", index: "03", label: "Vol Surface", description: "Skew + term" },
+  { id: "curve", index: "04", label: "Yield Curve", description: "Bootstrap + risk" },
+];
+
+export function Labs() {
+  const initial = typeof window === "undefined" ? "black-scholes" : new URLSearchParams(window.location.search).get("lab");
+  const [active, setActive] = useState<LabId>(labTabs.some((lab) => lab.id === initial) ? initial as LabId : "black-scholes");
+  return (
+    <div className="lab-page">
+      <header className="page-hero section-shell compact-hero">
+        <span className="eyebrow">QUANT LAB · CONTROLLED EXPERIMENTS</span>
+        <h1>TOUCH THE MODEL.</h1>
+        <p>Change one assumption. Watch every dependent output react. The market will not wait for a spreadsheet recalc.</p>
+      </header>
+      <div className="lab-tabs section-shell" role="tablist" aria-label="Quant labs">
+        {labTabs.map((lab) => <button type="button" role="tab" aria-selected={active === lab.id} className={active === lab.id ? "active" : ""} onClick={() => setActive(lab.id)} key={lab.id}><span>{lab.index}</span><strong>{lab.label}</strong><small>{lab.description}</small></button>)}
+      </div>
+      <section className="lab-workspace section-shell">
+        {active === "black-scholes" && <BlackScholesLab />}
+        {active === "greeks" && <GreeksLab />}
+        {active === "surface" && <VolatilitySurfaceLab />}
+        {active === "curve" && <YieldCurveLab />}
+      </section>
+    </div>
+  );
+}
+
+function ParameterInput({ label, value, min, max, step, suffix, onChange }: { label: string; value: number; min: number; max: number; step: number; suffix?: string; onChange: (value: number) => void }) {
+  return (
+    <label className="parameter-input">
+      <span><b>{label}</b><em>{suffix}</em></span>
+      <div><input type="range" min={min} max={max} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} /><input type="number" min={min} max={max} step={step} value={Number(value.toFixed(6))} onChange={(event) => onChange(Math.max(min, Math.min(max, Number(event.target.value))))} aria-label={`${label} exact value`} /></div>
+    </label>
+  );
+}
+
+const baseOption: BlackScholesInput = { spot: 100, strike: 100, time: 1, rate: 0.04, dividend: 0.01, volatility: 0.2, type: "call" };
+
+function BlackScholesLab() {
+  const [input, setInput] = useState(baseOption);
+  const [animating, setAnimating] = useState(false);
+  const animationStartRef = useRef(baseOption.time);
+  const analytics = useMemo(() => blackScholes(input), [input]);
+  const spots = useMemo(() => Array.from({ length: 61 }, (_, index) => input.strike * (0.45 + index * 0.0185)), [input.strike]);
+  const prices = useMemo(() => spots.map((spot) => blackScholes({ ...input, spot }).price), [spots, input]);
+  const intrinsic = useMemo(() => spots.map((spot) => Math.max((input.type === "call" ? 1 : -1) * (spot - input.strike), 0)), [spots, input]);
+
+  useEffect(() => {
+    if (!animating) return;
+    let frame = 0;
+    const started = performance.now();
+    const startTime = animationStartRef.current;
+    const animate = (now: number) => {
+      const progress = Math.min((now - started) / 5200, 1);
+      setInput((current) => ({ ...current, time: Math.max(0.003, startTime * (1 - progress)) }));
+      if (progress < 1) frame = requestAnimationFrame(animate); else setAnimating(false);
+    };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [animating]);
+
+  const update = <K extends keyof BlackScholesInput>(key: K, value: BlackScholesInput[K]) => setInput((current) => ({ ...current, [key]: value }));
+  return (
+    <div className="experiment">
+      <LabHeader index="01" title="Black-Scholes Playground" copy="Move the state variables, then read price and hedge sensitivities as one connected system." note="European option · continuous rates/dividend · no transaction costs" />
+      <div className="lab-grid">
+        <aside className="control-panel">
+          <div className="control-heading"><span>MODEL PARAMETERS</span><button type="button" onClick={() => setInput(baseOption)}>Reset</button></div>
+          <div className="segmented"><button className={input.type === "call" ? "active" : ""} onClick={() => update("type", "call")}>Call</button><button className={input.type === "put" ? "active" : ""} onClick={() => update("type", "put")}>Put</button></div>
+          <ParameterInput label="Spot" suffix="S" value={input.spot} min={40} max={180} step={1} onChange={(value) => update("spot", value)} />
+          <ParameterInput label="Strike" suffix="K" value={input.strike} min={40} max={180} step={1} onChange={(value) => update("strike", value)} />
+          <ParameterInput label="Time" suffix="years" value={input.time} min={0.003} max={5} step={0.01} onChange={(value) => update("time", value)} />
+          <ParameterInput label="Risk-free rate" suffix="decimal" value={input.rate} min={-0.02} max={0.15} step={0.001} onChange={(value) => update("rate", value)} />
+          <ParameterInput label="Dividend yield" suffix="decimal" value={input.dividend} min={0} max={0.12} step={0.001} onChange={(value) => update("dividend", value)} />
+          <ParameterInput label="Volatility" suffix="decimal" value={input.volatility} min={0.001} max={0.8} step={0.005} onChange={(value) => update("volatility", value)} />
+          <div className="presets"><span>PRESETS</span><button onClick={() => setInput({ ...baseOption, spot: 120 })}>ITM</button><button onClick={() => setInput(baseOption)}>ATM</button><button onClick={() => setInput({ ...baseOption, spot: 80 })}>OTM</button></div>
+          <button className="animate-button" type="button" onClick={() => { if (!animating) { const startTime = input.time < 0.05 ? 1 : input.time; animationStartRef.current = startTime; setInput((current) => ({ ...current, time: startTime })); } setAnimating((value) => !value); }}>{animating ? "Pause expiry animation" : "Animate time → expiry"}</button>
+        </aside>
+        <div className="output-panel">
+          <div className="metric-grid"><Metric label="Price" value={analytics.price} primary /><Metric label="Delta" value={analytics.delta} /><Metric label="Gamma" value={analytics.gamma} /><Metric label="Vega / 1 vol pt" value={analytics.vega} /><Metric label="Theta / day" value={analytics.theta} /><Metric label="Rho / 100bp" value={analytics.rho} /></div>
+          <div className="chart-card"><div className="chart-title"><div><span>OPTION VALUE</span><strong>Price across spot</strong></div><div className="legend"><i /> Model <i /> Intrinsic</div></div><LineChart x={spots} series={[{ name: "Model", values: prices }, { name: "Intrinsic", values: intrinsic, color: "#8b8277" }]} xLabel="Spot" yLabel="Value" /></div>
+          <div className="formula-card"><span className="eyebrow">PRICING FORMULA</span><code>C = S e<sup>−qT</sup>N(d₁) − K e<sup>−rT</sup>N(d₂)</code><p>d₁ = {Number.isFinite(analytics.d1) ? analytics.d1.toFixed(4) : "∞"} · d₂ = {Number.isFinite(analytics.d2) ? analytics.d2.toFixed(4) : "∞"}</p></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Metric({ label, value, primary = false }: { label: string; value: number; primary?: boolean }) {
+  return <div className={primary ? "metric primary" : "metric"}><span>{label}</span><strong>{Math.abs(value) < 0.0001 ? value.toExponential(2) : value.toFixed(4)}</strong></div>;
+}
+
+type GreekKey = "delta" | "gamma" | "vega" | "theta";
+
+function GreeksLab() {
+  const [greek, setGreek] = useState<GreekKey>("gamma");
+  const [spotPreset, setSpotPreset] = useState(100);
+  const [volatility, setVolatility] = useState(0.2);
+  const [type, setType] = useState<"call" | "put">("call");
+  const [heatmap, setHeatmap] = useState(false);
+  const spots = useMemo(() => Array.from({ length: 81 }, (_, index) => 55 + index * 1.125), []);
+  const values = useMemo(() => spots.map((spot) => blackScholes({ ...baseOption, type, spot, volatility })[greek]), [spots, type, volatility, greek]);
+  const current = blackScholes({ ...baseOption, type, spot: spotPreset, volatility })[greek];
+  const heatValues = useMemo(() => Array.from({ length: 48 }, (_, index) => {
+    const col = index % 12; const row = Math.floor(index / 12);
+    return blackScholes({ ...baseOption, type, spot: 65 + col * 6.5, time: 0.05 + row * 0.48, volatility })[greek];
+  }), [type, volatility, greek]);
+  const heatMax = Math.max(...heatValues.map(Math.abs), 1e-8);
+  return (
+    <div className="experiment">
+      <LabHeader index="02" title="Greeks Explorer" copy="Read sensitivity as geometry. The local hedge is a slope; the re-hedge is curvature." note="Analytical Greeks · Black-Scholes conventions" />
+      <div className="lab-grid">
+        <aside className="control-panel">
+          <div className="control-heading"><span>SENSITIVITY</span><em>∂V</em></div>
+          <div className="greek-picker">{(["delta", "gamma", "vega", "theta"] as GreekKey[]).map((item) => <button className={greek === item ? "active" : ""} key={item} onClick={() => setGreek(item)}><strong>{item}</strong><small>{item === "delta" ? "direction" : item === "gamma" ? "curvature" : item === "vega" ? "volatility" : "time decay"}</small></button>)}</div>
+          <div className="segmented"><button className={type === "call" ? "active" : ""} onClick={() => setType("call")}>Call</button><button className={type === "put" ? "active" : ""} onClick={() => setType("put")}>Put</button></div>
+          <ParameterInput label="Volatility" suffix="decimal" value={volatility} min={0.05} max={0.8} step={0.01} onChange={setVolatility} />
+          <span className="control-label">MONEYNESS PRESET</span>
+          <div className="presets"><button className={spotPreset === 120 ? "active" : ""} onClick={() => setSpotPreset(120)}>ITM</button><button className={spotPreset === 100 ? "active" : ""} onClick={() => setSpotPreset(100)}>ATM</button><button className={spotPreset === 80 ? "active" : ""} onClick={() => setSpotPreset(80)}>OTM</button></div>
+          <label className="toggle-row" htmlFor="spot-time-view" aria-label="Toggle Spot by Time view"><span><strong>Spot × Time view</strong><small>Reveal the sensitivity plane</small></span><input id="spot-time-view" type="checkbox" checked={heatmap} onChange={(event) => setHeatmap(event.target.checked)} /></label>
+          <div className="desk-panel"><span>DESK VIEW</span><p>{greek === "gamma" ? "Near expiry, ATM gamma concentrates sharply. Your hedge ratio starts moving faster than your coffee can compensate." : greek === "vega" ? "Vega is not a view on realised vol alone. Surface dynamics, tenor and smile all get a vote." : greek === "theta" ? "Theta is the model’s carry invoice. Weekend conventions and surface moves decide what actually arrives." : "Delta is a local hedge coordinate, not a permanent statement about direction."}</p></div>
+        </aside>
+        <div className="output-panel">
+          <div className="greek-readout"><span>CURRENT {greek.toUpperCase()} · SPOT {spotPreset}</span><strong>{current.toFixed(5)}</strong><em>{type.toUpperCase()} · σ {(volatility * 100).toFixed(1)}%</em></div>
+          <div className="chart-card"><div className="chart-title"><div><span>SENSITIVITY PROFILE</span><strong>{greek[0].toUpperCase() + greek.slice(1)} against spot</strong></div></div><LineChart x={spots} series={[{ name: greek, values }]} xLabel="Spot" yLabel={greek.toUpperCase()} height={310} /></div>
+          {heatmap && <div className="heatmap-card"><div className="chart-title"><div><span>SPOT × TIME</span><strong>Relative {greek} intensity</strong></div><span>2.0Y → 0.05Y</span></div><div className="greek-heatmap">{heatValues.map((value, index) => <i key={index} title={`${value.toFixed(5)}`} style={{ opacity: 0.15 + 0.85 * Math.abs(value) / heatMax }} />)}</div></div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function VolatilitySurfaceLab() {
+  const [params, setParams] = useState<SurfaceParameters>({ atm: 0.184, skew: -0.075, convexity: 0.62, termStructure: 0.018 });
+  const [sliceMaturity, setSliceMaturity] = useState(1);
+  const moneyness = useMemo(() => Array.from({ length: 41 }, (_, index) => 0.7 + index * 0.015), []);
+  const smile = useMemo(() => moneyness.map((m) => syntheticVolatility(m, sliceMaturity, params)), [moneyness, sliceMaturity, params]);
+  const maturities = useMemo(() => Array.from({ length: 41 }, (_, index) => 0.05 + index * 0.075), []);
+  const term = useMemo(() => maturities.map((time) => syntheticVolatility(1, time, params)), [maturities, params]);
+  const update = (key: keyof SurfaceParameters, value: number) => setParams((current) => ({ ...current, [key]: value }));
+  return (
+    <div className="experiment">
+      <LabHeader index="03" title="Synthetic Volatility Surface" copy="Decompose a surface into level, skew, convexity and term. Then deform each component independently." note="Pedagogical synthetic volatility surface · not live market data" />
+      <div className="surface-lab-grid">
+        <aside className="control-panel">
+          <div className="control-heading"><span>SURFACE PARAMETERS</span><button onClick={() => setParams({ atm: 0.184, skew: -0.075, convexity: 0.62, termStructure: 0.018 })}>Reset</button></div>
+          <ParameterInput label="ATM volatility" suffix="decimal" value={params.atm} min={0.05} max={0.6} step={0.005} onChange={(value) => update("atm", value)} />
+          <ParameterInput label="Skew" suffix="slope" value={params.skew} min={-0.5} max={0.5} step={0.005} onChange={(value) => update("skew", value)} />
+          <ParameterInput label="Convexity" suffix="curvature" value={params.convexity} min={0} max={1.5} step={0.01} onChange={(value) => update("convexity", value)} />
+          <ParameterInput label="Term structure" suffix="slope" value={params.termStructure} min={-0.08} max={0.12} step={0.002} onChange={(value) => update("termStructure", value)} />
+          <div className="surface-summary"><span>ATM 1Y</span><strong>{(syntheticVolatility(1, 1, params) * 100).toFixed(2)}%</strong><span>80% / 120% wing</span><strong>{(syntheticVolatility(0.8, 1, params) * 100).toFixed(2)} / {(syntheticVolatility(1.2, 1, params) * 100).toFixed(2)}</strong></div>
+          <div className="desk-panel"><span>INTERPRETATION</span><p>Skew tilts the distributional price of downside versus upside. Convexity raises both wings. Term structure decides whether uncertainty becomes richer or cheaper further out.</p></div>
+        </aside>
+        <div className="surface-output">
+          <div className="chart-card surface-main"><div className="chart-title"><div><span>VOLATILITY SURFACE</span><strong>Implied volatility · moneyness × maturity</strong></div><span className="demo-chip">SYNTHETIC</span></div><SurfaceCanvas params={params} /></div>
+          <div className="slice-grid">
+            <div className="chart-card"><div className="chart-title"><div><span>SMILE SLICE</span><strong>Maturity {sliceMaturity.toFixed(2)}y</strong></div><input aria-label="Smile maturity" type="range" min="0.1" max="3" step="0.1" value={sliceMaturity} onChange={(event) => setSliceMaturity(Number(event.target.value))} /></div><LineChart x={moneyness} series={[{ name: "vol", values: smile }]} xLabel="Moneyness" yLabel="IV" height={210} /></div>
+            <div className="chart-card"><div className="chart-title"><div><span>TERM SLICE</span><strong>ATM moneyness</strong></div></div><LineChart x={maturities} series={[{ name: "vol", values: term }]} xLabel="Maturity" yLabel="IV" height={210} /></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const curveSeed: CurveNode[] = [
+  { tenor: "1M", time: 1 / 12, quote: 0.031 }, { tenor: "3M", time: 0.25, quote: 0.0325 }, { tenor: "6M", time: 0.5, quote: 0.0338 },
+  { tenor: "1Y", time: 1, quote: 0.035 }, { tenor: "2Y", time: 2, quote: 0.0362 }, { tenor: "5Y", time: 5, quote: 0.038 },
+  { tenor: "10Y", time: 10, quote: 0.0392 }, { tenor: "20Y", time: 20, quote: 0.0387 }, { tenor: "30Y", time: 30, quote: 0.0381 },
+];
+
+function YieldCurveLab() {
+  const [nodes, setNodes] = useState(curveSeed);
+  const curve = useMemo(() => bootstrapCurve(nodes), [nodes]);
+  const setQuote = useCallback((index: number, quote: number) => setNodes((current) => current.map((node, nodeIndex) => nodeIndex === index ? { ...node, quote: Math.max(-0.02, Math.min(0.12, quote)) } : node)), []);
+  const transform = (action: "shift" | "steepen" | "flatten" | "bump") => setNodes((current) => current.map((node) => {
+    const centred = (node.time - 5) / 30;
+    const amount = action === "shift" ? 0.0025 : action === "bump" ? 0.0001 : action === "steepen" ? 0.006 * centred : -0.006 * centred;
+    return { ...node, quote: node.quote + amount };
+  }));
+  return (
+    <div className="experiment">
+      <LabHeader index="04" title="Yield Curve Explorer" copy="Move one node or reshape the entire term structure. Watch discounting and forwards inherit the decision." note="Simplified educational zero-quote bootstrap · continuously compounded" />
+      <div className="curve-actions"><button onClick={() => setNodes(curveSeed)}>Reset curve</button><button onClick={() => transform("shift")}>Parallel +25bp</button><button onClick={() => transform("steepen")}>Steepen</button><button onClick={() => transform("flatten")}>Flatten</button><button onClick={() => transform("bump")}>Every node +1bp</button></div>
+      <div className="curve-workspace">
+        <div className="chart-card curve-chart-card"><div className="chart-title"><div><span>INTERACTIVE ZERO CURVE</span><strong>Drag a node vertically to reprice the structure</strong></div><span className="demo-chip">DEMO QUOTES</span></div><CurveCanvas nodes={nodes} onChange={setQuote} /><div className="curve-series"><span><i /> Zero rate</span><span><i /> Forward rate</span><span><i /> Discount factor</span></div></div>
+        <div className="bootstrap-flow" aria-label="Bootstrap flow"><span>Market instruments</span><b>↓</b><span>Bootstrap</span><b>↓</b><span>Discount factors</span><b>↓</b><span>Zero curve</span><b>↓</b><span>Forward curve</span></div>
+      </div>
+      <div className="curve-table-wrap"><table className="curve-table"><thead><tr><th>Tenor</th><th>Market quote</th><th>Zero rate</th><th>Discount factor</th><th>Forward rate</th><th>Node control</th></tr></thead><tbody>{curve.map((node, index) => <tr key={node.tenor}><td><strong>{node.tenor}</strong></td><td>{(node.quote * 100).toFixed(3)}%</td><td>{(node.zero * 100).toFixed(3)}%</td><td>{node.discount.toFixed(6)}</td><td className={node.forward >= 0 ? "positive" : "negative"}>{(node.forward * 100).toFixed(3)}%</td><td><input aria-label={`${node.tenor} quote`} type="range" min="-0.01" max="0.09" step="0.0001" value={node.quote} onChange={(event) => setQuote(index, Number(event.target.value))} /></td></tr>)}</tbody></table></div>
+    </div>
+  );
+}
+
+function CurveCanvas({ nodes, onChange }: { nodes: CurveNode[]; onChange: (index: number, quote: number) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const dragRef = useRef<number | null>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const curve = bootstrapCurve(nodes);
+    const rect = canvas.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = rect.width * ratio; canvas.height = rect.height * ratio;
+    const context = canvas.getContext("2d"); if (!context) return;
+    context.scale(ratio, ratio);
+    const width = rect.width; const height = rect.height; const pad = { l: 48, r: 25, t: 20, b: 35 };
+    const mapX = (time: number) => pad.l + (Math.log1p(time) / Math.log(31)) * (width - pad.l - pad.r);
+    const minRate = -0.015; const maxRate = 0.085;
+    const mapY = (rate: number) => pad.t + (1 - (rate - minRate) / (maxRate - minRate)) * (height - pad.t - pad.b);
+    context.clearRect(0, 0, width, height); context.font = "11px ui-monospace, monospace";
+    context.strokeStyle = "#d8d3ca"; context.fillStyle = "#817b72";
+    for (let tick = 0; tick <= 4; tick += 1) { const y = pad.t + tick / 4 * (height - pad.t - pad.b); context.beginPath(); context.moveTo(pad.l, y); context.lineTo(width - pad.r, y); context.stroke(); context.fillText(`${((maxRate - tick / 4 * (maxRate - minRate)) * 100).toFixed(1)}%`, 5, y + 4); }
+    const drawSeries = (values: number[], color: string, widthLine: number) => { context.beginPath(); values.forEach((value, index) => index ? context.lineTo(mapX(curve[index].time), mapY(value)) : context.moveTo(mapX(curve[index].time), mapY(value))); context.strokeStyle = color; context.lineWidth = widthLine; context.stroke(); };
+    drawSeries(curve.map((node) => node.zero), "#7a263a", 2.3); drawSeries(curve.map((node) => node.forward), "#9a7655", 1.5);
+    curve.forEach((node) => { context.beginPath(); context.arc(mapX(node.time), mapY(node.quote), 5, 0, Math.PI * 2); context.fillStyle = "#f7f3eb"; context.fill(); context.strokeStyle = "#7a263a"; context.lineWidth = 2; context.stroke(); context.fillStyle = "#625e57"; context.fillText(node.tenor, mapX(node.time) - 8, height - 10); });
+    const pointerDown = (event: PointerEvent) => { const box = canvas.getBoundingClientRect(); let nearest = -1; let distance = 18; curve.forEach((node, index) => { const current = Math.hypot(mapX(node.time) - (event.clientX - box.left), mapY(node.quote) - (event.clientY - box.top)); if (current < distance) { distance = current; nearest = index; } }); if (nearest >= 0) { dragRef.current = nearest; canvas.setPointerCapture(event.pointerId); } };
+    const pointerMove = (event: PointerEvent) => { if (dragRef.current === null) return; const box = canvas.getBoundingClientRect(); const ratioY = 1 - ((event.clientY - box.top - pad.t) / (height - pad.t - pad.b)); onChange(dragRef.current, minRate + ratioY * (maxRate - minRate)); };
+    const pointerUp = () => { dragRef.current = null; };
+    canvas.addEventListener("pointerdown", pointerDown); canvas.addEventListener("pointermove", pointerMove); canvas.addEventListener("pointerup", pointerUp); canvas.addEventListener("pointerleave", pointerUp);
+    return () => { canvas.removeEventListener("pointerdown", pointerDown); canvas.removeEventListener("pointermove", pointerMove); canvas.removeEventListener("pointerup", pointerUp); canvas.removeEventListener("pointerleave", pointerUp); };
+  }, [nodes, onChange]);
+  return <canvas ref={canvasRef} className="curve-canvas" aria-label="Interactive zero and forward curve. Drag rate nodes vertically." />;
+}
+
+function LabHeader({ index, title, copy, note }: { index: string; title: string; copy: string; note: string }) {
+  return <header className="experiment-header"><div><span className="eyebrow">EXPERIMENT {index}</span><h2>{title}</h2><p>{copy}</p></div><span className="assumption-note">{note}</span></header>;
+}
