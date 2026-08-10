@@ -21,6 +21,11 @@ export interface OptionAnalytics {
   rho: number;
   d1: number;
   d2: number;
+  forward: number;
+  discountFactor: number;
+  intrinsicValue: number;
+  timeValue: number;
+  moneyness: number;
 }
 
 const EPSILON = 1e-10;
@@ -50,11 +55,18 @@ export function blackScholes(input: BlackScholesInput): OptionAnalytics {
       rho: 0,
       d1: sign * (s - k) >= 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY,
       d2: sign * (s - k) >= 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY,
+      forward: s,
+      discountFactor: 1,
+      intrinsicValue: Math.max(sign * (s - k), 0),
+      timeValue: 0,
+      moneyness: s / k,
     };
   }
 
   const discountR = Math.exp(-r * t);
   const discountQ = Math.exp(-q * t);
+  const forward = s * Math.exp((r - q) * t);
+  const intrinsicValue = Math.max(sign * (s - k), 0);
   if (sigma <= EPSILON) {
     const forwardPv = s * discountQ - k * discountR;
     const itm = sign * forwardPv > 0;
@@ -67,6 +79,11 @@ export function blackScholes(input: BlackScholesInput): OptionAnalytics {
       rho: itm ? sign * k * t * discountR * 0.01 : 0,
       d1: forwardPv >= 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY,
       d2: forwardPv >= 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY,
+      forward,
+      discountFactor: discountR,
+      intrinsicValue,
+      timeValue: Math.max(Math.max(sign * forwardPv, 0) - intrinsicValue, 0),
+      moneyness: s / k,
     };
   }
 
@@ -87,7 +104,7 @@ export function blackScholes(input: BlackScholesInput): OptionAnalytics {
   const theta = thetaAnnual / 365;
   const rho = sign * k * t * discountR * nd2 * 0.01;
 
-  return { price, delta, gamma, vega, theta, rho, d1, d2 };
+  return { price, delta, gamma, vega, theta, rho, d1, d2, forward, discountFactor: discountR, intrinsicValue, timeValue: Math.max(price - intrinsicValue, 0), moneyness: s / k };
 }
 
 export function optionPrice(input: BlackScholesInput): number {

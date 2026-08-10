@@ -32,7 +32,7 @@ test("server-renders the finished landing page and production metadata", async (
 test("renders key product routes without external services", async () => {
   for (const [path, expected] of [
     ["/lab", "Black-Scholes Playground"],
-    ["/markets", "DEMO DATA"],
+    ["/markets", "REFERENCE \\+ DEMO"],
     ["/ask", "MOCK PROVIDER"],
     ["/research", "ACTIVE RESEARCH"],
     ["/learn/equity/black-scholes", "Build the mental model first"],

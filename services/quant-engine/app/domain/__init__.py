@@ -1,0 +1,1 @@
+"""Domain conventions and errors."""

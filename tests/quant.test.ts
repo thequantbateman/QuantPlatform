@@ -2,8 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { normalCdf, normalPdf } from "../src/quant/math/normal";
 import { blackScholes } from "../src/quant/models/blackScholes";
-import { black76Price } from "../src/quant/models/black76";
+import { black76, black76Price } from "../src/quant/models/black76";
 import { garmanKohlhagen } from "../src/quant/models/garmanKohlhagen";
+import { impliedVolatility } from "../src/quant/volatility/impliedVolatility";
+import { priceVanilla, scenarioGrid } from "../src/quant/pricing/vanilla";
 import { discountFactor, forwardRate, zeroRate } from "../src/quant/curves/rates";
 import { linearInterpolate } from "../src/quant/curves/interpolation";
 
@@ -63,4 +65,31 @@ test("Black-76 and Garman-Kohlhagen return positive finite prices", () => {
   const fx = garmanKohlhagen({ spot: 1.1, strike: 1.1, time: 1, domesticRate: 0.04, foreignRate: 0.02, volatility: 0.15, type: "call" });
   assert.ok(Number.isFinite(black) && black > 0);
   assert.ok(Number.isFinite(fx.price) && fx.price > 0);
+});
+
+test("Black-76 analytics match a reference value", () => {
+  const result = black76({ forward: 100, strike: 100, time: 1, rate: 0.05, volatility: 0.2, type: "call" });
+  closeTo(result.price, 7.57708215, 2e-5);
+  assert.ok(result.delta > 0 && result.gamma > 0 && result.vega > 0);
+});
+
+test("implied volatility inverts BSM and rejects impossible prices", () => {
+  const target = blackScholes({ ...base, volatility: 0.31, strike: 110, type: "put" }).price;
+  const result = impliedVolatility({ model: "bsm", marketPrice: target, spot: base.spot, strike: 110, time: base.time, rate: base.rate, dividend: base.dividend, type: "put" });
+  closeTo(result.volatility, 0.31, 1e-8);
+  assert.equal(result.converged, true);
+  assert.throws(() => impliedVolatility({ model: "bsm", marketPrice: 120, spot: 100, strike: 100, time: 1, rate: 0, dividend: 0, type: "call" }), /bounds/);
+});
+
+test("scenario engine returns one coherent spot-volatility matrix", () => {
+  const grid = scenarioGrid({ mode: "fx", underlying: "EURUSD", spot: 1.16, forward: 1.16, strike: 1.17, time: 1, rate: 0.03, foreignRate: 0.02, volatility: 0.1, type: "call", notional: 1 }, "gamma");
+  assert.equal(grid.values.length, 5);
+  assert.equal(grid.values[0].length, 5);
+  assert.ok(grid.values.flat().every(Number.isFinite));
+});
+
+test("position notional scales PV and every reported Greek", () => {
+  const unit = priceVanilla({ mode: "equity", underlying: "TEST", spot: 100, forward: 100, strike: 100, time: 1, rate: 0.04, foreignRate: 0.01, volatility: 0.2, type: "call", notional: 1 });
+  const position = priceVanilla({ mode: "equity", underlying: "TEST", spot: 100, forward: 100, strike: 100, time: 1, rate: 0.04, foreignRate: 0.01, volatility: 0.2, type: "call", notional: 25 });
+  for (const metric of ["price", "delta", "gamma", "vega", "theta", "rho"] as const) assert.ok(Math.abs(position[metric] - unit[metric] * 25) < 1e-10, metric);
 });

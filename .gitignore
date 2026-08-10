@@ -42,3 +42,6 @@ yarn-error.log*
 /.wrangler/
 /outputs/
 /work/
+**/.venv/
+**/*.egg-info/
+**/__pycache__/

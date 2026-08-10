@@ -1,0 +1,1 @@
+"""TheQuantBateman transparent quantitative engine."""
