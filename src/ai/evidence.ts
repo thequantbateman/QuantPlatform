@@ -1,0 +1,16 @@
+import { assetPath, contentCatalog } from "@/src/content/catalog";
+import { demoMarketQuotes } from "@/src/data/markets";
+
+export interface AssistantEvidence { tool: "market_data" | "learn" | "analytics" | "navigation"; answer: string; sources: { label: string; href: string; status: string }[]; }
+
+export function resolveEvidence(question: string): AssistantEvidence {
+  const term = question.toLowerCase();
+  const quote = demoMarketQuotes.find((item) => term.includes(item.symbol.toLowerCase()) || term.includes(item.displaySymbol.toLowerCase()));
+  if (quote) return { tool: "market_data", answer: `${quote.displaySymbol} is ${quote.price} ${quote.currency}; displayed change ${quote.changePercent.toFixed(2)}%. This is ${quote.status} data from ${quote.source}, timestamped ${quote.marketTimestamp}. It is not presented as a live tradable quote.`, sources: [{ label: `${quote.displaySymbol} data passport`, href: `/markets/${quote.symbol.toLowerCase()}`, status: quote.status }] };
+  if (/(use|run|calculate|price)/.test(term) && /(option|greek|delta|gamma|vega|theta|rho|implied vol|black.scholes|garman|black.76)/.test(term)) return { tool: "analytics", answer: "A numerical answer requires explicit model, spot or forward, strike, maturity, rates, volatility, option type and notional. Open the deterministic analytics tool; its output, assumptions and data lineage take authority over any language-model explanation.", sources: [{ label: "European option analytics", href: "/lab?lab=vanilla", status: "LOCAL QUANT ENGINE" }] };
+  const concept = contentCatalog.find((entry) => term.includes(entry.title.toLowerCase())) ?? contentCatalog.find((entry) => entry.tags.some((tag) => term.includes(tag.toLowerCase())));
+  if (concept) return { tool: "learn", answer: `${concept.title}: ${concept.description} ${concept.intuition} Market use: ${concept.marketUse}`, sources: [{ label: concept.title, href: `/learn/${assetPath(concept.assetClass)}/${concept.slug}`, status: `REVIEWED ${concept.lastReviewed}` }] };
+  if (/price|greek|delta|gamma|vega|theta|rho|implied vol|black.scholes|garman|black.76/.test(term)) return { tool: "analytics", answer: "A numerical answer requires explicit model, spot or forward, strike, maturity, rates, volatility, option type and notional. Open the deterministic analytics tool; its output, assumptions and data lineage take authority over any language-model explanation.", sources: [{ label: "European option analytics", href: "/lab?lab=vanilla", status: "LOCAL QUANT ENGINE" }] };
+  if (/prediction|probability|polymarket/.test(term)) return { tool: "navigation", answer: "Prediction-market probabilities are loaded from Polymarket’s public read-only Gamma and CLOB APIs. They are observed contract prices, not calibrated real-world forecasts. Open the dashboard for current source timestamps and availability.", sources: [{ label: "Prediction markets", href: "/markets/predictions", status: "PUBLIC READ ONLY" }] };
+  return { tool: "navigation", answer: "I can ground answers in the Learn corpus, displayed market data, prediction markets or deterministic analytics. Name a concept or instrument, or provide complete pricing inputs.", sources: [{ label: "Unified Learn catalog", href: "/learn", status: "LOCAL REVIEWED CORPUS" }] };
+}

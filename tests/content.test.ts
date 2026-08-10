@@ -17,3 +17,7 @@ test("Spanish localization preserves identifiers and mathematics", () => {
   assert.notEqual(localized.title, source.title);
   assert.match(localized.marketUse, /mercado/i);
 });
+
+test("market-to-model bridge concepts remain in the knowledge graph", () => {
+  for (const slug of ["bid-ask-and-mid", "market-price-vs-model-price", "streaming-quotes-and-staleness", "reference-vs-real-time-data", "prediction-market-probabilities", "realized-vs-implied-volatility"]) assert.ok(contentCatalog.some((entry) => entry.slug === slug), slug);
+});

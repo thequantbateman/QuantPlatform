@@ -5,12 +5,23 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "re
 import { usePathname } from "next/navigation";
 import { assetPath, contentCatalog } from "@/src/content/catalog";
 import { Avatar } from "@/src/components/avatar/Avatar";
+import { demoMarketQuotes, marketDetailPath } from "@/src/data/markets";
 import { I18nProvider, useI18n } from "@/src/i18n";
 
 const navigation = [
-  ["nav.home", "/"], ["nav.learn", "/learn"], ["nav.lab", "/lab"], ["nav.markets", "/markets"],
-  ["nav.research", "/research"], ["nav.desk", "/desk"], ["nav.ask", "/ask"],
+  ["nav.learn", "/learn"], ["nav.markets", "/markets"], ["nav.analytics", "/analytics"],
+  ["nav.intelligence", "/intelligence"], ["nav.research", "/research"], ["nav.ask", "/ask"],
 ] as const;
+
+const platformSearchItems = [
+  ...contentCatalog.map((entry) => ({ title: entry.title, description: entry.description, meta: `${entry.assetClass} · ${entry.difficulty}`, href: `/learn/${assetPath(entry.assetClass)}/${entry.slug}`, keywords: [entry.title, entry.description, entry.assetClass, entry.type, entry.difficulty, ...entry.tags].join(" ") })),
+  ...demoMarketQuotes.map((quote) => ({ title: quote.displaySymbol, description: quote.name, meta: `${quote.assetClass} · ${quote.status}`, href: marketDetailPath(quote.symbol), keywords: `${quote.symbol} ${quote.name} ${quote.assetClass} market quote` })),
+  { title: "European option pricer", description: "BSM, Garman–Kohlhagen and Black-76", meta: "ANALYTICS · LAB", href: "/lab?lab=vanilla", keywords: "price option bsm black scholes garman kohlhagen black 76 analytics lab" },
+  { title: "Greeks dashboard", description: "Delta, Gamma, Vega, Theta and Rho", meta: "ANALYTICS · LAB", href: "/lab?lab=greeks", keywords: "greeks delta gamma vega theta rho analytics lab" },
+  { title: "Prediction markets", description: "Public read-only macro probabilities", meta: "MARKETS · LIVE PUBLIC", href: "/markets/predictions", keywords: "polymarket predictions probability macro market intelligence" },
+  { title: "Market intelligence", description: "Returns, realized volatility, z-scores and range", meta: "INTELLIGENCE", href: "/intelligence", keywords: "market intelligence return realized volatility z score range analytics" },
+  { title: "Quant research", description: "Frontier models and implementation notes", meta: "RESEARCH", href: "/research", keywords: "research rough volatility differentiable pricing monte carlo" },
+];
 
 export function AppShell({ children }: { children: ReactNode }) {
   return <I18nProvider><Shell>{children}</Shell></I18nProvider>;
@@ -25,6 +36,8 @@ function Shell({ children }: { children: ReactNode }) {
   const [query, setQuery] = useState("");
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
+  const [assistantMeta, setAssistantMeta] = useState("");
+  const [assistantBusy, setAssistantBusy] = useState(false);
   const [dark, setDark] = useState(true);
 
   useEffect(() => {
@@ -38,8 +51,8 @@ function Shell({ children }: { children: ReactNode }) {
 
   const results = useMemo(() => {
     const term = query.trim().toLowerCase();
-    if (!term) return contentCatalog.slice(0, 7);
-    return contentCatalog.filter((entry) => [entry.title, entry.description, entry.assetClass, entry.type, entry.difficulty, ...entry.tags].join(" ").toLowerCase().includes(term)).slice(0, 9);
+    if (!term) return platformSearchItems.slice(0, 8);
+    return platformSearchItems.filter((entry) => entry.keywords.toLowerCase().includes(term)).slice(0, 10);
   }, [query]);
 
   const activeRoot = pathname === "/" ? "/" : `/${pathname.split("/").filter(Boolean)[0] ?? ""}`;
@@ -48,13 +61,11 @@ function Shell({ children }: { children: ReactNode }) {
   function toggleTheme() {
     const next = !dark; setDark(next); document.documentElement.dataset.theme = next ? "dark" : "light"; localStorage.setItem("tqb-theme", next ? "dark" : "light");
   }
-  function submitAssistant(event: FormEvent) {
+  async function submitAssistant(event: FormEvent) {
     event.preventDefault(); if (!question.trim()) return;
     const labContext = pathname.includes("lab") ? localStorage.getItem("tqb-lab-context") : null;
-    const page = pathname.includes("lab") ? (locale === "es" ? "el laboratorio y sus parámetros actuales" : "the lab and its current parameters") : (locale === "es" ? "esta página" : "this page");
-    const params = labContext ? ` ${locale === "es" ? "Parámetros" : "Parameters"}: ${labContext}.` : "";
-    setAnswer(locale === "es" ? `Contexto recibido: ${page}.${params} Empieza por la convención, identifica la variable que cambia y separa precio, cobertura y dinámica. «${question.trim()}» merece una respuesta por capas; la integración del proveedor remoto está marcada como demo local.` : `Context received: ${page}.${params} Start with the convention, identify the variable that moves, then separate pricing, hedging and dynamics. “${question.trim()}” deserves a layered answer; the remote provider integration is explicitly a local demo.`);
-    setQuestion("");
+    const asked = question.trim(); setQuestion(""); setAssistantBusy(true); setAnswer(""); setAssistantMeta("");
+    try { const response = await fetch("/api/assistant", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question: asked, context: JSON.stringify({ pathname, locale, labContext }) }) }); const payload = await response.json() as { answer?: string; provider?: string; tool?: string; error?: string }; if (!response.ok) throw new Error(payload.error || "Assistant unavailable"); setAnswer(payload.answer || "No answer returned."); setAssistantMeta(`${payload.provider} · ${payload.tool}`); } catch (error) { setAnswer(error instanceof Error ? error.message : "Assistant unavailable"); setAssistantMeta("ERROR · NO UNGROUNDED FALLBACK"); } finally { setAssistantBusy(false); }
   }
 
   return (
@@ -79,13 +90,13 @@ function Shell({ children }: { children: ReactNode }) {
       {assistantOpen && <aside className="assistant-drawer" aria-label={t("assistant.title")}>
         <header><Avatar state={answer ? "explaining" : "idle"} compact /><div><strong>{t("assistant.title")}</strong><span>{t("assistant.subtitle")}</span></div><button onClick={() => setAssistantOpen(false)} aria-label={t("assistant.close")}>×</button></header>
         <div className="assistant-context"><b>{t("assistant.context")}</b><code>{`{ page: "${pathname}", locale: "${locale}", mode: "${pathname.includes("lab") ? "lab" : "page"}" }`}</code></div>
-        {answer && <p className="assistant-answer">{answer}</p>}
-        <form onSubmit={submitAssistant}><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={t("assistant.placeholder")} rows={3}/><button disabled={!question.trim()}>{t("assistant.send")} ↗</button></form><small>{t("assistant.local")}</small>
+        {assistantBusy && <p className="assistant-answer">{t("assistant.title")} · checking authoritative sources…</p>}{answer && <p className="assistant-answer">{answer}</p>}{assistantMeta && <small>{assistantMeta}</small>}
+        <form onSubmit={submitAssistant}><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={t("assistant.placeholder")} rows={3}/><button disabled={!question.trim() || assistantBusy}>{t("assistant.send")} ↗</button></form><small>TOOLS FIRST · NUMBERS REQUIRE AUTHORITATIVE SOURCES</small>
       </aside>}
 
       <footer className="site-footer"><div className="footer-brand"><span className="wordmark-mark">TQB</span><div><strong>THEQUANTBATEMAN</strong><span>{t("shell.footer")}</span></div></div><p>{t("shell.disclaimer")}</p><span className="footer-meta">© 2026 · {t("shell.demo")} · {locale.toUpperCase()}</span></footer>
 
-      {paletteOpen && <div className="palette-backdrop"><button className="palette-dismiss" type="button" onClick={() => setPaletteOpen(false)} aria-label={t("shell.close")} /><section className="command-palette" role="dialog" aria-modal="true" aria-label={t("shell.search")}><div className="palette-input-row"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("shell.searchPlaceholder")} aria-label={t("shell.search")} /><kbd>ESC</kbd></div><div className="palette-results"><span className="eyebrow">{query ? `${results.length} ${t("shell.results")}` : t("shell.suggested")}</span>{results.map((entry) => <a key={`${entry.assetClass}-${entry.slug}`} href={`/learn/${assetPath(entry.assetClass)}/${entry.slug}`} onClick={() => setPaletteOpen(false)}><span className={`asset-dot asset-${entry.assetClass.toLowerCase()}`} /><div><strong>{entry.title}</strong><small>{entry.description}</small></div><span className="result-meta">{entry.assetClass} · {entry.difficulty}</span></a>)}{!results.length && <p className="empty-state">{t("shell.noResults")}</p>}</div></section></div>}
+      {paletteOpen && <div className="palette-backdrop"><button className="palette-dismiss" type="button" onClick={() => setPaletteOpen(false)} aria-label={t("shell.close")} /><section className="command-palette" role="dialog" aria-modal="true" aria-label={t("shell.search")}><div className="palette-input-row"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("shell.searchPlaceholder")} aria-label={t("shell.search")} /><kbd>ESC</kbd></div><div className="palette-results"><span className="eyebrow">{query ? `${results.length} ${t("shell.results")}` : t("shell.suggested")}</span>{results.map((entry) => <a key={entry.href} href={entry.href} onClick={() => setPaletteOpen(false)}><span className="asset-dot asset-foundations" /><div><strong>{entry.title}</strong><small>{entry.description}</small></div><span className="result-meta">{entry.meta}</span></a>)}{!results.length && <p className="empty-state">{t("shell.noResults")}</p>}</div></section></div>}
     </div>
   );
 }
