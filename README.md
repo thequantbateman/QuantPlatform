@@ -1,12 +1,12 @@
 # THEQUANTBATEMAN
 
-**Quant Finance. Visually Explained.** A bilingual interactive platform combining a 100+ topic knowledge graph, four quant labs, clearly labelled demo market intelligence, editorial research and a contextual local tutor.
+**Quant Finance. Visually Explained.** A bilingual interactive workstation combining a 100+ topic knowledge graph, a source-aware Market Board, transparent option pricing, dynamic risk/scenario analytics, clearly labelled demo/reference data and a contextual local tutor.
 
-The second product iteration adds persistent EN/ES presentation, compact active navigation, a unified volatility explorer, a full-input Greeks dashboard, shared interactive chart behavior and an original editorial avatar asset.
+The workstation vertical now connects Market → Instrument → Model → Pricing → Greeks → Scenarios → Visualization → Mathematics → Python → Desk View. The V0 engine covers Black–Scholes–Merton, Garman–Kohlhagen, Black–76 and robust implied-volatility inversion.
 
 ## Architecture
 
-The vinext/React application uses thin routes in `app/`, reusable domain UI in `src/components/`, typed content in `src/content/`, and a framework-free quantitative engine in `src/quant/`. Market and tutor integrations use provider interfaces with local fallbacks. The optional Python service is not part of web startup.
+The vinext/React application uses thin routes in `app/`, reusable domain UI in `src/components/`, typed content in `src/content/`, and a framework-free TypeScript fallback engine in `src/quant/`. The FastAPI service in `services/quant-engine/` owns professional analytical endpoints. Market and tutor integrations use provider interfaces with local fallbacks.
 
 ## Tech stack
 
@@ -18,14 +18,40 @@ The vinext/React application uses thin routes in `app/`, reusable domain UI in `
 
 ## Install and run locally
 
-Requirements: Node.js 22.13+ and npm.
+Requirements: Node.js 22.13+, npm and Python 3.9+.
 
 ```bash
 npm ci
+npm run setup:quant
+npm run dev:all
+```
+
+One-time Python setup (the package script is intentionally explicit):
+
+```bash
+python3 -m venv services/quant-engine/.venv
+services/quant-engine/.venv/bin/pip install services/quant-engine
+```
+
+Run the full application:
+
+```bash
+npm run dev:all
+```
+
+Frontend only:
+
+```bash
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Quant engine only:
+
+```bash
+npm run dev:quant
+```
+
+Open the frontend at `http://localhost:3000`; engine health is `http://127.0.0.1:8000/health`.
 
 ## Quality checks
 
@@ -36,7 +62,7 @@ npm test
 npm run build
 ```
 
-`npm test` runs analytical quant references, parity, curve consistency, interpolation and rendered application checks.
+`npm test` runs TypeScript and Python analytical references, parity, implied-volatility inversion, boundaries, curve consistency and rendered application checks.
 
 ## Content creation
 
