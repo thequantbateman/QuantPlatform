@@ -7,6 +7,7 @@
 - `src/quant/` is framework-free TypeScript. It must never import React, browser APIs or UI types.
 - `src/content/` owns typed metadata and the search index. `content/` is the MDX-compatible authoring source.
 - `src/data/` exposes provider interfaces and local demo implementations.
+- `src/i18n/` owns UI dictionaries and device-local locale state; content localization lives in `src/content/localization.ts`.
 - `docs/` records product and engineering decisions. `services/quant-python/` is optional future infrastructure.
 
 Dependencies flow inward: routes → components → typed domain modules. Quant and provider modules must not depend on routes or components.
@@ -44,6 +45,7 @@ Dependencies flow inward: routes → components → typed domain modules. Quant 
 - Labs are desktop-primary but must stack without horizontal page overflow.
 - All controls need labels; keyboard navigation and `prefers-reduced-motion` are mandatory.
 - Use motion to explain state, never to decorate idle screens.
+- Reuse axes, formatting, crosshair and tooltip behavior from `src/components/charts/`.
 - Do not imitate a real actor, film character, copyrighted scene or third-party brand asset.
 
 ## Content conventions

@@ -1,6 +1,8 @@
 # THEQUANTBATEMAN
 
-**Quant Finance. Visually Explained.** A production-oriented MVP combining a progressive knowledge graph, four interactive quant labs, clearly labelled demo market intelligence, editorial research and a local mock AI tutor.
+**Quant Finance. Visually Explained.** A bilingual interactive platform combining a 100+ topic knowledge graph, four quant labs, clearly labelled demo market intelligence, editorial research and a contextual local tutor.
+
+The second product iteration adds persistent EN/ES presentation, compact active navigation, a unified volatility explorer, a full-input Greeks dashboard, shared interactive chart behavior and an original editorial avatar asset.
 
 ## Architecture
 
@@ -51,9 +53,13 @@ Add an MDX-compatible source in `content/<asset>/`, then add its typed metadata 
 
 Create a component under `src/components/labs/`, import only typed quant functions, label educational assumptions, provide exact inputs alongside sliders, and include a numerical summary for every chart.
 
+## Product documentation
+
+See `docs/I18N.md`, `docs/DESIGN_SYSTEM.md`, `docs/QUANT_VISUALIZATION.md` and `docs/AVATAR_ART_DIRECTION.md`.
+
 ## Add a Rive avatar
 
-Follow `docs/AVATAR.md`. The current CSS placeholder implements the stable `AvatarState` contract; a Rive renderer can replace only the visual layer.
+Follow `docs/AVATAR.md` and `docs/AVATAR_ART_DIRECTION.md`. The bitmap component implements the stable `AvatarState` contract; Rive can replace only the visual layer.
 
 ## Add an AI provider
 

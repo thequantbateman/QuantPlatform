@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head><script dangerouslySetInnerHTML={{ __html: `try{const s=localStorage.getItem('tqb-theme');document.documentElement.dataset.theme=s||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch{}` }} /></head>
+      <head><script dangerouslySetInnerHTML={{ __html: `try{document.documentElement.dataset.theme=localStorage.getItem('tqb-theme')||'dark';document.documentElement.lang=localStorage.getItem('tqb-locale')||'en'}catch{}` }} /></head>
       <body>{children}</body>
     </html>
   );

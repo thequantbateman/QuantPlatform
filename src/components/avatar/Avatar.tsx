@@ -1,25 +1,12 @@
 "use client";
 
-export type AvatarState = "idle" | "thinking" | "typing" | "explaining" | "speaking" | "amused" | "error";
+export type AvatarState = "idle" | "thinking" | "typing" | "explaining" | "skeptical" | "amused" | "speaking" | "error";
 
-export function Avatar({ state = "idle", compact = false }: { state?: AvatarState; compact?: boolean }) {
+export function Avatar({ state = "idle", compact = false, assetSrc = "/brand/tqb-avatar-v2.png" }: { state?: AvatarState; compact?: boolean; assetSrc?: string }) {
   return (
-    <div className={`avatar avatar-${state} ${compact ? "avatar-compact" : ""}`} role="img" aria-label={`Original TheQuantBateman avatar, ${state}`}>
-      <div className="avatar-aura" />
-      <div className="avatar-head">
-        <div className="avatar-hair" />
-        <div className="avatar-brow avatar-brow-left" />
-        <div className="avatar-brow avatar-brow-right" />
-        <div className="avatar-eye avatar-eye-left" />
-        <div className="avatar-eye avatar-eye-right" />
-        <div className="avatar-nose" />
-        <div className="avatar-mouth" />
-      </div>
-      <div className="avatar-collar left" />
-      <div className="avatar-collar right" />
-      <div className="avatar-jacket" />
-      <div className="avatar-tie" />
-      <span className="avatar-status">{state}</span>
-    </div>
+    <figure className={`avatar avatar-${state} ${compact ? "avatar-compact" : ""}`} role="img" aria-label={`Original fictional TheQuantBateman quant strategist, ${state}`}>
+      <picture><source srcSet={assetSrc} type="image/png" /><img src={assetSrc} alt="Original fictional quant strategist in a dark editorial studio" /></picture>
+      <span className="avatar-scan" /><span className="avatar-status"><i />{state}</span>
+    </figure>
   );
 }

@@ -1,5 +1,20 @@
 # Roadmap
 
+## Completed in v2
+
+- Persistent English/Spanish shell and localized knowledge presentation
+- Compact dark-first navigation, breadcrumbs and contextual assistant
+- Expanded 100+ topic graph
+- Unified volatility progression and maturity slices
+- Full-input Greeks dashboard with 1D/2D views
+- Shared chart crosshair/tooltips and original editorial avatar asset
+
+## Next three priorities
+
+1. Replace generic Spanish content fallbacks with editorially reviewed, concept-specific translations.
+2. Add arbitrage diagnostics and calibrated SVI/SABR data to the volatility explorer.
+3. Connect the tutor to a production provider with retrieval, typed tools and observability.
+
 - **0.1 MVP:** four labs, content graph, demo markets, local tutor, editorial and research surfaces.
 - **0.2 Content Expansion:** full instrument/model chapters, exercises, Spanish-ready content keys.
 - **0.3 AI Tutor:** server Responses API, reviewed retrieval and typed quant tools.
