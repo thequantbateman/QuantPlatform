@@ -21,9 +21,9 @@ test("server-renders the finished landing page and production metadata", async (
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   const html = await response.text();
   assert.match(html, /<title>TheQuantBateman — Quant Finance, Visually Explained<\/title>/i);
-  assert.match(html, /QUANT FINANCE,/);
-  assert.match(html, /VISUALLY EXPLAINED/);
-  assert.match(html, /DON[’']T READ/);
+  assert.match(html, /QUANTITATIVE FINANCE/);
+  assert.match(html, /MARKETS, MODELS &amp; ANALYTICS/);
+  assert.match(html, /source-aware workspace/i);
   assert.match(html, /educational and research platform/i);
   assert.match(html, /http:\/\/localhost\/og\.png/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
@@ -32,7 +32,7 @@ test("server-renders the finished landing page and production metadata", async (
 test("renders key product routes without external services", async () => {
   for (const [path, expected] of [
     ["/lab", "Black-Scholes Playground"],
-    ["/markets", "REFERENCE \\+ DEMO"],
+    ["/markets", "MARKET DATA WORKSTATION"],
     ["/ask", "MOCK PROVIDER"],
     ["/research", "ACTIVE RESEARCH"],
     ["/learn/equity/black-scholes", "Build the mental model first"],

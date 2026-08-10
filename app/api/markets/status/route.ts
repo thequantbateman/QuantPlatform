@@ -1,0 +1,3 @@
+import { licensingModeFromEnv, sanitizedProviderCatalog } from "@/src/market-data/router";
+
+export async function GET() { const now = new Date().toISOString(); return Response.json({ checkedAt: now, licensingMode: licensingModeFromEnv(process.env), providers: sanitizedProviderCatalog().map((provider) => ({ id: provider.id, state: provider.configured ? "CONNECTED" : "DISCONNECTED", checkedAt: now, lastSuccessfulQuote: null, lastError: provider.configured ? null : "Credentials or display licence not configured", latencyMs: null, subscriptionCount: 0 })) }, { headers: { "cache-control": "no-store" } }); }

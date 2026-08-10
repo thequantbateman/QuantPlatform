@@ -10,13 +10,13 @@ const cases = [
   ...["hello", "where should I start", "help me navigate", "what can you do", "show the platform", "unknown subject", "find resources", "learning path", "start", "help"].map((question) => [question, "navigation"] as const),
 ];
 
-test("50 assistant evaluation cases route to authoritative tools", () => {
+test("50 assistant evaluation cases route to authoritative tools", async () => {
   assert.equal(cases.length, 50);
-  for (const [question, expected] of cases) assert.equal(resolveEvidence(question).tool, expected, question);
+  for (const [question, expected] of cases) assert.equal((await resolveEvidence(question)).tool, expected, question);
 });
 
-test("analytics requests with incomplete inputs do not invent a price", () => {
-  const evidence = resolveEvidence("price an option");
+test("analytics requests with incomplete inputs do not invent a price", async () => {
+  const evidence = await resolveEvidence("price an option");
   assert.match(evidence.answer, /requires explicit model/i);
   assert.doesNotMatch(evidence.answer, /\$\d|price is \d/i);
 });

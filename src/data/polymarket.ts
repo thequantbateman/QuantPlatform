@@ -11,6 +11,7 @@ export interface PredictionMarket {
   liquidity: number;
   updatedAt: string;
   tokenId: string | null;
+  sourceUrl: string;
   history: { timestamp: number; probability: number }[];
 }
 
@@ -35,6 +36,7 @@ export function normalizeGammaEvents(input: unknown): PredictionMarket[] {
         endDate: market.endDate ? String(market.endDate) : null,
         probability: outcomePrices.length ? outcomePrices[yesIndex >= 0 ? yesIndex : 0] : null,
         outcomes, outcomePrices, volume: number(market.volume ?? event.volume), liquidity: number(market.liquidity ?? event.liquidity), updatedAt: String(market.updatedAt ?? event.updatedAt ?? new Date(0).toISOString()), tokenId: tokenIds[yesIndex >= 0 ? yesIndex : 0] ?? null, history: [],
+        sourceUrl: `https://polymarket.com/event/${encodeURIComponent(String(event.slug ?? market.slug ?? event.id ?? ""))}`,
       } satisfies PredictionMarket;
     });
   }).filter((market) => market.id && market.probability !== null && market.probability >= 0 && market.probability <= 1);
