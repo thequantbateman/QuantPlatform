@@ -81,11 +81,11 @@ Create a component under `src/components/labs/`, import only typed quant functio
 
 ## Product documentation
 
-See `docs/I18N.md`, `docs/DESIGN_SYSTEM.md`, `docs/QUANT_VISUALIZATION.md` and `docs/AVATAR_ART_DIRECTION.md`.
+See `docs/I18N.md`, `docs/DESIGN_SYSTEM.md`, `docs/QUANT_VISUALIZATION.md` and `docs/design/quant-bateman-assistant.md`.
 
-## Add a Rive avatar
+## Extend Quant Bateman
 
-Follow `docs/AVATAR.md` and `docs/AVATAR_ART_DIRECTION.md`. The bitmap component implements the stable `AvatarState` contract; Rive can replace only the visual layer.
+Follow `docs/design/quant-bateman-assistant.md` and `docs/design/quant-bateman-rive.md`. Product modules target the stable `QuantBatemanState` API; image and future Rive renderers remain interchangeable visual layers.
 
 ## Add an AI provider
 

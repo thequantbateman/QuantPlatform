@@ -1,10 +1,13 @@
 "use client";
 /* eslint-disable @next/next/no-html-link-for-pages */
 
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { assetPath, contentCatalog } from "@/src/content/catalog";
-import { Avatar } from "@/src/components/avatar/Avatar";
+import { QuantBatemanAssistant } from "@/src/components/quant-bateman/QuantBatemanAssistant";
+import { QuantBatemanImageRenderer } from "@/src/components/quant-bateman/renderers/QuantBatemanImageRenderer";
+import { QuantBatemanProvider } from "@/src/components/quant-bateman/QuantBatemanProvider";
+import { useQuantBateman } from "@/src/components/quant-bateman/useQuantBateman";
 import { demoMarketQuotes, marketDetailPath } from "@/src/data/markets";
 import { I18nProvider, useI18n } from "@/src/i18n";
 
@@ -27,26 +30,22 @@ const platformSearchItems = [
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  return <I18nProvider><Shell>{children}</Shell></I18nProvider>;
+  return <I18nProvider><QuantBatemanProvider><Shell>{children}</Shell></QuantBatemanProvider></I18nProvider>;
 }
 
 function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const quantBateman = useQuantBateman();
   const { locale, setLocale, t } = useI18n();
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [assistantOpen, setAssistantOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [assistantMeta, setAssistantMeta] = useState("");
-  const [assistantBusy, setAssistantBusy] = useState(false);
   const [dark, setDark] = useState(true);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") { event.preventDefault(); setPaletteOpen((value) => !value); }
-      if (event.key === "Escape") { setPaletteOpen(false); setAssistantOpen(false); }
+      if (event.key === "Escape") setPaletteOpen(false);
     };
     window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
   }, []);
@@ -64,17 +63,10 @@ function Shell({ children }: { children: ReactNode }) {
   function toggleTheme() {
     const next = !dark; setDark(next); document.documentElement.dataset.theme = next ? "dark" : "light"; localStorage.setItem("tqb-theme", next ? "dark" : "light");
   }
-  async function submitAssistant(event: FormEvent) {
-    event.preventDefault(); if (!question.trim()) return;
-    const labContext = pathname.includes("lab") ? localStorage.getItem("tqb-lab-context") : null;
-    const asked = question.trim(); setQuestion(""); setAssistantBusy(true); setAnswer(""); setAssistantMeta("");
-    try { const response = await fetch("/api/assistant", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ question: asked, context: JSON.stringify({ pathname, locale, labContext }) }) }); const payload = await response.json() as { answer?: string; provider?: string; tool?: string; error?: string }; if (!response.ok) throw new Error(payload.error || "Assistant unavailable"); setAnswer(payload.answer || "No answer returned."); setAssistantMeta(`${payload.provider} · ${payload.tool}`); } catch (error) { setAnswer(error instanceof Error ? error.message : "Assistant unavailable"); setAssistantMeta("ERROR · NO UNGROUNDED FALLBACK"); } finally { setAssistantBusy(false); }
-  }
-
   return (
     <div className="site-shell">
       <header className="topbar">
-        <a href="/" className="wordmark" aria-label="TheQuantBateman home"><span className="wordmark-mark">TQB</span><span>THEQUANTBATEMAN</span></a>
+        <a href="/" className="wordmark" aria-label="TheQuantBateman home"><span className={`wordmark-mark${pathname === "/ask" ? " ask-character-mark" : ""}`}>{pathname === "/ask" ? <QuantBatemanImageRenderer state={quantBateman.state} dragging={false} hovered={false} talking={false} pose="default" outfit="default" /> : "TQB"}</span><span>THEQUANTBATEMAN</span></a>
         <nav className={menuOpen ? "primary-nav is-open" : "primary-nav"} aria-label="Primary navigation">
           {navigation.map(([key, href]) => <a className={activeRoot === href ? "active" : ""} aria-current={activeRoot === href ? "page" : undefined} key={href} href={href} onClick={() => setMenuOpen(false)}>{t(key)}</a>)}
         </nav>
@@ -89,13 +81,7 @@ function Shell({ children }: { children: ReactNode }) {
       {pathname !== "/" && <div className="context-nav"><a href="/">TQB</a>{crumbs.map((crumb, index) => <span key={crumb}>/ <a href={`/${crumbs.slice(0, index + 1).join("/")}`}>{crumb.replaceAll("-", " ")}</a></span>)}<i /><b>{locale.toUpperCase()} · {dark ? "DARK" : "LIGHT"}</b></div>}
       <main>{children}</main>
 
-      <button className="assistant-launcher" type="button" onClick={() => setAssistantOpen(true)} aria-label={t("assistant.title")}><span>∂</span><b>{t("assistant.title")}</b></button>
-      {assistantOpen && <aside className="assistant-drawer" aria-label={t("assistant.title")}>
-        <header><Avatar state={answer ? "explaining" : "idle"} compact /><div><strong>{t("assistant.title")}</strong><span>{t("assistant.subtitle")}</span></div><button onClick={() => setAssistantOpen(false)} aria-label={t("assistant.close")}>×</button></header>
-        <div className="assistant-context"><b>{t("assistant.context")}</b><code>{`{ page: "${pathname}", locale: "${locale}", mode: "${pathname.includes("lab") ? "lab" : "page"}" }`}</code></div>
-        {assistantBusy && <p className="assistant-answer">{t("assistant.title")} · checking authoritative sources…</p>}{answer && <p className="assistant-answer">{answer}</p>}{assistantMeta && <small>{assistantMeta}</small>}
-        <form onSubmit={submitAssistant}><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={t("assistant.placeholder")} rows={3}/><button disabled={!question.trim() || assistantBusy}>{t("assistant.send")} ↗</button></form><small>TOOLS FIRST · NUMBERS REQUIRE AUTHORITATIVE SOURCES</small>
-      </aside>}
+      <QuantBatemanAssistant />
 
       <footer className="site-footer"><div className="footer-brand"><span className="wordmark-mark">TQB</span><div><strong>THEQUANTBATEMAN</strong><span>{t("shell.footer")}</span></div></div><p>{t("shell.disclaimer")}</p><span className="footer-meta">© 2026 · {t("shell.demo")} · {locale.toUpperCase()}</span></footer>
 

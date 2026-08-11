@@ -1,7 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-html-link-for-pages */
 
-import { Avatar } from "./avatar/Avatar";
 import { PredictionsDashboard } from "./markets/PredictionsDashboard";
 import { marketIntelligenceMetrics } from "@/src/data/marketMetrics";
 import { homeTickerIds, instrumentMaster } from "@/src/market-data/instrumentMaster";
@@ -23,7 +22,6 @@ export function HomePage() {
   return <div className="home-terminal">
     <section className="home-lead section-shell">
       <div className="home-title"><span className="eyebrow">THEQUANTBATEMAN · EDUCATION × MARKET INTELLIGENCE</span><h1>{pick(locale, { en: <>QUANTITATIVE FINANCE.<br /><em>MARKETS, MODELS & ANALYTICS.</em></>, es: <>FINANZAS CUANTITATIVAS.<br /><em>MERCADOS, MODELOS Y ANALÍTICA.</em></> })}</h1><p>{pick(locale, { en: "Learn the theory, inspect observed market context, then test the model in one source-aware workspace.", es: "Aprende la teoría, inspecciona el contexto de mercado y prueba el modelo en un espacio con fuentes explícitas." })}</p><div className="hero-actions"><a className="button button-primary" href="/learn">{pick(locale, { en: "START LEARNING", es: "EMPEZAR A APRENDER" })} <span>→</span></a><a className="button button-secondary" href="/markets">{pick(locale, { en: "OPEN MARKETS", es: "ABRIR MERCADOS" })} <span>→</span></a><a className="text-link" href="/analytics">{pick(locale, { en: "Run analytics", es: "Ejecutar analítica" })} ↗</a></div></div>
-      <aside className="bateman-signal"><Avatar state="idle" compact interactive /><div><span>BATEMAN · THEMATIC GUIDE</span><p>{pick(locale, { en: "Market price is an observation. Model price is an argument. Keep the lineage visible.", es: "El precio de mercado es una observación. El precio de modelo es un argumento. Muestra la procedencia." })}</p><small>{pick(locale, { en: "Animation states prepared for later iterations", es: "Estados de animación preparados para próximas iteraciones" })}</small></div></aside>
     </section>
 
     <section className="home-market-strip section-shell"><div className="module-head"><div><span className="eyebrow">MARKET PULSE · SOURCE AWARE</span><h2>{pick(locale, { en: "Visible inputs, explicit status", es: "Inputs visibles, estado explícito" })}</h2></div><a href="/markets">{pick(locale, { en: "All instruments", es: "Todos los instrumentos" })} →</a></div><div className="home-quotes">{lead.map((instrument) => <HomeQuote instrument={instrument} key={instrument.id} />)}</div></section>

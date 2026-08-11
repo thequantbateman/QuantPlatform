@@ -1,7 +1,16 @@
-# Avatar Art Direction
+# Quant Bateman art direction
 
-TheQuantBateman is an original fictional quant strategist, not a replica of Patrick Bateman, Christian Bale or any real person. The tone is composed, analytical and dry. Avoid finance clichés, aggression, meme aesthetics, sunglasses, cigars, cash and celebrity resemblance.
+The owner-approved ten-image set under `public/characters/quant-bateman/source` is the canonical character identity for this MVP. Preserve the face, sunglasses, dark pinstripe default suit, red tie, brown shoes and restrained illustrated finish exactly.
 
-The v2 asset is a premium semi-realistic editorial portrait with dark institutional lighting, subtle volatility and curve geometry, and restrained amber accents. `Avatar` uses an external bitmap instead of a CSS-drawn face. The social master is `public/og.png`; the portrait crop is `public/brand/tqb-avatar-v2.png`.
+Product rules:
 
-Supported semantic states are `idle`, `thinking`, `typing`, `explaining`, `skeptical`, `amused`, `speaking` and `error`. State treatment currently changes scan, indicator and grading. The component accepts `assetSrc`, so future transparent PNG/WebP, Rive or Live2D assets can replace the bitmap without changing callers.
+- The dark pinstripe identity is the normal state family.
+- The laughing image is primarily success.
+- The blank business-card image is an easter egg.
+- The light gray double-breasted suit and camel overcoat are explicit alternate outfits, never random state changes.
+- Text, prices and assistant messages remain HTML; never bake them into artwork.
+- Motion stays subtle, functional and disabled by reduced-motion preferences.
+
+The character is an original fictional quantitative strategist. Do not introduce a real-person likeness, copyrighted scene, third-party brand asset, finance meme styling, cash/cigar props, aggression or neon/casino aesthetics.
+
+The exact state-to-image decisions are recorded in `docs/design/quant-bateman-assistant.md`. Future Rive authoring must preserve these visual and semantic decisions.

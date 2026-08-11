@@ -1,7 +1,10 @@
-# Avatar integration
+# Quant Bateman integration
 
-The stable `AvatarState` union is `idle | thinking | typing | explaining | speaking | amused | error`. `QuantChat` owns state transitions; the CSS placeholder is only a renderer.
+The active character architecture is documented in:
 
-To add Rive, place the reviewed `.riv` asset under `public/avatar/`, map each `AvatarState` to a Rive state-machine input, lazy-load the renderer on avatar routes and keep the CSS fallback for reduced motion or load failure. Do not copy a real person or copyrighted character.
+- `docs/design/quant-bateman-assistant.md` — product behavior, state machine, canonical asset map, dragging, Ask integration, accessibility and extension guides.
+- `docs/design/quant-bateman-rive.md` — current runtime assessment and the authored `.riv` migration contract.
 
-Longer term: Rive 2D → Blender rig → GLTF → React Three Fiber/Three.js. A 3D renderer must preserve the same state contract.
+The stable product states are `idle | thinking | fetching | working | pricing | talking | success | warning | error | easterEgg`. Pages call `useQuantBateman()`; they do not select images or control renderer internals.
+
+Approved PNG originals live under `public/characters/quant-bateman/source`. Do not regenerate, reinterpret or replace them without owner approval.

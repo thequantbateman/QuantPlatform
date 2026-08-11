@@ -10,7 +10,7 @@ The current owner-provided high-resolution assets remain the visual source. The 
 | 4. Working | State-triggered micro-motion; later layered typing/watch loop | Low then high / 1–5d | Event-driven; no idle distraction | Needs new arm/desk layers |
 | 5. Hover | Deterministic state and small parallax/tie cue | Low / 1d | Immediate and cheap | Cursor following is intentionally limited |
 | 6. Expressions | Live2D or Rive mesh/state machine | High / 5–10d | Best interactive quality | Artist/editor pipeline required |
-| 7. AI integration | Controller maps thinking/tool/success/error events | Medium / 2d | Architecture already present | Real provider events pending |
+| 7. AI integration | Provider maps Ask and selected calculation events to product states | Implemented MVP | Central, intentional events | Additional modules remain opt-in |
 | 8. Voice/lip sync | Live2D MotionSync or viseme-driven Rive | High / 1–3w | Premium if authored well | Deferred cost/privacy/latency |
 
 ## Technology conclusion

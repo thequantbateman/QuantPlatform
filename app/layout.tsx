@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head><script dangerouslySetInnerHTML={{ __html: `try{document.documentElement.dataset.theme=localStorage.getItem('tqb-theme')||'dark';document.documentElement.lang=localStorage.getItem('tqb-locale')||'en'}catch{}` }} /></head>
+      <head><link rel="preload" as="image" href="/characters/quant-bateman/web/idle-pinstripe.png" /><script dangerouslySetInnerHTML={{ __html: `try{document.documentElement.dataset.theme=localStorage.getItem('tqb-theme')||'dark';document.documentElement.lang=localStorage.getItem('tqb-locale')||'en'}catch{}` }} /></head>
       <body>{children}</body>
     </html>
   );

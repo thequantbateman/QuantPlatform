@@ -33,7 +33,7 @@ test("renders key product routes without external services", async () => {
   for (const [path, expected] of [
     ["/lab", "Black-Scholes Playground"],
     ["/markets", "MARKET DATA WORKSTATION"],
-    ["/ask", "MOCK PROVIDER"],
+    ["/ask", "TOOLS → SOURCES → EXPLANATION"],
     ["/research", "ACTIVE RESEARCH"],
     ["/learn/equity/black-scholes", "Build the mental model first"],
   ]) {
@@ -41,6 +41,18 @@ test("renders key product routes without external services", async () => {
     assert.equal(response.status, 200, path);
     assert.match(await response.text(), new RegExp(expected, "i"), path);
   }
+});
+
+test("Ask renders a compact approved Quant Bateman chat identity", async () => {
+  const response = await render("/ask");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /ask-bateman-avatar empty/);
+  assert.match(html, /wordmark-mark ask-character-mark/);
+  assert.match(html, /characters\/quant-bateman\/web\/idle-pinstripe\.png/);
+  assert.match(html, /Start with a precise question/);
+  assert.doesNotMatch(html, /ask-character-stage/);
+  assert.doesNotMatch(html, /class="qb-assistant"/);
 });
 
 test("starter preview is removed and project assets are present", async () => {

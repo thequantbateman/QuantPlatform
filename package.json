@@ -13,7 +13,7 @@
     "build": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "test": "npm run test:quant && npm run test:python && node --test tests/rendered-html.test.mjs",
-    "test:quant": "node --import tsx --test tests/quant.test.ts tests/content.test.ts tests/intelligence.test.ts tests/ai.test.ts tests/market-data.test.ts",
+    "test:quant": "node --import tsx --test tests/quant.test.ts tests/content.test.ts tests/intelligence.test.ts tests/ai.test.ts tests/market-data.test.ts tests/quant-bateman.test.ts",
     "test:market-data:integration": "node --import tsx --test tests/market-data.integration.test.ts",
     "test:python": "services/quant-engine/.venv/bin/python -m unittest discover -s services/quant-engine/tests -v",
     "typecheck": "tsc --noEmit",
