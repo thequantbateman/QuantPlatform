@@ -13,14 +13,14 @@ Reviewed 2026-08-10 against the current official [API introduction](https://docs
 | Trades | Data API plus `last_trade_price` stream | Public tape, deduplication and D1 persistence | No wallet attribution analytics in the product UX |
 | History | CLOB `prices-history` | 1H/1D/7D/30D/ALL backfill, checkpoint and D1 query path | Vendor points are persisted as observations; live OHLC aggregates are maintained separately |
 | Analytics | Gamma/Data volume, liquidity, OI, holders | Volume, 24H volume, liquidity, open interest and top-holder count | Leaderboard is researched but not surfaced; it adds little event-risk signal and can encourage gambling UX |
-| Persistence | Site-native D1 | 10 relational tables, migration, idempotent upserts, deduplicated time series, buffered live writes | PostgreSQL/Timescale is the scale-up path, not falsely claimed as provisioned |
+| Persistence | Cloudflare D1 | 10 relational tables, migration, idempotent upserts, deduplicated time series, buffered live writes | High-frequency live writes are disabled for the initial public deployment; PostgreSQL/Timescale is the scale-up path |
 | Cross asset | TQB normalized market data | Deterministic keyword rules, separate-unit panels and Learn links | No AI-created relationships and no causal claims |
 | AI | TQB evidence router | Current prediction questions use the normalized service; answers include bid/ask, activity and lineage | The model never calls raw Polymarket APIs independently |
 | Trading | Authenticated CLOB/order endpoints | Not implemented | No wallet, signing, orders, deposits, withdrawals or geographic workarounds |
 
 ## Persistence and time series
 
-D1 is selected because this application is hosted with Sites and D1 is its supported durable structured store. It provides a real deployed database without a paid external service. PostgreSQL with Timescale hypertables remains the recommended scale-up when ingest concurrency, analytical joins, retention jobs or dataset size exceed D1's operating envelope.
+D1 is selected because the application is deployed as a Cloudflare Worker and D1 is its native durable structured store. PostgreSQL with Timescale hypertables remains the recommended scale-up when ingest concurrency, analytical joins, retention jobs or dataset size exceed D1's operating envelope.
 
 The schema separates events, markets, outcomes/tokens, quotes, trades, market-stat snapshots, sampled order-book depth, probability bars, curated cross-asset links and ingestion checkpoints. Live callbacks only normalize and enqueue patches. A two-second writer drains up to 250 patches and sends prepared statements in bounded D1 batches. Duplicate quote timestamps, trade identities, history coordinates and book timestamps are ignored. Live midpoint/last updates maintain 1m, 5m, 15m, 1h and 1d OHLC aggregates.
 
@@ -47,4 +47,4 @@ npm run predictions:health
 
 Set `TQB_BASE_URL` when the application is not running at `http://localhost:3000`. Backfill size can be controlled with `POLYMARKET_BACKFILL_PAGES` and `POLYMARKET_BACKFILL_MARKETS`; live collection duration uses `POLYMARKET_INGEST_SECONDS`.
 
-`npm run db:migrate` targets the local D1 emulator declared in `wrangler.jsonc`. Sites provisions the production `DB` binding from `.openai/hosting.json` and applies the checked-in migrations during its deployment workflow; the local placeholder database ID must never be used as a remote target.
+`npm run db:migrate` targets the local D1 emulator declared in `wrangler.jsonc`. Production uses the same `DB` binding and the checked-in `drizzle/` migrations, applied explicitly with `npm run db:migrate:production` after the real database ID replaces the placeholder. The deploy preflight refuses a placeholder ID. `ENABLE_PREDICTION_LIVE_PERSISTENCE=false` keeps high-frequency stream/book writes off for the initial Free-plan deployment while discovery, event detail, history and stats persistence remain available.

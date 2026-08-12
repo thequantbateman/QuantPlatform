@@ -1,14 +1,34 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "thequantbateman-local",
+  "name": "thequantbateman",
   "main": "worker/index.ts",
   "compatibility_date": "2026-07-02",
   "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": true,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "vars": {
+    "QUANT_ASSISTANT_PROVIDER": "mock",
+    "MARKET_DATA_DISPLAY_LICENSE": "unconfirmed",
+    "MARKET_DATA_LICENSE_MODE": "PUBLIC_DEMO",
+    "ENABLE_STREAMING_MARKETS": "false",
+    "ENABLE_PROVIDER_SWITCHER": "false",
+    "ENABLE_HISTORICAL_MODE": "true",
+    "ENABLE_MARKET_SNAPSHOTS": "true",
+    "ENABLE_MARKET_DEBUG": "false",
+    "ENABLE_CRYPTO_MARKETS": "true",
+    "ENABLE_PREDICTION_STREAM": "true",
+    "ENABLE_PREDICTION_PERSISTENCE": "true",
+    "ENABLE_PREDICTION_LIVE_PERSISTENCE": "false"
+  },
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "site-creator-d1",
-      "database_id": "00000000-0000-4000-8000-000000000000",
+      "database_name": "thequantbateman-production",
+      "database_id": "9c2095f2-f7a8-4dd7-9d21-07882a8391da",
       "migrations_dir": "drizzle"
     }
   ]

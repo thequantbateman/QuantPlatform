@@ -11,13 +11,22 @@ const record = (value: unknown): UnknownRecord => value !== null && typeof value
 const numberOrNull = (value: unknown): number | null => Number.isFinite(Number(value)) ? Number(value) : null;
 const text = (value: unknown): string => value === null || value === undefined ? "" : String(value);
 
+async function boundedJson(response: Response, maxBytes = 4 * 1024 * 1024): Promise<unknown> {
+  const declaredLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > maxBytes) throw new Error("Upstream payload exceeded the response limit");
+  if (!response.body) throw new Error("Upstream returned an empty response");
+  const reader = response.body.getReader(); const decoder = new TextDecoder(); let size = 0; let body = "";
+  while (true) { const { done, value } = await reader.read(); if (done) break; size += value.byteLength; if (size > maxBytes) { await reader.cancel(); throw new Error("Upstream payload exceeded the response limit"); } body += decoder.decode(value, { stream: true }); }
+  body += decoder.decode(); return JSON.parse(body) as unknown;
+}
+
 async function publicJson(url: string, timeoutMs = 7_500, init: RequestInit = {}): Promise<unknown> {
   const controller = new AbortController(); const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const headers = new Headers(init.headers); headers.set("accept", "application/json"); headers.set("user-agent", "TheQuantBateman/0.1 public-read-only");
     const response = await fetch(url, { ...init, signal: controller.signal, headers });
     if (!response.ok) throw new Error(`${new URL(url).hostname} returned ${response.status}`);
-    return await response.json() as unknown;
+    return await boundedJson(response);
   } finally { clearTimeout(timer); }
 }
 

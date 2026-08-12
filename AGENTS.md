@@ -8,7 +8,7 @@
 - `src/content/` owns typed metadata and the search index. `content/` is the MDX-compatible authoring source.
 - `src/data/` exposes provider interfaces and local demo implementations.
 - `src/i18n/` owns UI dictionaries and device-local locale state; content localization lives in `src/content/localization.ts`.
-- `docs/` records product and engineering decisions. `services/quant-python/` is optional future infrastructure.
+- `docs/` records product and engineering decisions. `services/quant-engine/` is the preserved Python analytical-validation service; it is not required by the public Worker runtime.
 
 Dependencies flow inward: routes → components → typed domain modules. Quant and provider modules must not depend on routes or components.
 
@@ -75,3 +75,13 @@ Dependencies flow inward: routes → components → typed domain modules. Quant 
 3. Make the smallest domain-correct change and preserve public conventions.
 4. Add or update targeted tests before broad validation.
 5. Update content review dates and docs when a convention or provider contract changes.
+
+## Canonical repository and deployment
+
+- The canonical repository is `https://github.com/thequantbateman/QuantPlatform.git`; verify `git remote -v` before any release operation.
+- The canonical workspace is the current Git root. Local Git is the development workspace, GitHub is the source of truth, and Cloudflare production is downstream of GitHub. Never create or deploy a parallel application copy.
+- Cloudflare Workers plus Workers Builds is the production web target. Do not convert the application to Pages, a static-only export, or a second repository.
+- `wrangler.jsonc` is the production Worker configuration. Its D1 `database_id` placeholder must be replaced with the real Cloudflare resource ID before deployment; `npm run cloudflare:preflight` enforces this boundary.
+- `.openai/hosting.json` and the Sites Vite plugin remain available for Codex preview compatibility, but they are not the production source of truth.
+- D1 migrations are manual release operations. Run local migrations first, then the documented remote command only after confirming the active Cloudflare account and database.
+- Production does not depend on a developer laptop or the local Python service. Keep the TypeScript quant fallback intact; deploy `services/quant-engine/` separately only when a backend validation service is intentionally introduced.

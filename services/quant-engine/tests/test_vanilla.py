@@ -1,8 +1,11 @@
 import unittest
 
+from pydantic import ValidationError
+
 from app.domain.conventions import OptionType, QuantInputError
 from app.models.vanilla import price_black_76, price_black_scholes, price_garman_kohlhagen
 from app.pricing.implied_volatility import solve_implied_volatility
+from app.schemas.pricing import PricingRequest, ScenarioRequest
 
 
 class VanillaModelTests(unittest.TestCase):
@@ -43,6 +46,16 @@ class VanillaModelTests(unittest.TestCase):
         self.assertEqual(price_black_scholes(150, 100, 0, 0, 0, 0.2, OptionType.CALL).pv, 50)
         self.assertAlmostEqual(price_black_scholes(50, 100, 1e-8, 0, 0, 1e-8, OptionType.CALL).pv, 0)
         self.assertGreater(price_black_scholes(150, 100, 1, 0, 0.02, 0.2, OptionType.CALL).pv, 0)
+
+    def test_api_schema_rejects_non_finite_and_extreme_inputs(self):
+        with self.assertRaises(ValidationError):
+            PricingRequest(model="black_scholes_merton", spot=float("nan"), strike=100, time=1, rate=0.03, volatility=0.2)
+        with self.assertRaises(ValidationError):
+            PricingRequest(model="black_scholes_merton", spot=100, strike=100, time=101, rate=0.03, volatility=0.2)
+
+    def test_scenario_schema_bounds_matrix_size(self):
+        with self.assertRaises(ValidationError):
+            ScenarioRequest(model="black_scholes_merton", spot=100, strike=100, time=1, rate=0.03, volatility=0.2, underlying_shocks=[0.0] * 42)
 
 
 if __name__ == "__main__":

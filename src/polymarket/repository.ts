@@ -3,6 +3,8 @@ import type { PredictionCoverage, PredictionEvent, PredictionHistoryPoint, Predi
 
 function at(value: string | null): number | null { if (!value) return null; const time = new Date(value).getTime(); return Number.isFinite(time) ? time : null; }
 function bool(value: boolean): number { return value ? 1 : 0; }
+export function predictionPersistenceEnabled(): boolean { return process.env.ENABLE_PREDICTION_PERSISTENCE !== "false"; }
+export function predictionLivePersistenceEnabled(): boolean { return predictionPersistenceEnabled() && process.env.ENABLE_PREDICTION_LIVE_PERSISTENCE !== "false"; }
 
 async function runBatches(db: D1Database, statements: D1PreparedStatement[], size = 80): Promise<number> {
   let rows = 0;
@@ -11,7 +13,7 @@ async function runBatches(db: D1Database, statements: D1PreparedStatement[], siz
 }
 
 export async function persistPredictionDiscovery(events: PredictionEvent[]): Promise<{ persistent: boolean; rows: number }> {
-  const db = getD1(); if (!db || events.length === 0) return { persistent: false, rows: 0 }; const persistedAt = Date.now();
+  const db = getD1(); if (!predictionPersistenceEnabled() || !db || events.length === 0) return { persistent: false, rows: 0 }; const persistedAt = Date.now();
   const eventSql = `INSERT INTO prediction_events (id, slug, title, description, category, series_id, resolution_source, start_at, end_at, active, closed, negative_risk, volume, liquidity, open_interest, source_url, provider_updated_at, persisted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET slug=excluded.slug, title=excluded.title, description=excluded.description, category=excluded.category, series_id=excluded.series_id, resolution_source=excluded.resolution_source, start_at=excluded.start_at, end_at=excluded.end_at, active=excluded.active, closed=excluded.closed, negative_risk=excluded.negative_risk, volume=excluded.volume, liquidity=excluded.liquidity, open_interest=excluded.open_interest, source_url=excluded.source_url, provider_updated_at=excluded.provider_updated_at, persisted_at=excluded.persisted_at`;
   const marketSql = `INSERT INTO prediction_markets (id, event_id, condition_id, slug, question, description, active, closed, accepting_orders, negative_risk, min_tick_size, min_order_size, volume, volume_24h, liquidity, best_bid, best_ask, last_trade_price, change_1d, change_1w, end_at, provider_updated_at, persisted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET event_id=excluded.event_id, condition_id=excluded.condition_id, slug=excluded.slug, question=excluded.question, description=excluded.description, active=excluded.active, closed=excluded.closed, accepting_orders=excluded.accepting_orders, negative_risk=excluded.negative_risk, min_tick_size=excluded.min_tick_size, min_order_size=excluded.min_order_size, volume=excluded.volume, volume_24h=excluded.volume_24h, liquidity=excluded.liquidity, best_bid=excluded.best_bid, best_ask=excluded.best_ask, last_trade_price=excluded.last_trade_price, change_1d=excluded.change_1d, change_1w=excluded.change_1w, end_at=excluded.end_at, provider_updated_at=excluded.provider_updated_at, persisted_at=excluded.persisted_at`;
   const outcomeSql = `INSERT INTO prediction_outcomes (market_id, outcome_index, label, token_id, latest_price, persisted_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(market_id, outcome_index) DO UPDATE SET label=excluded.label, token_id=excluded.token_id, latest_price=excluded.latest_price, persisted_at=excluded.persisted_at`;
@@ -31,7 +33,7 @@ export async function persistPredictionDiscovery(events: PredictionEvent[]): Pro
 }
 
 export async function persistPredictionHistory(tokenId: string, points: PredictionHistoryPoint[], interval = "raw"): Promise<{ persistent: boolean; rows: number }> {
-  const db = getD1(); if (!db || points.length === 0) return { persistent: false, rows: 0 };
+  const db = getD1(); if (!predictionPersistenceEnabled() || !db || points.length === 0) return { persistent: false, rows: 0 };
   const sql = `INSERT OR IGNORE INTO prediction_probability_bars (token_id, interval, bucket_at, open, high, low, close, observations) VALUES (?, ?, ?, ?, ?, ?, ?, 1)`;
   const rows = await runBatches(db, points.map((point) => db.prepare(sql).bind(tokenId, interval, point.timestamp, point.probability, point.probability, point.probability, point.probability)));
   const now = Date.now(); await db.prepare(`INSERT INTO prediction_ingestion_checkpoints (job, cursor, status, rows_written, latest_data_at, updated_at, error) VALUES (?, ?, ?, ?, ?, ?, NULL) ON CONFLICT(job) DO UPDATE SET cursor=excluded.cursor, status=excluded.status, rows_written=prediction_ingestion_checkpoints.rows_written + excluded.rows_written, latest_data_at=excluded.latest_data_at, updated_at=excluded.updated_at, error=NULL`).bind(`history:${tokenId}`, String(points.at(-1)?.timestamp ?? ""), "HEALTHY", rows, points.at(-1)?.timestamp ?? null, now).run();
@@ -45,12 +47,12 @@ export async function readPredictionHistory(tokenId: string, from: number, inter
 }
 
 export async function persistPredictionStats(stats: PredictionStats): Promise<boolean> {
-  const db = getD1(); if (!db) return false;
+  const db = getD1(); if (!predictionPersistenceEnabled() || !db) return false;
   await db.prepare(`INSERT OR IGNORE INTO prediction_stats (market_id, observed_at, volume, volume_24h, liquidity, open_interest) VALUES (?, ?, ?, ?, ?, ?)`).bind(stats.marketId, stats.observedAt, stats.volume, stats.volume24h, stats.liquidity, stats.openInterest).run(); return true;
 }
 
 export async function persistLivePatches(patches: PredictionLivePatch[]): Promise<{ persistent: boolean; rows: number }> {
-  const db = getD1(); if (!db || patches.length === 0) return { persistent: false, rows: 0 };
+  const db = getD1(); if (!predictionLivePersistenceEnabled() || !db || patches.length === 0) return { persistent: false, rows: 0 };
   const quoteSql = `INSERT OR IGNORE INTO prediction_quotes (token_id, observed_at, market_id, bid, ask, mid, spread, last, source_event) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
   const barSql = `INSERT INTO prediction_probability_bars (token_id, interval, bucket_at, open, high, low, close, observations) VALUES (?, ?, ?, ?, ?, ?, ?, 1) ON CONFLICT(token_id, interval, bucket_at) DO UPDATE SET high=MAX(prediction_probability_bars.high, excluded.high), low=MIN(prediction_probability_bars.low, excluded.low), close=excluded.close, observations=prediction_probability_bars.observations + 1`;
   const tradeSql = `INSERT OR IGNORE INTO prediction_trades (identity, market_id, token_id, observed_at, price, size, side, transaction_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;

@@ -97,7 +97,7 @@ Implement `MarketDataProvider`, normalise licensed provider records on the serve
 
 ## Deployment
 
-The repository preserves the bundled Sites/vinext Cloudflare Worker pipeline. Validate with `npm run build`; hosted versions use `.openai/hosting.json` and the generated `dist/` Worker artifact.
+Production targets Cloudflare Workers through the Vite plugin and Wrangler. `wrangler.jsonc` is the production source of truth; `.openai/hosting.json` remains only for Codex preview compatibility. Validate with `npm run build`, and follow `docs/DEPLOYMENT_CLOUDFLARE.md` before creating or changing remote infrastructure.
 
 ## Roadmap
 
