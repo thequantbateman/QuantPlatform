@@ -1,5 +1,6 @@
 import type { AcademyLesson, AcademyReference, AcademyTrack } from "./types";
 import { additionalRatesLessons, ratesAdvancedTrackNodes } from "./ratesAdvancedLessons";
+import { ratesOptionalityLesson, ratesOptionalityTrackNode } from "./ratesOptionalityLesson";
 
 const reviewed = "2026-08-12";
 
@@ -197,7 +198,7 @@ const foundationalRatesLessons: AcademyLesson[] = seeds.map((seed) => ({
   relatedLessonIds: seed.related,
 }));
 
-export const ratesLessons: AcademyLesson[] = [...foundationalRatesLessons, ...additionalRatesLessons];
+export const ratesLessons: AcademyLesson[] = [...foundationalRatesLessons, ratesOptionalityLesson, ...additionalRatesLessons];
 
 export const ratesTrack: AcademyTrack = {
   id: "rates",
@@ -211,6 +212,7 @@ export const ratesTrack: AcademyTrack = {
     { id: "ois", title: "OIS compounding", stage: "Collateral and policy path", level: "intermediate", href: "/learn/rates/ois-compounding", academyLessonId: "rate-ois" },
     { id: "fra-futures", title: "FRAs and futures", stage: "Forward fixing and convexity", level: "intermediate", href: "/learn/rates/fra-futures-convexity", academyLessonId: "rate-fra-futures" },
     { id: "swaps", title: "Interest-rate swaps", stage: "Par rate and leg PV", level: "intermediate", href: "/learn/rates/interest-rate-swaps", academyLessonId: "rate-swaps" },
+    ratesOptionalityTrackNode,
     ...ratesAdvancedTrackNodes,
   ],
 };

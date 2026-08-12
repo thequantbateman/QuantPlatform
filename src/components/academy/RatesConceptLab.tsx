@@ -108,6 +108,19 @@ const definitions: Partial<Record<LabId, Definition>> = {
     ],
     build: (scenario, intensity, locale) => { const x = range(61, 0, 30); const decay = x.map((t) => Math.exp(-scenario.primary * t)); const sigma = x.map((t) => scenario.secondary * intensity * Math.sqrt((1 - Math.exp(-2 * scenario.primary * t)) / (2 * scenario.primary))); return { x, series: [{ name: pick(locale, c("shock persistence", "persistencia del shock")), values: decay, color: "#f59e0b" }, { name: pick(locale, c("short-rate std dev", "desv. típica del tipo corto")), values: sigma, color: "#22d3ee" }], metrics: [[c("Mean reversion", "Reversión a la media"), scenario.primary.toFixed(3)], [c("Long-run factor std", "Desv. típica límite"), percent(scenario.secondary * intensity / Math.sqrt(2 * scenario.primary))], [c("10Y persistence", "Persistencia 10A"), percent(decay[20])]] }; },
   },
+  "rate-optionality": {
+    eyebrow: c("ONE PAYOFF · EXPLICIT VOLATILITY COORDINATE", "UN PAYOFF · COORDENADA DE VOLATILIDAD EXPLÍCITA"), xLabel: c("Strike (annual rate)", "Strike (tipo anual)"), yLabel: c("Premium per unit notional", "Prima por unidad de nocional"),
+    scenarios: [
+      { id: "black", label: c("Lognormal Black", "Black lognormal"), note: c("Positive forward and strike", "Forward y strike positivos"), primary: 0.24, secondary: 0.032 },
+      { id: "normal", label: c("Normal Bachelier", "Bachelier normal"), note: c("Absolute rate volatility", "Volatilidad en unidades absolutas de tipo"), primary: 0.009, secondary: 0.012 },
+      { id: "shifted", label: c("Shifted lognormal", "Lognormal desplazado"), note: c("Negative forward with a 3% shift", "Forward negativo con desplazamiento del 3%"), primary: 0.3, secondary: -0.005 },
+    ],
+    build: (scenario, intensity, locale) => {
+      const x = range(61, -0.015, 0.075); const expiry = 2; const annuity = 4.35; const rootT = Math.sqrt(expiry); const normalPdf = (z: number) => Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI); const normalCdf = (z: number) => 0.5 * (1 + Math.sign(z) * Math.sqrt(1 - Math.exp(-2 * z * z / Math.PI))); const forward = scenario.secondary; const shifted = scenario.id === "shifted" ? 0.03 : 0; const vol = scenario.primary * (0.55 + 0.45 * intensity);
+      const payer = x.map((strike) => { if (scenario.id === "normal") { const std = vol * rootT; const z = (forward - strike) / std; return annuity * ((forward - strike) * normalCdf(z) + std * normalPdf(z)); } const shiftedForward = forward + shifted; const shiftedStrike = strike + shifted; if (shiftedStrike <= 0) return annuity * Math.max(forward - strike, 0); const d1 = (Math.log(shiftedForward / shiftedStrike) + 0.5 * vol * vol * expiry) / (vol * rootT); const d2 = d1 - vol * rootT; return annuity * (shiftedForward * normalCdf(d1) - shiftedStrike * normalCdf(d2)); });
+      const intrinsic = x.map((strike) => annuity * Math.max(forward - strike, 0)); const atmIndex = x.reduce((best, strike, index) => Math.abs(strike - forward) < Math.abs(x[best] - forward) ? index : best, 0); return { x, series: [{ name: pick(locale, c("payer premium", "prima payer")), values: payer, color: "#f59e0b" }, { name: pick(locale, c("intrinsic value", "valor intrínseco")), values: intrinsic, color: "#22d3ee" }], metrics: [[c("Forward swap rate", "Tipo swap forward"), percent(forward)], [c("ATM premium", "Prima ATM"), payer[atmIndex].toFixed(5)], [c("Quote volatility", "Volatilidad cotizada"), scenario.id === "normal" ? `${(vol * 10_000).toFixed(0)} bp` : percent(vol)]] };
+    },
+  },
   hjm: {
     eyebrow: c("FORWARD VOLATILITY DETERMINES RISK-NEUTRAL DRIFT", "LA VOLATILIDAD FORWARD DETERMINA EL DRIFT"), xLabel: c("Forward maturity (years)", "Vencimiento forward (años)"), yLabel: c("Instantaneous forward", "Forward instantáneo"),
     scenarios: [

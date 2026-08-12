@@ -91,6 +91,7 @@ export interface AcademyLesson {
       | "multi-curve"
       | "curve-risk"
       | "hull-white"
+      | "rate-optionality"
       | "hjm";
     title: string;
     description: string;

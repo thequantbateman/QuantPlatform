@@ -25,7 +25,7 @@ test("market-to-model bridge concepts remain in the knowledge graph", () => {
 });
 
 test("Academy V2 lessons implement the canonical educational contract", () => {
-  assert.equal(academyLessons.length, 24);
+  assert.equal(academyLessons.length, 25);
   for (const lesson of academyLessons) {
     assert.ok(lesson.learningObjectives.length >= 3, lesson.id);
     assert.ok(lesson.mathematics.formulas.length >= 2, lesson.id);
@@ -54,11 +54,12 @@ test("flagship volatility track is sequenced and cross-links deep lessons", () =
 test("flagship rates track is sequenced from discounting through HJM", () => {
   const track = academyTracks.find((item) => item.id === "rates");
   assert.ok(track);
-  assert.equal(track.nodes.length, 12);
+  assert.equal(track.nodes.length, 13);
   assert.equal(track.nodes[0].academyLessonId, "rate-discount");
   assert.equal(track.nodes.at(-1)?.academyLessonId, "rate-hjm");
   assert.ok(track.nodes.some((node) => node.academyLessonId === "rate-curve-bootstrap"));
-  assert.equal(new Set(track.nodes.map((node) => node.academyLessonId)).size, 12);
+  assert.ok(track.nodes.some((node) => node.academyLessonId === "rate-optionality"));
+  assert.equal(new Set(track.nodes.map((node) => node.academyLessonId)).size, 13);
 });
 
 test("legacy volatility routes resolve to the canonical deep lessons", () => {
