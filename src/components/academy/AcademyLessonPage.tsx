@@ -3,6 +3,7 @@ import type { AcademyLesson } from "@/src/content/academy/types";
 import { findAcademyLessonById } from "@/src/content/academy/catalog";
 import { DerivationSteps, LessonSection, MacroFlow, ModelComparison, OnTheDesk, PythonLab, QuantVisual, SourceReferences } from "./AcademyComponents";
 import { LazyVolSurfaceLab } from "./LazyVolSurfaceLab";
+import { VolatilityConceptLab } from "./VolatilityConceptLab";
 
 const sections = [
   ["01", "Intuition", "intuition"], ["02", "Why markets care", "market"], ["03", "Mathematics", "mathematics"], ["04", "Derivation", "derivation"],
@@ -12,7 +13,7 @@ const sections = [
 
 export function AcademyLessonPage({ lesson }: { lesson: AcademyLesson }) {
   const related = lesson.relatedLessonIds.map(findAcademyLessonById).filter((item): item is AcademyLesson => Boolean(item));
-  const hasSurface = lesson.interactiveLabs.some((lab) => lab.id === "vol-surface");
+  const hasSurface = lesson.id === "vol-surface";
   return <article className="academy-lesson section-shell">
     <header className="academy-lesson-hero">
       <div className="breadcrumb"><a href="/learn">Academy</a><span>/</span><a href="/learn#track-volatility">Volatility</a><span>/</span><b>{lesson.title}</b></div>
@@ -27,7 +28,7 @@ export function AcademyLessonPage({ lesson }: { lesson: AcademyLesson }) {
       <LessonSection index="04" label="DERIVATION" title="Do not jump to the final expression." id="derivation"><DerivationSteps {...lesson.derivation} /></LessonSection>
       <LessonSection index="05" label="MODEL / PRICING" title="Fit, compute, then challenge the assumptions." id="pricing"><div className="pricing-grid"><article><span>METHOD</span><p>{lesson.pricing.method}</p></article><article><span>CALIBRATION</span><p>{lesson.pricing.calibration}</p></article></div><div className="academy-limitations"><span>LIMITATIONS</span>{lesson.pricing.limitations.map((item) => <p key={item}>{item}</p>)}</div>{lesson.id !== "vol-implied" && <ModelComparison />}{lesson.implementation.quantLib && <details className="quantlib-note"><summary>Implementation with current QuantLib</summary><p>{lesson.implementation.quantLib}</p><small>API authority: upstream QuantLib reference pinned in the source registry.</small></details>}</LessonSection>
       <LessonSection index="06" label="PYTHON LAB" title="Theory → implementation → checks." id="python"><PythonLab {...lesson.implementation.pythonLab} /></LessonSection>
-      <LessonSection index="07" label="INTERACTIVE LAB" title={hasSurface ? "One surface, four linked views." : "Move from formula to state."} id="interactive">{hasSurface ? <LazyVolSurfaceLab /> : <QuantVisual title="Implied-volatility inversion" eyebrow="NUMERICAL FLOW" annotation="The existing deterministic quant lab solves the same bracketed inverse with residual diagnostics." caption="The implementation remains shared with the platform’s typed pricing engine."><a className="academy-open-lab" href="/lab?lab=vanilla">OPEN IMPLIED-VOL SOLVER →</a></QuantVisual>}</LessonSection>
+      <LessonSection index="07" label="INTERACTIVE LAB" title={hasSurface ? "One surface, four linked views." : "Move the state. Challenge the equation."} id="interactive">{hasSurface ? <LazyVolSurfaceLab /> : lesson.id === "vol-implied" ? <QuantVisual title="Implied-volatility inversion" eyebrow="NUMERICAL FLOW" annotation="The deterministic quant lab solves the same bracketed inverse with residual diagnostics." caption="The implementation remains shared with the platform’s typed pricing engine."><a className="academy-open-lab" href="/lab?lab=vanilla">OPEN IMPLIED-VOL SOLVER →</a></QuantVisual> : <VolatilityConceptLab lesson={lesson} />}</LessonSection>
       <LessonSection index="08" label="FRONT OFFICE" title="Where the model meets the book." id="desk"><OnTheDesk section={lesson.frontOffice} /></LessonSection>
       <LessonSection index="09" label="MACRO CONNECTION" title="Map the transmission channel." id="macro">{lesson.macroConnections.map((connection) => <MacroFlow connection={connection} key={connection.title} />)}</LessonSection>
       <LessonSection index="10" label="COMMON PITFALLS" title="Most failures begin outside the formula." id="pitfalls"><div className="pitfall-list">{lesson.pitfalls.map((item, index) => <div key={item}><span>{String(index + 1).padStart(2, "0")}</span><p>{item}</p></div>)}</div></LessonSection>

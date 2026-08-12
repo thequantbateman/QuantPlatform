@@ -24,7 +24,9 @@ export function VolSurfaceLab({ compact = false }: { compact?: boolean }) {
   const [maturity, setMaturity] = useState(0.5);
   const [moneyness, setMoneyness] = useState(1);
   const [playing, setPlaying] = useState(false);
-  const grid = useMemo(() => buildVolSurface(params), [params]);
+  const grid = useMemo(() => view === "3d"
+    ? buildVolSurface(params, Array.from({ length: 19 }, (_, index) => 7 / 365 + index * ((2 - 7 / 365) / 18)), Array.from({ length: 31 }, (_, index) => 0.7 + index * 0.02))
+    : buildVolSurface(params), [params, view]);
   const selected = useMemo(() => nearestSurfacePoint(grid, moneyness, maturity), [grid, moneyness, maturity]);
   const currentScenario = scenarios.find((scenario) => scenario.id === params.scenario) ?? scenarios[0];
   const smile = useMemo(() => Array.from({ length: 41 }, (_, index) => 0.7 + index * 0.015).map((ratio) => ({ x: ratio, y: educationalVolatility(ratio, maturity, params) })), [maturity, params]);

@@ -6,6 +6,27 @@ import type { VolSurfacePoint } from "@/src/quant/volatility/volSurface";
 type Camera = { yaw: number; pitch: number; zoom: number };
 type Projected = VolSurfacePoint & { x: number; y: number; depth: number };
 
+const HEAT_STOPS = [
+  { at: 0, rgb: [75, 30, 168] },
+  { at: 0.18, rgb: [37, 79, 222] },
+  { at: 0.36, rgb: [16, 190, 224] },
+  { at: 0.54, rgb: [49, 210, 123] },
+  { at: 0.72, rgb: [238, 225, 72] },
+  { at: 0.86, rgb: [255, 142, 43] },
+  { at: 1, rgb: [238, 48, 55] },
+] as const;
+
+function heatColor(value: number): string {
+  const normalized = Math.max(0, Math.min(1, value));
+  const upperIndex = HEAT_STOPS.findIndex((stop) => stop.at >= normalized);
+  if (upperIndex <= 0) return `rgb(${HEAT_STOPS[0].rgb.join(",")})`;
+  const lower = HEAT_STOPS[upperIndex - 1];
+  const upper = HEAT_STOPS[upperIndex];
+  const weight = (normalized - lower.at) / Math.max(upper.at - lower.at, 1e-8);
+  const channels = lower.rgb.map((channel, index) => Math.round(channel + (upper.rgb[index] - channel) * weight));
+  return `rgb(${channels.join(",")})`;
+}
+
 export function VolSurfaceCanvas({ grid, selected, onSelect }: { grid: VolSurfacePoint[][]; selected: VolSurfacePoint; onSelect: (point: VolSurfacePoint) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cameraRef = useRef<Camera>({ yaw: -0.72, pitch: 0.62, zoom: 1 });
@@ -29,8 +50,6 @@ export function VolSurfaceCanvas({ grid, selected, onSelect }: { grid: VolSurfac
     const ink = style.getPropertyValue("--academy-chart-ink").trim() || "#eee7dc";
     const muted = style.getPropertyValue("--academy-chart-muted").trim() || "#8d929e";
     const gridColor = style.getPropertyValue("--academy-chart-grid").trim() || "#283140";
-    const low = style.getPropertyValue("--academy-chart-low").trim() || "#345b65";
-    const high = style.getPropertyValue("--academy-chart-high").trim() || "#c37d55";
     const values = grid.flat().map((point) => point.volatility);
     const minVol = Math.min(...values);
     const maxVol = Math.max(...values);
@@ -69,17 +88,25 @@ export function VolSurfaceCanvas({ grid, selected, onSelect }: { grid: VolSurfac
     }
     cells.sort((a, b) => a.depth - b.depth).forEach((cell) => {
       const normalized = (cell.value - minVol) / volRange;
-      const gradient = context.createLinearGradient(cell.corners[0].x, cell.corners[0].y, cell.corners[2].x, cell.corners[2].y);
-      gradient.addColorStop(0, `${low}${Math.round((0.72 + normalized * 0.2) * 255).toString(16).padStart(2, "0")}`);
-      gradient.addColorStop(1, `${high}${Math.round((0.65 + normalized * 0.3) * 255).toString(16).padStart(2, "0")}`);
-      context.fillStyle = gradient;
-      context.strokeStyle = `${ink}26`;
+      context.fillStyle = heatColor(normalized);
+      context.strokeStyle = "rgba(7, 12, 24, .48)";
       context.beginPath(); cell.corners.forEach((point, index) => index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)); context.closePath(); context.fill(); context.stroke();
     });
 
+    projected.forEach((row) => {
+      context.beginPath();
+      row.forEach((point, index) => index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y));
+      context.strokeStyle = "rgba(236, 244, 255, .28)"; context.lineWidth = 0.7; context.stroke();
+    });
+    for (let column = 0; column < projected[0].length; column += 1) {
+      context.beginPath();
+      projected.forEach((row, index) => index ? context.lineTo(row[column].x, row[column].y) : context.moveTo(row[column].x, row[column].y));
+      context.strokeStyle = "rgba(236, 244, 255, .24)"; context.lineWidth = 0.7; context.stroke();
+    }
+
     const marker = pointsRef.current.reduce((nearest, point) => Math.hypot(point.moneyness - selected.moneyness, point.maturity - selected.maturity) < Math.hypot(nearest.moneyness - selected.moneyness, nearest.maturity - selected.maturity) ? point : nearest);
     context.fillStyle = ink; context.strokeStyle = "#0c1220"; context.lineWidth = 2; context.beginPath(); context.arc(marker.x, marker.y, 5, 0, Math.PI * 2); context.fill(); context.stroke();
-    context.fillStyle = muted; context.font = "10px ui-monospace, monospace"; context.fillText("LOG-MONEYNESS →", width - 150, height - 16); context.fillText("MATURITY", 18, height - 16);
+    context.fillStyle = muted; context.font = "10px ui-monospace, monospace"; context.fillText("MONEYNESS K/S →", width - 150, height - 16); context.fillText("MATURITY T", 18, height - 16);
   }, [grid, selected]);
 
   useEffect(() => {
@@ -110,6 +137,16 @@ export function VolSurfaceCanvas({ grid, selected, onSelect }: { grid: VolSurfac
     return () => { observer.disconnect(); canvas.removeEventListener("pointerdown", onPointerDown); canvas.removeEventListener("pointermove", onPointerMove); canvas.removeEventListener("pointerup", onPointerUp); canvas.removeEventListener("pointerleave", onPointerUp); canvas.removeEventListener("wheel", onWheel); };
   }, [draw, onSelect]);
 
+  const adjustCamera = (yaw: number, pitch: number, zoom: number) => {
+    cameraRef.current = {
+      yaw: cameraRef.current.yaw + yaw,
+      pitch: Math.max(0.22, Math.min(1.18, cameraRef.current.pitch + pitch)),
+      zoom: Math.max(0.72, Math.min(1.55, cameraRef.current.zoom * zoom)),
+    };
+    draw();
+  };
   const reset = () => { cameraRef.current = { yaw: -0.72, pitch: 0.62, zoom: 1 }; draw(); };
-  return <div className="academy-surface-3d"><canvas ref={canvasRef} aria-label="Interactive synthetic implied volatility surface. Drag to rotate, scroll to zoom, and click a node to select it." /><button type="button" onClick={reset}>RESET CAMERA</button><span>Drag rotate · Scroll zoom · Select node</span>{hover && <output>{hover.maturity.toFixed(2)}y · K {hover.strike.toFixed(1)} · {(hover.volatility * 100).toFixed(2)}%</output>}</div>;
+  const values = grid.flat().map((point) => point.volatility);
+  const minimum = Math.min(...values); const maximum = Math.max(...values); const mid = minimum + (maximum - minimum) / 2;
+  return <div className="academy-surface-3d"><canvas ref={canvasRef} aria-label="Interactive synthetic implied volatility surface. Height and violet-to-red surface color both encode implied volatility. Drag to rotate, scroll to zoom, and click a node to select it." /><div className="surface-camera-controls" aria-label="3D camera controls"><button type="button" onClick={() => adjustCamera(-0.15, 0, 1)}>VIEW −</button><button type="button" onClick={() => adjustCamera(0.15, 0, 1)}>VIEW +</button><button type="button" onClick={() => adjustCamera(0, -0.12, 1)}>TILT −</button><button type="button" onClick={() => adjustCamera(0, 0.12, 1)}>TILT +</button><button type="button" onClick={() => adjustCamera(0, 0, 1.1)}>ZOOM +</button><button type="button" onClick={reset}>RESET</button></div><span>Drag rotate · Scroll zoom · Select node</span>{hover && <output>{hover.maturity.toFixed(2)}y · K {hover.strike.toFixed(1)} · {(hover.volatility * 100).toFixed(2)}%</output>}<div className="surface-heat-legend" aria-label={`Surface heat scale from ${(minimum * 100).toFixed(1)} to ${(maximum * 100).toFixed(1)} percent implied volatility`}><b>IMPLIED VOL</b><i /><div><span>{(minimum * 100).toFixed(1)}%</span><span>{(mid * 100).toFixed(1)}%</span><span>{(maximum * 100).toFixed(1)}%</span></div></div></div>;
 }

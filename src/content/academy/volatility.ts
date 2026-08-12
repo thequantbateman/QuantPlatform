@@ -1,4 +1,5 @@
 import type { AcademyLesson, AcademyTrack } from "./types";
+import { additionalVolatilityLessons } from "./volatilityTrackLessons";
 
 const reviewed = "2026-08-12";
 
@@ -8,18 +9,18 @@ export const volatilityTrack: AcademyTrack = {
   subtitle: "From observed dispersion to model dynamics",
   description: "A sequenced path through measurement, option-implied coordinates, surface construction, dynamics, calibration and hedge risk.",
   nodes: [
-    { id: "volatility", title: "Volatility", stage: "Language and units", level: "foundation", href: "/learn/equity/historical-volatility" },
-    { id: "realized-implied", title: "Realized vs implied", stage: "Observation vs price", level: "foundation", href: "/learn/equity/realized-vs-implied-volatility" },
+    { id: "volatility", title: "Realized volatility", stage: "Measurement and estimators", level: "foundation", href: "/learn/volatility/realized-volatility", academyLessonId: "vol-realized" },
+    { id: "realized-implied", title: "Realized vs implied", stage: "Variance risk premium", level: "foundation", href: "/learn/volatility/realized-vs-implied", academyLessonId: "vol-realized-implied" },
     { id: "implied-volatility", title: "Black–Scholes implied volatility", stage: "Inversion", level: "intermediate", href: "/learn/volatility/implied-volatility", academyLessonId: "vol-implied" },
-    { id: "smile", title: "Smile and skew", stage: "Strike geometry", level: "intermediate", href: "/learn/equity/volatility-smile" },
-    { id: "term", title: "Term structure", stage: "Expiry geometry", level: "intermediate", href: "/learn/equity/term-structure" },
+    { id: "smile", title: "Smile and skew", stage: "Strike geometry", level: "intermediate", href: "/learn/volatility/smile-and-skew", academyLessonId: "vol-smile" },
+    { id: "term", title: "Term structure", stage: "Expiry geometry", level: "intermediate", href: "/learn/volatility/term-structure", academyLessonId: "vol-term" },
     { id: "surface", title: "Volatility surface", stage: "Flagship workbench", level: "front-office", href: "/learn/volatility/volatility-surface", academyLessonId: "vol-surface" },
-    { id: "local-vol", title: "Local volatility", stage: "State-dependent diffusion", level: "advanced", href: "/learn/equity/local-volatility" },
-    { id: "stochastic-vol", title: "Stochastic volatility", stage: "Random variance", level: "advanced", href: "/learn/equity/stochastic-volatility" },
+    { id: "local-vol", title: "Local volatility", stage: "State-dependent diffusion", level: "advanced", href: "/learn/volatility/local-volatility", academyLessonId: "vol-local" },
+    { id: "stochastic-vol", title: "Stochastic volatility", stage: "Random variance", level: "advanced", href: "/learn/volatility/stochastic-volatility", academyLessonId: "vol-stochastic" },
     { id: "heston", title: "Heston", stage: "Affine stochastic variance", level: "front-office", href: "/learn/volatility/heston-model", academyLessonId: "vol-heston" },
-    { id: "sabr", title: "SABR", stage: "Forward smile dynamics", level: "front-office", href: "/learn/equity/sabr" },
-    { id: "calibration", title: "Calibration", stage: "Fit, stability, governance", level: "front-office", href: "/learn/foundations/calibration-basics" },
-    { id: "higher-order-risk", title: "Vega, vanna and volga", stage: "Hedge geometry", level: "front-office", href: "/learn/equity/greeks" },
+    { id: "sabr", title: "SABR", stage: "Forward smile dynamics", level: "front-office", href: "/learn/volatility/sabr", academyLessonId: "vol-sabr" },
+    { id: "calibration", title: "Calibration", stage: "Fit, stability, governance", level: "front-office", href: "/learn/volatility/calibration", academyLessonId: "vol-calibration" },
+    { id: "higher-order-risk", title: "Vega, vanna and volga", stage: "Hedge geometry", level: "front-office", href: "/learn/volatility/vega-vanna-volga", academyLessonId: "vol-higher-risk" },
   ],
 };
 
@@ -91,7 +92,7 @@ solved = implied_vol(target, 100.0, 105.0, 0.75, 0.03)
 assert abs(solved - 0.27) < 1e-10
 print(f"Implied volatility: {solved:.4%}")`;
 
-export const volatilityLessons: AcademyLesson[] = [
+const flagshipVolatilityLessons: AcademyLesson[] = [
   {
     id: "vol-implied",
     slug: "implied-volatility",
@@ -159,7 +160,7 @@ export const volatilityLessons: AcademyLesson[] = [
         checks: ["Known-vol round trip is accurate to 1e-10.", "No-arbitrage bounds are validated before solving.", "The bracket is positive and finite."],
       },
     },
-    interactiveLabs: [],
+    interactiveLabs: [{ id: "implied-volatility", title: "Implied-volatility inversion", description: "Move premium and state inputs through a bracketed inverse with residual and vega diagnostics." }],
     frontOffice: {
       quote: "Volatility is the desk language; premium remains the cash value.",
       inputs: ["bid/offer premium", "spot or forward", "discount and carry curves", "expiry and settlement", "strike/delta convention"],
@@ -319,7 +320,7 @@ export const volatilityLessons: AcademyLesson[] = [
         checks: ["Spot remains positive under the log update.", "Diffusion uses truncated non-negative variance.", "A deterministic seed makes regression checks repeatable."],
       },
     },
-    interactiveLabs: [{ id: "vol-surface", title: "Surface model comparison", description: "Use the workbench comparison matrix to contrast Black–Scholes, local volatility and Heston assumptions and dynamics." }],
+    interactiveLabs: [{ id: "heston", title: "Heston dynamics lab", description: "Move mean reversion, long-run variance, vol-of-vol and correlation; inspect variance persistence and smile response." }],
     frontOffice: {
       quote: "Calibration error is visible. Parameter instability is often more expensive.",
       inputs: ["clean vanilla surface", "curves and forwards", "calibration weights", "parameter bounds", "engine tolerances"],
@@ -337,3 +338,7 @@ export const volatilityLessons: AcademyLesson[] = [
     relatedLessonIds: ["vol-surface", "vol-implied"],
   },
 ];
+
+const trackOrder = volatilityTrack.nodes.map((node) => node.academyLessonId);
+export const volatilityLessons: AcademyLesson[] = [...flagshipVolatilityLessons, ...additionalVolatilityLessons]
+  .sort((left, right) => trackOrder.indexOf(left.id) - trackOrder.indexOf(right.id));

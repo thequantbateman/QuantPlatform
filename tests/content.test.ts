@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { contentCatalog, findContent } from "../src/content/catalog";
 import { localizeEntry } from "../src/content/localization";
-import { academyLessons, academyTracks, findAcademyLesson } from "../src/content/academy/catalog";
+import { academyLessons, academyTracks, findAcademyLesson, findAcademyLessonForRoute } from "../src/content/academy/catalog";
 import { academySources } from "../src/content/academy/sources";
 
 test("expanded knowledge graph covers all major asset families", () => {
@@ -25,7 +25,7 @@ test("market-to-model bridge concepts remain in the knowledge graph", () => {
 });
 
 test("Academy V2 lessons implement the canonical educational contract", () => {
-  assert.ok(academyLessons.length >= 3);
+  assert.equal(academyLessons.length, 12);
   for (const lesson of academyLessons) {
     assert.ok(lesson.learningObjectives.length >= 3, lesson.id);
     assert.ok(lesson.mathematics.formulas.length >= 2, lesson.id);
@@ -34,6 +34,9 @@ test("Academy V2 lessons implement the canonical educational contract", () => {
     assert.ok(lesson.frontOffice.workflow.length >= 4, lesson.id);
     assert.ok(lesson.macroConnections.length > 0, lesson.id);
     assert.ok(lesson.references.length > 0, lesson.id);
+    assert.ok(lesson.interactiveLabs.length > 0, lesson.id);
+    assert.doesNotMatch(lesson.intuition.lead, /build the mental model/i, lesson.id);
+    assert.ok(lesson.mathematics.formulas.every((formula) => !formula.latex.includes("\\mathcal{M}")), lesson.id);
   }
   assert.equal(findAcademyLesson("volatility-surface")?.id, "vol-surface");
 });
@@ -44,6 +47,14 @@ test("flagship volatility track is sequenced and cross-links deep lessons", () =
   assert.ok(track.nodes.length >= 12);
   assert.equal(track.nodes[0].id, "volatility");
   assert.ok(track.nodes.some((node) => node.academyLessonId === "vol-surface"));
+  assert.ok(track.nodes.every((node) => node.academyLessonId), "every volatility stage must resolve to a deep lesson");
+  assert.equal(new Set(track.nodes.map((node) => node.academyLessonId)).size, 12);
+});
+
+test("legacy volatility routes resolve to the canonical deep lessons", () => {
+  assert.equal(findAcademyLessonForRoute("equity", "realized-volatility")?.id, "vol-realized");
+  assert.equal(findAcademyLessonForRoute("equity", "historical-volatility")?.id, "vol-realized");
+  assert.equal(findAcademyLessonForRoute("equity", "volatility-smile")?.id, "vol-smile");
 });
 
 test("every Academy reference resolves to an attributed licensed source", () => {

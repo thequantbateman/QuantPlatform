@@ -104,6 +104,16 @@ test("educational volatility surface is finite, positive and deterministic", () 
   assert.ok(first.flat().every((point) => Number.isFinite(point.volatility) && point.volatility > 0));
 });
 
+test("dense 3D volatility mesh preserves domains and selected-node consistency", () => {
+  const maturities = Array.from({ length: 19 }, (_, index) => 7 / 365 + index * ((2 - 7 / 365) / 18));
+  const moneyness = Array.from({ length: 31 }, (_, index) => 0.7 + index * 0.02);
+  const dense = buildVolSurface(defaultVolSurfaceParameters, maturities, moneyness);
+  assert.equal(dense.length, 19);
+  assert.equal(dense[0].length, 31);
+  assert.ok(dense.flat().every((point) => point.maturity > 0 && point.moneyness >= 0.7 && point.moneyness <= 1.3));
+  assert.ok(dense.flat().every((point) => Number.isFinite(point.volatility) && point.volatility > 0));
+});
+
 test("surface scenarios deform the intended dimensions", () => {
   const base = educationalVolatility(0.8, 7 / 365, defaultVolSurfaceParameters);
   const crash = { ...defaultVolSurfaceParameters, scenario: "spot-crash" as const, phase: 1 };

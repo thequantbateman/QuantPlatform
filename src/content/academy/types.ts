@@ -59,13 +59,18 @@ export interface AcademyLesson {
   tags: string[];
   estimatedMinutes: number;
   lastReviewed: string;
+  legacyRoutes?: string[];
   intuition: { lead: string; points: string[] };
   marketContext: { why: string; instruments: string[]; quoteConvention: string };
   mathematics: { notation: string[]; formulas: AcademyFormula[] };
   derivation: { title: string; introduction: string; steps: AcademyDerivationStep[]; conclusion: string };
   pricing: { method: string; calibration: string; limitations: string[] };
   implementation: { architecture: string[]; quantLib?: string; pythonLab: AcademyPythonLab };
-  interactiveLabs: Array<{ id: "vol-surface"; title: string; description: string }>;
+  interactiveLabs: Array<{
+    id: "realized-volatility" | "variance-risk-premium" | "implied-volatility" | "smile-skew" | "term-structure" | "vol-surface" | "local-volatility" | "stochastic-volatility" | "heston" | "sabr" | "calibration" | "higher-order-risk";
+    title: string;
+    description: string;
+  }>;
   frontOffice: DeskSection;
   macroConnections: MacroConnection[];
   pitfalls: string[];
