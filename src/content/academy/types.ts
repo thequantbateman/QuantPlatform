@@ -2,6 +2,7 @@ import type { AssetClass } from "@/src/content/types";
 
 export type AcademyLevel = "foundation" | "intermediate" | "advanced" | "front-office";
 export type AcademyDomain = "foundations" | "derivatives" | "volatility" | "rates" | "numerical-finance" | "risk" | "xva" | "macro" | "front-office";
+export type AcademyLabId = AcademyLesson["interactiveLabs"][number]["id"];
 
 export interface AcademyFormula {
   label: string;
@@ -92,7 +93,23 @@ export interface AcademyLesson {
       | "curve-risk"
       | "hull-white"
       | "rate-optionality"
-      | "hjm";
+      | "hjm"
+      | "filtration-explorer"
+      | "conditional-expectation"
+      | "measure-change"
+      | "girsanov"
+      | "forward-measures"
+      | "monte-carlo"
+      | "simulation-schemes"
+      | "variance-reduction"
+      | "fourier-cos"
+      | "first-order-greeks"
+      | "higher-order-greeks"
+      | "hedging-pnl"
+      | "exposure-profile"
+      | "xva-adjustments"
+      | "var-es"
+      | "model-risk";
     title: string;
     description: string;
   }>;
@@ -101,6 +118,7 @@ export interface AcademyLesson {
   pitfalls: string[];
   references: AcademyReference[];
   relatedLessonIds: string[];
+  localized?: { es: Partial<AcademyLesson> };
 }
 
 export interface AcademyTrackNode {
@@ -118,6 +136,7 @@ export interface AcademyTrack {
   subtitle: string;
   description: string;
   nodes: AcademyTrackNode[];
+  localized?: { es: Partial<AcademyTrack> };
 }
 
 export interface AcademySource {

@@ -149,6 +149,7 @@ const spanishProfiles: Record<string, SpanishProfile> = {
 
 export function localizeAcademyLesson(lesson: AcademyLesson, locale: Locale): AcademyLesson {
   if (locale === "en") return lesson;
+  if (lesson.localized?.es) return { ...lesson, ...lesson.localized.es, localized: lesson.localized };
   const profile = spanishProfiles[lesson.id] ?? { title: localizeAcademyText(lesson.title, locale), subtitle: `Tratamiento cuantitativo profesional de ${localizeAcademyText(lesson.title, locale).toLowerCase()}`, focus: "las convenciones, los supuestos, el cálculo y su validación", market: "valoración, riesgo y análisis cuantitativo", desk: "riesgo de modelo, datos y ejecución" };
   if (lesson.domain === "rates") {
     return {
@@ -246,6 +247,7 @@ export function localizeAcademyLesson(lesson: AcademyLesson, locale: Locale): Ac
 
 export function localizeAcademyTrack(track: AcademyTrack, locale: Locale): AcademyTrack {
   if (locale === "en") return track;
+  if (track.localized?.es) return { ...track, ...track.localized.es, localized: track.localized };
   const ratesCopy = track.id === "rates" ? {
     title: "Tipos y curvas",
     subtitle: "De factores de descuento a dinámica estocástica de la estructura temporal",

@@ -9,6 +9,9 @@ import { priceVanilla, scenarioGrid } from "../src/quant/pricing/vanilla";
 import { bootstrapCurve, discountFactor, forwardRate, logLinearDiscount, parSwapRate, receiverSwapPresentValue, simpleForwardRate, swapAnnuity, zeroRate } from "../src/quant/curves/rates";
 import { linearInterpolate } from "../src/quant/curves/interpolation";
 import { buildVolSurface, defaultVolSurfaceParameters, educationalVolatility, scenarioSpot } from "../src/quant/volatility/volSurface";
+import { brownianMarketPriceOfRisk, conditionalBinomialExpectation, girsanovDensity, measureState } from "../src/quant/probability/measureChange";
+import { buildExposureProfile, expectedPositiveExposure, historicalVarEs, unilateralCva } from "../src/quant/risk/exposure";
+import { antitheticVarianceReduction, compareGbmSchemes, monteCarloStandardError } from "../src/quant/simulation/schemes";
 
 const closeTo = (actual: number, expected: number, tolerance = 1e-5) => assert.ok(Math.abs(actual - expected) <= tolerance, `${actual} differs from ${expected}`);
 const base = { spot: 100, strike: 100, time: 1, rate: 0.05, dividend: 0, volatility: 0.2 };
@@ -164,4 +167,35 @@ test("surface scenarios deform the intended dimensions", () => {
 test("surface boundaries reject invalid inputs", () => {
   assert.throws(() => educationalVolatility(1, 0, defaultVolSurfaceParameters), /maturity/);
   assert.throws(() => buildVolSurface({ ...defaultVolSurfaceParameters, atmVol: Number.NaN }), /ATM volatility/);
+});
+
+test("measure-change primitives preserve reference identities", () => {
+  closeTo(brownianMarketPriceOfRisk(0.08, 0.03, 0.2), 0.25, 1e-12);
+  closeTo(girsanovDensity(0.25, 0, 2), Math.exp(-0.0625), 1e-12);
+  closeTo(conditionalBinomialExpectation(10, -4, 0.6), 4.4, 1e-12);
+  assert.equal(measureState("Q", 0.08, 0.03, 0.035).drift, 0.03);
+  assert.equal(measureState("QT", 0.08, 0.03, 0.035).numeraire, "Zero-coupon bond P(t,T)");
+  assert.throws(() => brownianMarketPriceOfRisk(0.08, 0.03, 0), /positive/);
+});
+
+test("GBM schemes share shocks and expose discretization error", () => {
+  const path = compareGbmSchemes({ spot: 100, rate: 0.03, volatility: 0.2, horizon: 1, steps: 32, seed: 7 });
+  assert.equal(path.time.length, 33);
+  assert.ok(path.exact.every((value) => Number.isFinite(value) && value > 0));
+  assert.ok(path.euler.some((value, index) => Math.abs(value - path.exact[index]) > 1e-8));
+  closeTo(monteCarloStandardError(4, 100), 0.2, 1e-12);
+  closeTo(antitheticVarianceReduction(-0.8), 0.1, 1e-12);
+});
+
+test("exposure, CVA and tail metrics respect financial boundaries", () => {
+  const unsecured = buildExposureProfile(5, 10, 0.2, 0.95, 2);
+  const tighter = buildExposureProfile(5, 10, 0.2, 0.95, 0.5);
+  assert.equal(unsecured.length, 41);
+  assert.ok(tighter.every((point, index) => point.collateralizedEe <= unsecured[index].collateralizedEe));
+  const epe = expectedPositiveExposure(unsecured);
+  assert.ok(epe > 0);
+  closeTo(unilateralCva(epe, 0, 0.4), 0, 1e-12);
+  const tail = historicalVarEs([1, 2, 3, 4, 5, 8, 13, 21], 0.75);
+  assert.ok(tail.expectedShortfall >= tail.var);
+  assert.throws(() => historicalVarEs([1], 0.99), /Invalid/);
 });

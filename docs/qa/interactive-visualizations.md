@@ -45,6 +45,17 @@ The final coverage review added an explicit caps/floors/swaptions stage because 
 - Motion: scenario playback respects `prefers-reduced-motion`; static state and manual time control remain available.
 - Runtime: no browser console errors during tab/view traversal.
 
+## Foundations, numerics, Greeks and xVA release
+
+Browser checks covered filtration/adapted-process content, Girsanov measure switching, Euler/Milstein/exact diagnostics, the Academy landing, and the CVA/DVA/FVA route.
+
+- Viewports: 375×812, 768×900 and 1440×1000; no page-level horizontal overflow.
+- Curriculum: six live tracks with node counts 5 / 12 / 13 / 4 / 3 / 4 and 41 deep lessons.
+- Localisation: Spanish titles, objectives, derivations, lab controls, metrics, sources and desk sections rendered on the tested routes.
+- Interaction: measure buttons changed active drift/numeraire after hydration; all advanced controls use labelled native range inputs.
+- Runtime: no console errors on the inspected Academy, foundations, numerical and xVA routes.
+- Numerical tests: measure identities, seeded common-shock paths, standard-error/antithetic bounds, collateral monotonicity, zero-PD CVA and ES ≥ VaR passed.
+
 ## Remaining boundaries
 
 - Synthetic surfaces are illustrative shapes, not calibrated market surfaces or forecasts.

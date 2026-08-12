@@ -40,6 +40,18 @@ Outputs:
 
 The lab is loaded as a client leaf with `React.lazy` and `Suspense`. The Academy landing and static lesson content do not load the canvas workbench. No global chart or WebGL bundle was added.
 
+## Advanced concept lab contract
+
+`AdvancedConceptLab` routes a lesson lab ID to one of five bounded workspaces:
+
+- information: filtration reveal and conditional expectation;
+- measure: P, Q and T-forward measure state plus Girsanov density;
+- numerical: shared-shock exact/Euler/Milstein paths, Monte Carlo error, variance reduction and transform diagnostics;
+- Greeks: analytical desk-unit risk, higher-order finite differences and discrete hedge P&L;
+- portfolio risk: EE/PFE/collateral, simplified CVA, VaR/ES and governance thresholds.
+
+Every workspace uses native labelled controls, deterministic state, exact metric readouts, a chart or timeline, a linked `QuantFlow`, and an explicit model boundary. New numerical logic is tested in framework-free modules rather than embedded in React.
+
 ## Visual direction
 
 The workbench combines the platform’s warm editorial paper shell with a restrained navy analytical stage, fine scientific grids, amber/oxblood emphasis and concise monospace annotations. The supplied handwritten-equation and surface screenshots informed composition, not branding or copied assets.

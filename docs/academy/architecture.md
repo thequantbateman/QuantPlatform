@@ -1,6 +1,6 @@
 # Academy V2 architecture
 
-Reviewed 12 August 2026.
+Reviewed 13 August 2026.
 
 ## Boundary
 
@@ -15,7 +15,7 @@ app/learn routes
       → framework-free src/quant calculations
 ```
 
-`app/` keeps route composition and metadata. `src/content/academy/` owns the curriculum, lesson schema and attribution. `src/components/academy/` owns presentation. `src/quant/volatility/` owns deterministic surface calculations and imports no React or browser APIs.
+`app/` keeps route composition and metadata. `src/content/academy/` owns the curriculum, lesson schema and attribution. `src/components/academy/` owns presentation. Framework-free modules under `src/quant/` own deterministic volatility, probability, simulation and risk calculations and import no React or browser APIs.
 
 ## Existing content map
 
@@ -38,7 +38,20 @@ app/learn routes
 - Every visual derives from one deterministic surface grid and exposes an exact readout plus numeric table.
 - No visualization dependency was added; this preserves the existing Worker-compatible build and keeps the Academy text path light.
 
-## Adding the next track
+## Academy V2 track inventory
+
+| Track | Deep lessons | Flagship interaction |
+|---|---:|---|
+| Probability, measures & pricing | 5 | filtration and measure-change explorers |
+| Volatility | 12 | linked heatmap / 3D surface workbench |
+| Rates & curves | 13 | curve bootstrap and rate-scenario labs |
+| Numerical finance | 4 | seeded schemes, error and transform diagnostics |
+| Greeks & hedging | 3 | desk-unit sensitivities and hedge P&L |
+| Risk & xVA | 4 | exposure, CVA, tail and governance controls |
+
+The shared `QuantFlow` renders information, measure, model, market and risk nodes. It is presentational only; financial state and formulas stay in the typed lesson and quant layers.
+
+## Adding another track
 
 1. Add typed lesson objects in `src/content/academy/<track>.ts`.
 2. Register lessons/tracks in `src/content/academy/catalog.ts`.
@@ -47,4 +60,4 @@ app/learn routes
 5. Add source records and per-lesson references.
 6. Add invariants and boundary tests before enabling a lab.
 
-Recommended next track: Rates & Curves, using the same pattern for discount factors, OIS bootstrapping, multi-curve construction and curve risk.
+The next asset-class track should reuse this contract and add its numerical logic under the relevant `src/quant/` domain.
