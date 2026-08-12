@@ -4,7 +4,7 @@ import { AppShell } from "@/src/components/AppShell";
 const tools = [
   ["01", "European option pricer", "BSM · Garman–Kohlhagen · Black-76", "/lab?lab=vanilla"],
   ["02", "Greeks dashboard", "Delta · Gamma · Vega · Theta · Rho", "/lab?lab=greeks"],
-  ["03", "Volatility explorer", "Smile · Surface · Skew · Term structure", "/lab?lab=surface"],
+  ["03", "Volatility surface workbench", "3D · Heatmap · Smile · Term · Scenarios", "/analytics/volatility"],
   ["04", "Yield-curve engine", "Discount factors · Zeroes · Forwards", "/lab?lab=curve"],
 ];
 export const metadata: Metadata = { title: "Analytics · TheQuantBateman", description: "Deterministic pricing, Greeks, volatility and curve analytics." };

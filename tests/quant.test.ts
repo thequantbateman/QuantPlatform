@@ -8,6 +8,7 @@ import { impliedVolatility } from "../src/quant/volatility/impliedVolatility";
 import { priceVanilla, scenarioGrid } from "../src/quant/pricing/vanilla";
 import { discountFactor, forwardRate, zeroRate } from "../src/quant/curves/rates";
 import { linearInterpolate } from "../src/quant/curves/interpolation";
+import { buildVolSurface, defaultVolSurfaceParameters, educationalVolatility, scenarioSpot } from "../src/quant/volatility/volSurface";
 
 const closeTo = (actual: number, expected: number, tolerance = 1e-5) => assert.ok(Math.abs(actual - expected) <= tolerance, `${actual} differs from ${expected}`);
 const base = { spot: 100, strike: 100, time: 1, rate: 0.05, dividend: 0, volatility: 0.2 };
@@ -92,4 +93,29 @@ test("position notional scales PV and every reported Greek", () => {
   const unit = priceVanilla({ mode: "equity", underlying: "TEST", spot: 100, forward: 100, strike: 100, time: 1, rate: 0.04, foreignRate: 0.01, volatility: 0.2, type: "call", notional: 1 });
   const position = priceVanilla({ mode: "equity", underlying: "TEST", spot: 100, forward: 100, strike: 100, time: 1, rate: 0.04, foreignRate: 0.01, volatility: 0.2, type: "call", notional: 25 });
   for (const metric of ["price", "delta", "gamma", "vega", "theta", "rho"] as const) assert.ok(Math.abs(position[metric] - unit[metric] * 25) < 1e-10, metric);
+});
+
+test("educational volatility surface is finite, positive and deterministic", () => {
+  const first = buildVolSurface(defaultVolSurfaceParameters);
+  const second = buildVolSurface(defaultVolSurfaceParameters);
+  assert.deepEqual(first, second);
+  assert.equal(first.length, 6);
+  assert.equal(first[0].length, 11);
+  assert.ok(first.flat().every((point) => Number.isFinite(point.volatility) && point.volatility > 0));
+});
+
+test("surface scenarios deform the intended dimensions", () => {
+  const base = educationalVolatility(0.8, 7 / 365, defaultVolSurfaceParameters);
+  const crash = { ...defaultVolSurfaceParameters, scenario: "spot-crash" as const, phase: 1 };
+  const stressed = educationalVolatility(0.8, 7 / 365, crash);
+  assert.ok(stressed > base);
+  assert.ok(scenarioSpot(crash) < crash.spot);
+
+  const inversion = { ...defaultVolSurfaceParameters, scenario: "term-inversion" as const, phase: 1 };
+  assert.ok(educationalVolatility(1, 7 / 365, inversion) > educationalVolatility(1, 2, inversion));
+});
+
+test("surface boundaries reject invalid inputs", () => {
+  assert.throws(() => educationalVolatility(1, 0, defaultVolSurfaceParameters), /maturity/);
+  assert.throws(() => buildVolSurface({ ...defaultVolSurfaceParameters, atmVol: Number.NaN }), /ATM volatility/);
 });
