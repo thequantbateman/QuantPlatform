@@ -25,7 +25,7 @@ test("market-to-model bridge concepts remain in the knowledge graph", () => {
 });
 
 test("Academy V2 lessons implement the canonical educational contract", () => {
-  assert.equal(academyLessons.length, 25);
+  assert.equal(academyLessons.length, 41);
   for (const lesson of academyLessons) {
     assert.ok(lesson.learningObjectives.length >= 3, lesson.id);
     assert.ok(lesson.mathematics.formulas.length >= 2, lesson.id);
@@ -60,6 +60,31 @@ test("flagship rates track is sequenced from discounting through HJM", () => {
   assert.ok(track.nodes.some((node) => node.academyLessonId === "rate-curve-bootstrap"));
   assert.ok(track.nodes.some((node) => node.academyLessonId === "rate-optionality"));
   assert.equal(new Set(track.nodes.map((node) => node.academyLessonId)).size, 13);
+});
+
+test("advanced Academy tracks connect foundations, numerics, Greeks and xVA", () => {
+  const expected = new Map([
+    ["foundations", ["foundation-filtrations", "foundation-forward-measures"]],
+    ["numerical-finance", ["numerical-monte-carlo", "numerical-fourier-cos"]],
+    ["greeks-hedging", ["greeks-first-order", "hedging-pnl"]],
+    ["risk-xva", ["risk-exposure-profile", "risk-model-governance"]],
+  ]);
+  for (const [trackId, boundaries] of expected) {
+    const track = academyTracks.find((item) => item.id === trackId);
+    assert.ok(track, trackId);
+    assert.equal(track.nodes[0].academyLessonId, boundaries[0]);
+    assert.equal(track.nodes.at(-1)?.academyLessonId, boundaries[1]);
+    assert.ok(track.nodes.every((node) => findAcademyLesson(node.href.split("/").at(-1) ?? "")), trackId);
+  }
+});
+
+test("new advanced lessons carry complete Spanish payloads", () => {
+  for (const lesson of academyLessons.filter((item) => ["foundations", "numerical-finance", "risk", "xva"].includes(item.domain))) {
+    assert.ok(lesson.localized?.es.title, lesson.id);
+    assert.equal(lesson.localized?.es.learningObjectives?.length, lesson.learningObjectives.length, lesson.id);
+    assert.equal(lesson.localized?.es.derivation?.steps.length, lesson.derivation.steps.length, lesson.id);
+    assert.equal(lesson.localized?.es.interactiveLabs?.length, 1, lesson.id);
+  }
 });
 
 test("legacy volatility routes resolve to the canonical deep lessons", () => {

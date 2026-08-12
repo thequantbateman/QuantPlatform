@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Formula } from "@/src/components/content/Formula";
 import { findAcademySource } from "@/src/content/academy/sources";
 import type { AcademyDerivationStep, AcademyReference, DeskSection, MacroConnection } from "@/src/content/academy/types";
+import { QuantFlow } from "./QuantFlow";
 
 export function LessonSection({ index, label, title, children, id }: { index: string; label: string; title: string; children: ReactNode; id: string }) {
   return <section className="academy-section" id={id}><header><span>{index}</span><div><b>{label}</b><h2>{title}</h2></div></header>{children}</section>;
@@ -25,7 +26,7 @@ export function OnTheDesk({ section }: { section: DeskSection }) {
 }
 
 export function MacroFlow({ connection }: { connection: MacroConnection }) {
-  return <div className="macro-flow"><header><span>MACRO CONNECTION</span><h3>{connection.title}</h3><p>{connection.thesis}</p></header><div>{connection.nodes.map((node, index) => <div key={node.label}><article><b>{node.label}</b><p>{node.effect}</p></article>{index < connection.nodes.length - 1 && <i aria-hidden="true">→</i>}</div>)}</div></div>;
+  return <QuantFlow eyebrow="MACRO CONNECTION" title={connection.title} thesis={connection.thesis} nodes={connection.nodes.map((node, index) => ({ id: `macro-${index}-${node.label}`, label: node.label, value: index < connection.nodes.length - 1 ? "transmits" : "output", detail: node.effect, kind: index === 0 ? "market" : index === connection.nodes.length - 1 ? "risk" : "model" }))} />;
 }
 
 export function SourceReferences({ references }: { references: AcademyReference[] }) {
