@@ -1,9 +1,10 @@
+import { ratesLessons, ratesTrack } from "./rates";
 import { volatilityLessons, volatilityTrack } from "./volatility";
 import type { AcademyLesson, AcademyTrack } from "./types";
 
-export const academyLessons: AcademyLesson[] = volatilityLessons;
-export const academyTracks: AcademyTrack[] = [volatilityTrack];
-export { volatilityTrack };
+export const academyLessons: AcademyLesson[] = [...volatilityLessons, ...ratesLessons];
+export const academyTracks: AcademyTrack[] = [volatilityTrack, ratesTrack];
+export { ratesTrack, volatilityTrack };
 
 export function findAcademyLesson(slug: string): AcademyLesson | undefined {
   return academyLessons.find((lesson) => lesson.slug === slug);

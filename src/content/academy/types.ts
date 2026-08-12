@@ -67,7 +67,31 @@ export interface AcademyLesson {
   pricing: { method: string; calibration: string; limitations: string[] };
   implementation: { architecture: string[]; quantLib?: string; pythonLab: AcademyPythonLab };
   interactiveLabs: Array<{
-    id: "realized-volatility" | "variance-risk-premium" | "implied-volatility" | "smile-skew" | "term-structure" | "vol-surface" | "local-volatility" | "stochastic-volatility" | "heston" | "sabr" | "calibration" | "higher-order-risk";
+    id:
+      | "realized-volatility"
+      | "variance-risk-premium"
+      | "implied-volatility"
+      | "smile-skew"
+      | "term-structure"
+      | "vol-surface"
+      | "local-volatility"
+      | "stochastic-volatility"
+      | "heston"
+      | "sabr"
+      | "calibration"
+      | "higher-order-risk"
+      | "discounting"
+      | "zero-forward-rates"
+      | "rate-conventions"
+      | "ois-compounding"
+      | "fra-futures"
+      | "interest-rate-swaps"
+      | "curve-bootstrapping"
+      | "curve-interpolation"
+      | "multi-curve"
+      | "curve-risk"
+      | "hull-white"
+      | "hjm";
     title: string;
     description: string;
   }>;
