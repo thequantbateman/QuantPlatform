@@ -6,7 +6,7 @@ import { black76, black76Price } from "../src/quant/models/black76";
 import { garmanKohlhagen } from "../src/quant/models/garmanKohlhagen";
 import { impliedVolatility } from "../src/quant/volatility/impliedVolatility";
 import { priceVanilla, scenarioGrid } from "../src/quant/pricing/vanilla";
-import { discountFactor, forwardRate, zeroRate } from "../src/quant/curves/rates";
+import { bootstrapCurve, discountFactor, forwardRate, logLinearDiscount, parSwapRate, receiverSwapPresentValue, simpleForwardRate, swapAnnuity, zeroRate } from "../src/quant/curves/rates";
 import { linearInterpolate } from "../src/quant/curves/interpolation";
 import { buildVolSurface, defaultVolSurfaceParameters, educationalVolatility, scenarioSpot } from "../src/quant/volatility/volSurface";
 
@@ -52,6 +52,42 @@ test("continuous forward rate is consistent with discount factors", () => {
   const start = discountFactor(0.03, 2);
   const end = discountFactor(0.04, 5);
   closeTo(forwardRate(start, end, 3), (0.04 * 5 - 0.03 * 2) / 3, 1e-12);
+});
+
+test("simple forwards and par swaps are internally consistent", () => {
+  const discounts = [1, 2, 3, 4, 5].map((time) => discountFactor(0.04, time));
+  closeTo(simpleForwardRate(discounts[1], discounts[2], 1), Math.exp(0.04) - 1, 1e-12);
+  const periods = discounts.map((discount) => ({ discount, accrualFactor: 1 }));
+  const annuity = swapAnnuity(periods);
+  const parRate = parSwapRate(periods);
+  assert.ok(annuity > 0 && parRate > 0);
+  closeTo(receiverSwapPresentValue(1_000_000, parRate, periods), 0, 1e-8);
+  assert.ok(receiverSwapPresentValue(1_000_000, parRate + 0.0001, periods) > 0);
+});
+
+test("log-linear discount interpolation preserves nodes and segment forwards", () => {
+  const points = [
+    { time: 1, discount: discountFactor(0.02, 1) },
+    { time: 3, discount: discountFactor(0.03, 3) },
+    { time: 7, discount: discountFactor(0.04, 7) },
+  ];
+  closeTo(logLinearDiscount(points, 3), points[1].discount, 1e-12);
+  const midpoint = logLinearDiscount(points, 2);
+  closeTo(Math.log(points[0].discount / midpoint), Math.log(midpoint / points[1].discount), 1e-12);
+  closeTo(logLinearDiscount(points, 0), 1, 1e-12);
+});
+
+test("educational curve bootstrap preserves zero quotes and rejects broken domains", () => {
+  const nodes = bootstrapCurve([
+    { tenor: "5Y", time: 5, quote: 0.035 },
+    { tenor: "1Y", time: 1, quote: 0.02 },
+    { tenor: "2Y", time: 2, quote: 0.028 },
+  ]);
+  assert.deepEqual(nodes.map((node) => node.tenor), ["1Y", "2Y", "5Y"]);
+  nodes.forEach((node) => closeTo(zeroRate(node.discount, node.time), node.quote, 1e-12));
+  assert.throws(() => discountFactor(Number.NaN, 1), /finite/);
+  assert.throws(() => logLinearDiscount([{ time: 1, discount: 0 }], 0.5), /positive/);
+  assert.throws(() => bootstrapCurve([{ tenor: "1Y", time: 1, quote: 0.02 }, { tenor: "1Y duplicate", time: 1, quote: 0.03 }]), /unique/);
 });
 
 test("linear interpolation supports interior values and flat extrapolation", () => {

@@ -14,6 +14,23 @@ const phrases: Array<[string, string]> = [
   ["Vega, vanna and volga", "Vega, vanna y volga"],
   ["Volatility", "Volatilidad"],
   ["volatility", "volatilidad"],
+  ["Rates & curves", "Tipos y curvas"],
+  ["Discount factors", "Factores de descuento"],
+  ["Zero and forward rates", "Tipos cero y forward"],
+  ["Conventions and schedules", "Convenciones y calendarios"],
+  ["OIS compounding", "Capitalización OIS"],
+  ["FRAs and futures", "FRAs y futuros"],
+  ["Interest-rate swaps", "Swaps de tipos de interés"],
+  ["Curve bootstrapping", "Bootstrap de curvas"],
+  ["Interpolation and arbitrage", "Interpolación y arbitraje"],
+  ["Multi-curve and basis", "Multicurva y base"],
+  ["Curve risk and roll", "Riesgo de curva y roll"],
+  ["HJM and market models", "HJM y modelos de mercado"],
+  ["curve", "curva"],
+  ["Curve", "Curva"],
+  ["discount", "descuento"],
+  ["Discount", "Descuento"],
+  ["forward", "forward"],
   ["Implied", "Implícita"],
   ["implied", "implícita"],
   ["Realized", "Realizada"],
@@ -115,11 +132,35 @@ const spanishProfiles: Record<string, SpanishProfile> = {
   "vol-sabr": { title: "SABR", subtitle: "Dinámica de sonrisa forward mediante backbone, correlación y vol-of-vol", focus: "las convenciones normal, lognormal y shifted junto con los límites ATM de la expansión", market: "caps, floors, swaptions y opciones sobre forwards", desk: "identificabilidad de beta, estabilidad de parámetros y error asintótico" },
   "vol-calibration": { title: "Calibración de modelos de volatilidad", subtitle: "Conversión de cotizaciones en parámetros con residuos, condicionamiento y gobernanza", focus: "la función objetivo, los pesos, las restricciones, el Jacobiano y la identificación", market: "cestas de calibración, superficies, modelos estocásticos y modelos proxy", desk: "mínimos locales, saltos de parámetros, unidades y fallback operativo" },
   "vol-higher-risk": { title: "Vega, vanna y volga", subtitle: "Geometría local del P&L de volatilidad más allá del primer orden", focus: "unidades de griegas, términos cruzados spot-vol y curvatura de volatilidad", market: "explicación de P&L, cobertura de superficies y stress de libros de opciones", desk: "vega por buckets, vanna, volga, bumps y recalibración" },
+  "rate-discount": { title: "Factores de descuento y valor actual", subtitle: "El valor temporal como objeto de curva observable y no como atajo de un único tipo", focus: "los precios cero cupón, la inversión tipo-factor y los pesos de valor actual por fecha", market: "bonos, descuento OIS, derivados con colateral y flujos deterministas", desk: "DV01, forma de curva, base de colateral y settlement" },
+  "rate-zero-forward": { title: "Tipos cero y tipos forward", subtitle: "La pendiente de curva como tipos break-even sin arbitraje, no como predicción automática", focus: "la diferencia entre tipos medios cero, forwards marginales y expectativas ajustadas por prima", market: "FRAs, swaps, carry, roll-down y lectura de senda monetaria", desk: "pendiente, mariposa, interpolación y convexidad" },
+  "rate-conventions": { title: "Convenciones, calendarios y schedules", subtitle: "Fechas, devengos y sintaxis de cotización como inputs ejecutables de valoración", focus: "day count, ajuste de días hábiles, stubs, lags y equivalencia de capitalización", market: "depósitos, bonos, FRAs, OIS y swaps de índices term", desk: "schedule, fixing, settlement y P&L de devengo" },
+  "rate-ois": { title: "OIS y capitalización overnight", subtitle: "Descuento con colateral desde fixings diarios, reglas de observación y expectativas monetarias", focus: "la capitalización diaria, el split entre fixings conocidos y proyectados y el tipo par OIS", market: "descuento con colateral, OIS, futuros overnight y senda de bancos centrales", desk: "DV01 por reunión, fixing, base corta y calendario" },
+  "rate-fra-futures": { title: "FRAs, futuros de tipos y convexidad", subtitle: "Fijación de un tipo futuro separando settlement y marginación diaria", focus: "el payoff de FRA, el settlement anticipado y el ajuste de convexidad futuro-forward", market: "FRAs, strips de futuros y coberturas del tramo corto", desk: "riesgo por reunión, convexidad, roll y base OTC" },
+  "rate-swaps": { title: "Swaps de tipos de interés", subtitle: "De una tira de forwards y descuentos al cupón par, valor actual y riesgo de curva", focus: "la anualidad fija, la proyección flotante, el tipo par y el signo pagador/receptor", market: "swaps, asset swaps, pasivos corporativos y macro trades", desk: "DV01 de descuento y proyección, base, fixing y carry" },
+  "rate-curve-bootstrap": { title: "Construcción y bootstrap de curvas", subtitle: "Sistema fechado de instrumentos de mercado con residuos de repricing en cada pilar", focus: "helpers por instrumento, solución secuencial, pilares, residuos de cotización y forwards implícitos", market: "descuento, proyección, carry, cobertura y valoración de toda la cartera de tipos", desk: "DV01 por pilar, base de instrumento, interpolación y cotizaciones stale" },
+  "rate-interpolation": { title: "Interpolación, extrapolación y arbitraje de curva", subtitle: "Selección del estado interpolado mediante el control del descuento y forward fuera de nodos", focus: "log-descuento, tipos cero, forwards instantáneos, reconstrucción y fronteras", market: "swaps broken-date, forwards, bonos y productos de largo plazo", desk: "DV01 fuera de nodos, saltos forward y extrapolación" },
+  "rate-multicurve": { title: "Valoración multicurva y basis", subtitle: "Separación entre descuento con colateral y proyección específica por índice", focus: "el papel de cada curva, la base de tenor y el grafo de dependencias", market: "OIS, swaps de índice term, basis swaps y opciones de tipos", desk: "DV01 de descuento, proyección, base y Jacobianos cruzados" },
+  "rate-curve-risk": { title: "Riesgo de curva, carry y roll-down", subtitle: "Del DV01 paralelo a buckets, escenarios, coberturas y paso del tiempo", focus: "signo y unidad del DV01, key rates, factores de curva y atribución carry/roll", market: "límites de mesa, P&L explain, macro escenarios y sizing de coberturas", desk: "nivel, pendiente, mariposa, concentración y base" },
+  "rate-hull-white": { title: "Modelo Hull–White de un factor", subtitle: "Ajuste de la curva actual con dinámica gaussiana de tipo corto y reversión a la media", focus: "el drift temporal, mean reversion, volatilidad, bonos afines y calibración de opciones", market: "caps, floors, swaptions, callables y exposición futura", desk: "mean reversion, vega por buckets, factor único y ejercicio" },
+  "rate-optionality": { title: "Caps, floors y swaptions", subtitle: "Opcionalidad de tipos desde forwards, anualidades y convenciones explícitas de volatilidad", focus: "la descomposición en caplets, la anualidad swap y las convenciones normal, lognormal y desplazada", market: "caps, floors, swaptions, collares y estructuras callables", desk: "vega por expiry/tenor, smile, anualidad y settlement" },
+  "rate-hjm": { title: "HJM y modelos de mercado", subtitle: "Dinámica de toda la curva forward bajo una restricción de drift sin arbitraje", focus: "la volatilidad forward, la restricción HJM, la medida, el numeraire y los factores", market: "caps, swaptions, CMS y estructuras dependientes de trayectoria", desk: "vega de factores, correlación, discretización y base de modelo" },
 };
 
 export function localizeAcademyLesson(lesson: AcademyLesson, locale: Locale): AcademyLesson {
   if (locale === "en") return lesson;
   const profile = spanishProfiles[lesson.id] ?? { title: localizeAcademyText(lesson.title, locale), subtitle: `Tratamiento cuantitativo profesional de ${localizeAcademyText(lesson.title, locale).toLowerCase()}`, focus: "las convenciones, los supuestos, el cálculo y su validación", market: "valoración, riesgo y análisis cuantitativo", desk: "riesgo de modelo, datos y ejecución" };
+  if (lesson.domain === "rates") {
+    return {
+      ...lesson,
+      title: profile.title,
+      subtitle: profile.subtitle,
+      interactiveLabs: lesson.interactiveLabs.map((lab) => ({
+        ...lab,
+        title: `${profile.title} · laboratorio`,
+      })),
+    };
+  }
   const objectiveVerbs = ["Definir", "Derivar", "Implementar", "Diagnosticar"];
   return {
     ...lesson,
@@ -205,11 +246,37 @@ export function localizeAcademyLesson(lesson: AcademyLesson, locale: Locale): Ac
 
 export function localizeAcademyTrack(track: AcademyTrack, locale: Locale): AcademyTrack {
   if (locale === "en") return track;
+  const ratesCopy = track.id === "rates" ? {
+    title: "Tipos y curvas",
+    subtitle: "De factores de descuento a dinámica estocástica de la estructura temporal",
+    description: "Itinerario secuencial sobre convenciones, capitalización overnight, productos, construcción de curvas, valoración multicurva, riesgo y dinámica sin arbitraje.",
+  } : undefined;
   return {
     ...track,
-    title: localizeAcademyText(track.title, locale),
-    subtitle: localizeAcademyText(track.subtitle, locale),
-    description: localizeAcademyText(track.description, locale),
-    nodes: track.nodes.map((node) => ({ ...node, title: localizeAcademyText(node.title, locale), stage: localizeAcademyText(node.stage, locale) })),
+    title: ratesCopy?.title ?? localizeAcademyText(track.title, locale),
+    subtitle: ratesCopy?.subtitle ?? localizeAcademyText(track.subtitle, locale),
+    description: ratesCopy?.description ?? localizeAcademyText(track.description, locale),
+    nodes: track.nodes.map((node) => {
+      const ratesNodes: Record<string, { title: string; stage: string }> = {
+        discount: { title: "Factores de descuento", stage: "Elementos de valor actual" },
+        "zero-forward": { title: "Tipos cero y forward", stage: "Coordenadas de curva" },
+        conventions: { title: "Convenciones y calendarios", stage: "Contratos ejecutables" },
+        ois: { title: "Capitalización OIS", stage: "Colateral y senda monetaria" },
+        "fra-futures": { title: "FRAs y futuros", stage: "Fixing forward y convexidad" },
+        swaps: { title: "Swaps de tipos de interés", stage: "Tipo par y valor de las patas" },
+        bootstrap: { title: "Bootstrap de curvas", stage: "Workbench principal de construcción" },
+        interpolation: { title: "Interpolación y arbitraje", stage: "Forma fuera de nodos" },
+        multicurve: { title: "Multicurva y base", stage: "Separación descuento/proyección" },
+        risk: { title: "Riesgo de curva y roll", stage: "DV01, carry y escenarios" },
+        "hull-white": { title: "Hull–White", stage: "Tipo corto con reversión a la media" },
+        hjm: { title: "HJM y modelos de mercado", stage: "Dinámica de curva sin arbitraje" },
+      };
+      const ratesNode = track.id === "rates" ? ratesNodes[node.id] : undefined;
+      return {
+        ...node,
+        title: ratesNode?.title ?? localizeAcademyText(node.title, locale),
+        stage: ratesNode?.stage ?? localizeAcademyText(node.stage, locale),
+      };
+    }),
   };
 }
