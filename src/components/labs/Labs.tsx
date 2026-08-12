@@ -37,7 +37,7 @@ export function Labs() {
         <h1>{t("lab.title")}</h1>
         <p>{t("lab.copy")}</p>
       </header>
-      <div className="lab-tabs section-shell" role="tablist" aria-label="Quant labs">
+      <div className="lab-tabs section-shell" role="tablist" aria-label={pick(locale, { en: "Quant labs", es: "Laboratorios quant" })}>
         {labTabs.map((lab) => <button type="button" role="tab" aria-selected={active === lab.id} className={active === lab.id ? "active" : ""} onClick={() => setActive(lab.id)} key={lab.id}><span>{lab.index}</span><strong>{lab.label}</strong><small>{lab.description}</small></button>)}
       </div>
       <section className="lab-workspace section-shell">
@@ -85,6 +85,7 @@ function VanillaOptionLab() {
 }
 
 function BlackScholesLab() {
+  const { locale } = useI18n();
   const [input, setInput] = useState(baseOption);
   const [animating, setAnimating] = useState(false);
   const animationStartRef = useRef(baseOption.time);
@@ -110,19 +111,19 @@ function BlackScholesLab() {
   const update = <K extends keyof BlackScholesInput>(key: K, value: BlackScholesInput[K]) => setInput((current) => ({ ...current, [key]: value }));
   return (
     <div className="experiment">
-      <LabHeader index="01" title="Black-Scholes Playground" copy="Move the state variables, then read price and hedge sensitivities as one connected system." note="European option · continuous rates/dividend · no transaction costs" />
+      <LabHeader index="01" title={pick(locale, { en: "Black-Scholes Playground", es: "Laboratorio Black–Scholes" })} copy={pick(locale, { en: "Move the state variables, then read price and hedge sensitivities as one connected system.", es: "Mueve las variables de estado y lee precio y sensibilidades de cobertura como un sistema conectado." })} note={pick(locale, { en: "European option · continuous rates/dividend · no transaction costs", es: "Opción europea · tipos/dividendos continuos · sin costes de transacción" })} />
       <div className="lab-grid">
         <aside className="control-panel">
-          <div className="control-heading"><span>MODEL PARAMETERS</span><button type="button" onClick={() => setInput(baseOption)}>Reset</button></div>
+          <div className="control-heading"><span>{pick(locale, { en: "MODEL PARAMETERS", es: "PARÁMETROS DEL MODELO" })}</span><button type="button" onClick={() => setInput(baseOption)}>{pick(locale, { en: "Reset", es: "Restablecer" })}</button></div>
           <div className="segmented"><button className={input.type === "call" ? "active" : ""} onClick={() => update("type", "call")}>Call</button><button className={input.type === "put" ? "active" : ""} onClick={() => update("type", "put")}>Put</button></div>
           <ParameterInput label="Spot" suffix="S" value={input.spot} min={40} max={180} step={1} onChange={(value) => update("spot", value)} />
           <ParameterInput label="Strike" suffix="K" value={input.strike} min={40} max={180} step={1} onChange={(value) => update("strike", value)} />
-          <ParameterInput label="Time" suffix="years" value={input.time} min={0.003} max={5} step={0.01} onChange={(value) => update("time", value)} />
-          <ParameterInput label="Risk-free rate" suffix="decimal" value={input.rate} min={-0.02} max={0.15} step={0.001} onChange={(value) => update("rate", value)} />
-          <ParameterInput label="Dividend yield" suffix="decimal" value={input.dividend} min={0} max={0.12} step={0.001} onChange={(value) => update("dividend", value)} />
-          <ParameterInput label="Volatility" suffix="decimal" value={input.volatility} min={0.001} max={0.8} step={0.005} onChange={(value) => update("volatility", value)} />
-          <div className="presets"><span>PRESETS</span><button onClick={() => setInput({ ...baseOption, spot: 120 })}>ITM</button><button onClick={() => setInput(baseOption)}>ATM</button><button onClick={() => setInput({ ...baseOption, spot: 80 })}>OTM</button></div>
-          <button className="animate-button" type="button" onClick={() => { if (!animating) { const startTime = input.time < 0.05 ? 1 : input.time; animationStartRef.current = startTime; setInput((current) => ({ ...current, time: startTime })); } setAnimating((value) => !value); }}>{animating ? "Pause expiry animation" : "Animate time → expiry"}</button>
+          <ParameterInput label={pick(locale, { en: "Time", es: "Tiempo" })} suffix={pick(locale, { en: "years", es: "años" })} value={input.time} min={0.003} max={5} step={0.01} onChange={(value) => update("time", value)} />
+          <ParameterInput label={pick(locale, { en: "Risk-free rate", es: "Tipo libre de riesgo" })} suffix="decimal" value={input.rate} min={-0.02} max={0.15} step={0.001} onChange={(value) => update("rate", value)} />
+          <ParameterInput label={pick(locale, { en: "Dividend yield", es: "Rentabilidad por dividendo" })} suffix="decimal" value={input.dividend} min={0} max={0.12} step={0.001} onChange={(value) => update("dividend", value)} />
+          <ParameterInput label={pick(locale, { en: "Volatility", es: "Volatilidad" })} suffix="decimal" value={input.volatility} min={0.001} max={0.8} step={0.005} onChange={(value) => update("volatility", value)} />
+          <div className="presets"><span>{pick(locale, { en: "PRESETS", es: "ESCENARIOS" })}</span><button onClick={() => setInput({ ...baseOption, spot: 120 })}>ITM</button><button onClick={() => setInput(baseOption)}>ATM</button><button onClick={() => setInput({ ...baseOption, spot: 80 })}>OTM</button></div>
+          <button className="animate-button" type="button" onClick={() => { if (!animating) { const startTime = input.time < 0.05 ? 1 : input.time; animationStartRef.current = startTime; setInput((current) => ({ ...current, time: startTime })); } setAnimating((value) => !value); }}>{animating ? pick(locale, { en: "Pause expiry animation", es: "Pausar animación al vencimiento" }) : pick(locale, { en: "Animate time → expiry", es: "Animar tiempo → vencimiento" })}</button>
         </aside>
         <div className="output-panel">
           <div className="metric-grid"><Metric label="Price" value={analytics.price} primary /><Metric label="Delta" value={analytics.delta} /><Metric label="Gamma" value={analytics.gamma} /><Metric label="Vega / 1 vol pt" value={analytics.vega} /><Metric label="Theta / day" value={analytics.theta} /><Metric label="Rho / 100bp" value={analytics.rho} /></div>
@@ -241,6 +242,7 @@ const curveSeed: CurveNode[] = [
 ];
 
 function YieldCurveLab() {
+  const { locale } = useI18n();
   const [nodes, setNodes] = useState(curveSeed);
   const curve = useMemo(() => bootstrapCurve(nodes), [nodes]);
   const setQuote = useCallback((index: number, quote: number) => setNodes((current) => current.map((node, nodeIndex) => nodeIndex === index ? { ...node, quote: Math.max(-0.02, Math.min(0.12, quote)) } : node)), []);
@@ -251,18 +253,18 @@ function YieldCurveLab() {
   }));
   return (
     <div className="experiment">
-      <LabHeader index="04" title="Yield Curve Explorer" copy="Move one node or reshape the entire term structure. Watch discounting and forwards inherit the decision." note="Simplified educational zero-quote bootstrap · continuously compounded" />
-      <div className="curve-actions"><button onClick={() => setNodes(curveSeed)}>Reset curve</button><button onClick={() => transform("shift")}>Parallel +25bp</button><button onClick={() => transform("steepen")}>Steepen</button><button onClick={() => transform("flatten")}>Flatten</button><button onClick={() => transform("bump")}>Every node +1bp</button></div>
+      <LabHeader index="04" title={pick(locale, { en: "Yield Curve Explorer", es: "Explorador de curva de tipos" })} copy={pick(locale, { en: "Move one node or reshape the entire term structure. Watch discounting and forwards inherit the decision.", es: "Mueve un nodo o transforma toda la estructura temporal. Observa cómo descuento y forwards heredan la decisión." })} note={pick(locale, { en: "Simplified educational zero-quote bootstrap · continuously compounded", es: "Bootstrap educativo simplificado de tipos cero · capitalización continua" })} />
+      <div className="curve-actions"><button onClick={() => setNodes(curveSeed)}>{pick(locale, { en: "Reset curve", es: "Restablecer curva" })}</button><button onClick={() => transform("shift")}>{pick(locale, { en: "Parallel +25bp", es: "Paralela +25pb" })}</button><button onClick={() => transform("steepen")}>{pick(locale, { en: "Steepen", es: "Aumentar pendiente" })}</button><button onClick={() => transform("flatten")}>{pick(locale, { en: "Flatten", es: "Aplanar" })}</button><button onClick={() => transform("bump")}>{pick(locale, { en: "Every node +1bp", es: "Cada nodo +1pb" })}</button></div>
       <div className="curve-workspace">
-        <div className="chart-card curve-chart-card"><div className="chart-title"><div><span>INTERACTIVE ZERO CURVE</span><strong>Drag a node vertically to reprice the structure</strong></div><span className="demo-chip">DEMO QUOTES</span></div><CurveCanvas nodes={nodes} onChange={setQuote} /><div className="curve-series"><span><i /> Zero rate</span><span><i /> Forward rate</span><span><i /> Discount factor</span></div></div>
-        <div className="bootstrap-flow" aria-label="Bootstrap flow"><span>Market instruments</span><b>↓</b><span>Bootstrap</span><b>↓</b><span>Discount factors</span><b>↓</b><span>Zero curve</span><b>↓</b><span>Forward curve</span></div>
+        <div className="chart-card curve-chart-card"><div className="chart-title"><div><span>{pick(locale, { en: "INTERACTIVE ZERO CURVE", es: "CURVA CERO INTERACTIVA" })}</span><strong>{pick(locale, { en: "Drag a node vertically to reprice the structure", es: "Arrastra un nodo verticalmente para revalorar la estructura" })}</strong></div><span className="demo-chip">{pick(locale, { en: "DEMO QUOTES", es: "COTIZACIONES DEMO" })}</span></div><CurveCanvas nodes={nodes} onChange={setQuote} locale={locale} /><div className="curve-series"><span><i /> {pick(locale, { en: "Zero rate", es: "Tipo cero" })}</span><span><i /> {pick(locale, { en: "Forward rate", es: "Tipo forward" })}</span><span><i /> {pick(locale, { en: "Discount factor", es: "Factor de descuento" })}</span></div></div>
+        <div className="bootstrap-flow" aria-label={pick(locale, { en: "Bootstrap flow", es: "Flujo de bootstrap" })}><span>{pick(locale, { en: "Market instruments", es: "Instrumentos de mercado" })}</span><b>↓</b><span>Bootstrap</span><b>↓</b><span>{pick(locale, { en: "Discount factors", es: "Factores de descuento" })}</span><b>↓</b><span>{pick(locale, { en: "Zero curve", es: "Curva cero" })}</span><b>↓</b><span>{pick(locale, { en: "Forward curve", es: "Curva forward" })}</span></div>
       </div>
-      <div className="curve-table-wrap"><table className="curve-table"><thead><tr><th>Tenor</th><th>Market quote</th><th>Zero rate</th><th>Discount factor</th><th>Forward rate</th><th>Node control</th></tr></thead><tbody>{curve.map((node, index) => <tr key={node.tenor}><td><strong>{node.tenor}</strong></td><td>{(node.quote * 100).toFixed(3)}%</td><td>{(node.zero * 100).toFixed(3)}%</td><td>{node.discount.toFixed(6)}</td><td className={node.forward >= 0 ? "positive" : "negative"}>{(node.forward * 100).toFixed(3)}%</td><td><input aria-label={`${node.tenor} quote`} type="range" min="-0.01" max="0.09" step="0.0001" value={node.quote} onChange={(event) => setQuote(index, Number(event.target.value))} /></td></tr>)}</tbody></table></div>
+      <div className="curve-table-wrap"><table className="curve-table"><thead><tr><th>Tenor</th><th>{pick(locale, { en: "Market quote", es: "Cotización" })}</th><th>{pick(locale, { en: "Zero rate", es: "Tipo cero" })}</th><th>{pick(locale, { en: "Discount factor", es: "Factor de descuento" })}</th><th>{pick(locale, { en: "Forward rate", es: "Tipo forward" })}</th><th>{pick(locale, { en: "Node control", es: "Control del nodo" })}</th></tr></thead><tbody>{curve.map((node, index) => <tr key={node.tenor}><td><strong>{node.tenor}</strong></td><td>{(node.quote * 100).toFixed(3)}%</td><td>{(node.zero * 100).toFixed(3)}%</td><td>{node.discount.toFixed(6)}</td><td className={node.forward >= 0 ? "positive" : "negative"}>{(node.forward * 100).toFixed(3)}%</td><td><input aria-label={`${node.tenor} ${pick(locale, { en: "quote", es: "cotización" })}`} type="range" min="-0.01" max="0.09" step="0.0001" value={node.quote} onChange={(event) => setQuote(index, Number(event.target.value))} /></td></tr>)}</tbody></table></div>
     </div>
   );
 }
 
-function CurveCanvas({ nodes, onChange }: { nodes: CurveNode[]; onChange: (index: number, quote: number) => void }) {
+function CurveCanvas({ nodes, onChange, locale }: { nodes: CurveNode[]; onChange: (index: number, quote: number) => void; locale: "en" | "es" }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragRef = useRef<number | null>(null);
   useEffect(() => {
@@ -290,9 +292,10 @@ function CurveCanvas({ nodes, onChange }: { nodes: CurveNode[]; onChange: (index
     canvas.addEventListener("pointerdown", pointerDown); canvas.addEventListener("pointermove", pointerMove); canvas.addEventListener("pointerup", pointerUp); canvas.addEventListener("pointerleave", pointerUp);
     return () => { canvas.removeEventListener("pointerdown", pointerDown); canvas.removeEventListener("pointermove", pointerMove); canvas.removeEventListener("pointerup", pointerUp); canvas.removeEventListener("pointerleave", pointerUp); };
   }, [nodes, onChange]);
-  return <canvas ref={canvasRef} className="curve-canvas" aria-label="Interactive zero and forward curve. Drag rate nodes vertically." />;
+  return <canvas ref={canvasRef} className="curve-canvas" aria-label={pick(locale, { en: "Interactive zero and forward curve. Drag rate nodes vertically.", es: "Curvas cero y forward interactivas. Arrastra verticalmente los nodos de tipos." })} />;
 }
 
 function LabHeader({ index, title, copy, note }: { index: string; title: string; copy: string; note: string }) {
-  return <header className="experiment-header"><div><span className="eyebrow">EXPERIMENT {index}</span><h2>{title}</h2><p>{copy}</p></div><span className="assumption-note">{note}</span></header>;
+  const { locale } = useI18n();
+  return <header className="experiment-header"><div><span className="eyebrow">{pick(locale, { en: "EXPERIMENT", es: "EXPERIMENTO" })} {index}</span><h2>{title}</h2><p>{copy}</p></div><span className="assumption-note">{note}</span></header>;
 }

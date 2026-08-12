@@ -1,0 +1,23 @@
+# Deployment security checklist
+
+- [x] No real secrets tracked in the current tree
+- [x] Reachable Git history scanned for secret-bearing filenames and credential patterns
+- [x] `.env*` and private key/certificate formats ignored
+- [x] `.env.example` contains safe placeholders only
+- [x] Client environment usage reviewed; confidential API keys remain server-side
+- [x] Public directory reviewed
+- [x] API inputs and collection sizes bounded
+- [x] Assistant POST body, origin and request rate bounded
+- [x] Production CORS reviewed
+- [x] Security headers and CSP reviewed
+- [x] Authentication/session surface reviewed; no app-owned user session exists
+- [x] Debug routes disabled or constrained in production
+- [x] HTTPS and HSTS enabled on production responses
+- [ ] Enable GitHub secret scanning and push protection where available
+- [ ] Add Cloudflare edge rate limiting before enabling paid AI or licensed data
+- [ ] Store any future production credential as an encrypted server-side secret
+- [x] npm production audit and Python dependency audit completed; zero known production/Python vulnerabilities
+- [x] Development/build-only npm advisories documented with exposure and mitigation
+- [x] Typecheck, lint, 58 automated checks and production build passed
+- [x] EN/ES responsive browser QA passed at 375px, 768px, 1280px and 1440px without page overflow
+- [ ] Verify `https://thequantbateman.com` and `https://www.thequantbateman.com` certificates, redirects and headers

@@ -5,6 +5,7 @@ import type { QuantBatemanRendererProps } from "./quantBateman.types";
 import { QuantBatemanImageRenderer } from "./renderers/QuantBatemanImageRenderer";
 import { QUANT_BATEMAN_RIVE_AVAILABLE, QuantBatemanRiveRenderer } from "./renderers/QuantBatemanRiveRenderer";
 import { useQuantBateman } from "./useQuantBateman";
+import { pick, useI18n } from "@/src/i18n";
 
 interface QuantBatemanCharacterProps extends QuantBatemanRendererProps {
   onPointerDown: (event: PointerEvent<HTMLButtonElement>) => void;
@@ -16,6 +17,7 @@ interface QuantBatemanCharacterProps extends QuantBatemanRendererProps {
 
 export function QuantBatemanCharacter({ onHoverChange, ...props }: QuantBatemanCharacterProps) {
   const qb = useQuantBateman();
+  const { locale } = useI18n();
   const Renderer = qb.renderer === "rive" && QUANT_BATEMAN_RIVE_AVAILABLE ? QuantBatemanRiveRenderer : QuantBatemanImageRenderer;
   const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (event.key !== "Enter" && event.key !== " ") return;
@@ -31,9 +33,9 @@ export function QuantBatemanCharacter({ onHoverChange, ...props }: QuantBatemanC
     <button
       className="qb-character-hitbox"
       type="button"
-      aria-label="Quant Bateman assistant. Click to open, drag to move."
+      aria-label={pick(locale, { en: "Quant Bateman assistant. Click to open, drag to move.", es: "Asistente Quant Bateman. Pulsa para abrir y arrastra para mover." })}
       aria-expanded={qb.isOpen}
-      title="Click to ask · drag to move · double-click for a card"
+      title={pick(locale, { en: "Click to ask · drag to move · double-click for a card", es: "Pulsa para preguntar · arrastra para mover · doble clic para la tarjeta" })}
       onPointerDown={props.onPointerDown}
       onPointerMove={props.onPointerMove}
       onPointerUp={props.onPointerUp}

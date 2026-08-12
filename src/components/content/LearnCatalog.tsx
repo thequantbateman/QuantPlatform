@@ -15,10 +15,10 @@ export function LearnCatalog({ initialAsset, showHero = true }: { initialAsset?:
   const [asset, setAsset] = useState<AssetClass | "All">(validInitial);
   const [level, setLevel] = useState<Difficulty | "all">("all");
   const [query, setQuery] = useState("");
-  const entries = useMemo(() => contentCatalog.filter((entry) => {
-    const search = `${entry.title} ${entry.description} ${entry.tags.join(" ")}`.toLowerCase();
-    return (asset === "All" || entry.assetClass === asset) && (level === "all" || entry.difficulty === level) && search.includes(query.trim().toLowerCase());
-  }).map((entry) => localizeEntry(entry, locale)), [asset, level, locale, query]);
+  const entries = useMemo(() => contentCatalog.map((source) => ({ source, localized: localizeEntry(source, locale) })).filter(({ source, localized }) => {
+    const search = `${source.title} ${source.description} ${source.tags.join(" ")} ${localized.title} ${localized.description} ${localized.tags.join(" ")}`.toLowerCase();
+    return (asset === "All" || source.assetClass === asset) && (level === "all" || source.difficulty === level) && search.includes(query.trim().toLowerCase());
+  }).map(({ localized }) => localized), [asset, level, locale, query]);
   return (
     <>
       {showHero && <header className="page-hero section-shell">
@@ -28,9 +28,9 @@ export function LearnCatalog({ initialAsset, showHero = true }: { initialAsset?:
       </header>}
       <section className="catalog section-shell">
         <div className="catalog-filters">
-          <label className="catalog-search"><span className="control-label">SEARCH ACADEMY</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Volatility, calibration, curves…" /></label>
+          <label className="catalog-search"><span className="control-label">{locale === "es" ? "BUSCAR EN ACADEMY" : "SEARCH ACADEMY"}</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={locale === "es" ? "Volatilidad, calibración, curvas…" : "Volatility, calibration, curves…"} /></label>
           <div><span className="control-label">{t("common.asset")}</span><div className="filter-row">{assets.map((item) => <button key={item} className={asset === item ? "active" : ""} onClick={() => setAsset(item)}>{item === "All" ? t("common.all") : item}</button>)}</div></div>
-          <label><span className="control-label">{t("common.level")}</span><select value={level} onChange={(event) => setLevel(event.target.value as Difficulty | "all")} aria-label="Filter by learning level">{levels.map((item) => <option value={item} key={item}>{item === "all" ? t("learn.levels") : item}</option>)}</select></label>
+          <label><span className="control-label">{t("common.level")}</span><select value={level} onChange={(event) => setLevel(event.target.value as Difficulty | "all")} aria-label={locale === "es" ? "Filtrar por nivel de aprendizaje" : "Filter by learning level"}>{levels.map((item) => <option value={item} key={item}>{item === "all" ? t("learn.levels") : locale === "es" ? ({ foundation: "fundamentos", practitioner: "profesional", "front-office": "front office", research: "investigación" } as Record<string, string>)[item] : item}</option>)}</select></label>
         </div>
         <div className="catalog-stats"><strong>{entries.length.toString().padStart(2, "0")}</strong><span>{t("learn.entries")}</span><i /><p><kbd>⌘K</kbd> {t("learn.tip")}</p></div>
         <div className="concept-grid">

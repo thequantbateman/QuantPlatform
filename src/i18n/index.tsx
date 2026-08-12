@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
 
 export type Locale = "en" | "es";
 
@@ -23,18 +23,47 @@ const dictionaries = {
   },
 } as const;
 
-type DictionaryKey = keyof typeof dictionaries.en;
-type I18nValue = { locale: Locale; setLocale: (locale: Locale) => void; t: (key: DictionaryKey) => string };
+export type DictionaryKey = keyof typeof dictionaries.en;
+type I18nValue = {
+  locale: Locale;
+  setLocale: (locale: Locale) => void;
+  t: (key: DictionaryKey) => string;
+  formatNumber: (value: number, options?: Intl.NumberFormatOptions) => string;
+  formatDate: (value: Date | number | string, options?: Intl.DateTimeFormatOptions) => string;
+};
 const I18nContext = createContext<I18nValue | null>(null);
 
-export function I18nProvider({ children }: { children: ReactNode }) {
+const localeCookie = "tqb-locale";
+
+export function I18nProvider({ children, initialLocale = "en" }: { children: ReactNode; initialLocale?: Locale }) {
   const locale = useSyncExternalStore<Locale>(
     (onChange) => { window.addEventListener("tqb-locale", onChange); return () => window.removeEventListener("tqb-locale", onChange); },
-    () => localStorage.getItem("tqb-locale") === "es" ? "es" : "en",
-    () => "en",
+    () => localStorage.getItem(localeCookie) === "es" ? "es" : localStorage.getItem(localeCookie) === "en" ? "en" : initialLocale,
+    () => initialLocale,
   );
-  const setLocale = useCallback((next: Locale) => { localStorage.setItem("tqb-locale", next); document.documentElement.lang = next; window.dispatchEvent(new Event("tqb-locale")); }, []);
-  const value = useMemo(() => ({ locale, setLocale, t: (key: DictionaryKey) => dictionaries[locale][key] }), [locale, setLocale]);
+  useEffect(() => {
+    document.documentElement.lang = locale;
+    document.cookie = `${localeCookie}=${locale}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;
+  }, [locale]);
+  useEffect(() => {
+    if (localStorage.getItem(localeCookie)) return;
+    const browserLocale: Locale = navigator.language.toLowerCase().startsWith("es") ? "es" : initialLocale;
+    localStorage.setItem(localeCookie, browserLocale);
+    window.dispatchEvent(new Event("tqb-locale"));
+  }, [initialLocale]);
+  const setLocale = useCallback((next: Locale) => {
+    localStorage.setItem(localeCookie, next);
+    document.cookie = `${localeCookie}=${next}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;
+    document.documentElement.lang = next;
+    window.dispatchEvent(new Event("tqb-locale"));
+  }, []);
+  const value = useMemo(() => ({
+    locale,
+    setLocale,
+    t: (key: DictionaryKey) => dictionaries[locale][key],
+    formatNumber: (number: number, options?: Intl.NumberFormatOptions) => new Intl.NumberFormat(locale === "es" ? "es-ES" : "en-US", options).format(number),
+    formatDate: (date: Date | number | string, options?: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(locale === "es" ? "es-ES" : "en-US", options).format(typeof date === "string" ? new Date(date) : date),
+  }), [locale, setLocale]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readJsonBody, RequestBodyError, withSecurityHeaders } from "../src/server/http";
+import { enforceSameOrigin, readJsonBody, RequestBodyError, withSecurityHeaders } from "../src/server/http";
 import { reportServerError } from "../src/server/observability";
 
 test("readJsonBody accepts bounded JSON requests", async () => {
@@ -34,6 +34,13 @@ test("withSecurityHeaders preserves the response and protects HTTPS requests", a
   assert.equal(secured.headers.get("x-content-type-options"), "nosniff");
   assert.equal(secured.headers.get("x-frame-options"), "SAMEORIGIN");
   assert.match(secured.headers.get("strict-transport-security") ?? "", /max-age=31536000/);
+  assert.match(secured.headers.get("content-security-policy") ?? "", /default-src 'self'/);
+});
+
+test("enforceSameOrigin blocks cross-site production writes", () => {
+  const rejected = enforceSameOrigin(new Request("https://thequantbateman.com/api/assistant", { method: "POST", headers: { origin: "https://attacker.example" } }));
+  assert.equal(rejected?.status, 403);
+  assert.equal(enforceSameOrigin(new Request("https://thequantbateman.com/api/assistant", { method: "POST", headers: { origin: "https://thequantbateman.com" } })), null);
 });
 
 test("reportServerError redacts credential-shaped values", () => {

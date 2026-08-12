@@ -4,33 +4,21 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { assetPath, contentCatalog } from "@/src/content/catalog";
+import { localizeEntry } from "@/src/content/localization";
 import { QuantBatemanAssistant } from "@/src/components/quant-bateman/QuantBatemanAssistant";
 import { QuantBatemanImageRenderer } from "@/src/components/quant-bateman/renderers/QuantBatemanImageRenderer";
 import { QuantBatemanProvider } from "@/src/components/quant-bateman/QuantBatemanProvider";
 import { useQuantBateman } from "@/src/components/quant-bateman/useQuantBateman";
 import { demoMarketQuotes, marketDetailPath } from "@/src/data/markets";
-import { I18nProvider, useI18n } from "@/src/i18n";
+import { useI18n } from "@/src/i18n";
 
 const navigation = [
   ["nav.learn", "/learn"], ["nav.markets", "/markets"], ["nav.analytics", "/analytics"],
   ["nav.intelligence", "/intelligence"], ["nav.research", "/research"], ["nav.ask", "/ask"],
 ] as const;
 
-const platformSearchItems = [
-  ...contentCatalog.map((entry) => ({ title: entry.title, description: entry.description, meta: `${entry.assetClass} · ${entry.difficulty}`, href: `/learn/${assetPath(entry.assetClass)}/${entry.slug}`, keywords: [entry.title, entry.description, entry.assetClass, entry.type, entry.difficulty, ...entry.tags].join(" ") })),
-  ...demoMarketQuotes.map((quote) => ({ title: quote.displaySymbol, description: quote.name, meta: `${quote.assetClass} · ${quote.status}`, href: marketDetailPath(quote.symbol), keywords: `${quote.symbol} ${quote.name} ${quote.assetClass} market quote` })),
-  { title: "European option pricer", description: "BSM, Garman–Kohlhagen and Black-76", meta: "ANALYTICS · LAB", href: "/lab?lab=vanilla", keywords: "price option bsm black scholes garman kohlhagen black 76 analytics lab" },
-  { title: "Greeks dashboard", description: "Delta, Gamma, Vega, Theta and Rho", meta: "ANALYTICS · LAB", href: "/lab?lab=greeks", keywords: "greeks delta gamma vega theta rho analytics lab" },
-  { title: "Prediction workstation", description: "Live events, L2 books, trades and public analytics", meta: "MARKETS · LIVE PUBLIC", href: "/markets/predictions", keywords: "polymarket predictions probability events order book trades screener" },
-  { title: "Prediction Data Explorer", description: "Persisted quotes, history, coverage and normalized schema", meta: "INTELLIGENCE · DATA", href: "/intelligence/data", keywords: "polymarket prediction data explorer database history quotes coverage d1" },
-  { title: "Cross-asset Event Study", description: "Curated prediction-versus-market comparisons", meta: "INTELLIGENCE · EVENT STUDY", href: "/intelligence/event-study", keywords: "polymarket prediction event study cross asset correlation probability" },
-  { title: "Prediction pipeline health", description: "Provider latency, stream topology and database lag", meta: "DEVELOPER · HEALTH", href: "/dev/data", keywords: "polymarket prediction pipeline websocket database health lag coverage" },
-  { title: "Market intelligence", description: "Returns, realized volatility, z-scores and range", meta: "INTELLIGENCE", href: "/intelligence", keywords: "market intelligence return realized volatility z score range analytics" },
-  { title: "Quant research", description: "Frontier models and implementation notes", meta: "RESEARCH", href: "/research", keywords: "research rough volatility differentiable pricing monte carlo" },
-];
-
 export function AppShell({ children }: { children: ReactNode }) {
-  return <I18nProvider><QuantBatemanProvider><Shell>{children}</Shell></QuantBatemanProvider></I18nProvider>;
+  return <QuantBatemanProvider><Shell>{children}</Shell></QuantBatemanProvider>;
 }
 
 function Shell({ children }: { children: ReactNode }) {
@@ -51,11 +39,21 @@ function Shell({ children }: { children: ReactNode }) {
   }, []);
   useEffect(() => { const id = window.setTimeout(() => setDark(document.documentElement.dataset.theme !== "light"), 0); return () => window.clearTimeout(id); }, []);
 
+  const platformSearchItems = useMemo(() => [
+    ...contentCatalog.map((source) => { const entry = localizeEntry(source, locale); return { title: entry.title, description: entry.description, meta: `${entry.assetClass} · ${entry.difficulty}`, href: `/learn/${assetPath(entry.assetClass)}/${entry.slug}`, keywords: [source.title, entry.title, source.description, entry.description, entry.assetClass, entry.type, entry.difficulty, ...entry.tags].join(" ") }; }),
+    ...demoMarketQuotes.map((quote) => ({ title: quote.displaySymbol, description: quote.name, meta: `${quote.assetClass} · ${quote.status}`, href: marketDetailPath(quote.symbol), keywords: `${quote.symbol} ${quote.name} ${quote.assetClass} market quote cotización mercado` })),
+    { title: locale === "es" ? "Valorador de opciones europeas" : "European option pricer", description: "BSM, Garman–Kohlhagen and Black-76", meta: "ANALYTICS · LAB", href: "/lab?lab=vanilla", keywords: "price option precio opción bsm black scholes garman kohlhagen black 76 analytics lab" },
+    { title: locale === "es" ? "Panel de griegas" : "Greeks dashboard", description: "Delta, Gamma, Vega, Theta and Rho", meta: "ANALYTICS · LAB", href: "/lab?lab=greeks", keywords: "greeks griegas delta gamma vega theta rho analytics lab" },
+    { title: locale === "es" ? "Estación de mercados de predicción" : "Prediction workstation", description: locale === "es" ? "Eventos en vivo, libros L2, operaciones y analítica pública" : "Live events, L2 books, trades and public analytics", meta: "MARKETS · LIVE PUBLIC", href: "/markets/predictions", keywords: "polymarket predictions predicción probability events order book trades screener" },
+    { title: locale === "es" ? "Inteligencia de mercado" : "Market intelligence", description: locale === "es" ? "Retornos, volatilidad realizada, z-scores y rangos" : "Returns, realized volatility, z-scores and range", meta: "INTELLIGENCE", href: "/intelligence", keywords: "market mercado intelligence inteligencia return realized volatility z score range analytics" },
+    { title: locale === "es" ? "Investigación cuantitativa" : "Quant research", description: locale === "es" ? "Modelos de frontera y notas de implementación" : "Frontier models and implementation notes", meta: "RESEARCH", href: "/research", keywords: "research investigación rough volatility differentiable pricing monte carlo" },
+  ], [locale]);
+
   const results = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) return platformSearchItems.slice(0, 8);
     return platformSearchItems.filter((entry) => entry.keywords.toLowerCase().includes(term)).slice(0, 10);
-  }, [query]);
+  }, [platformSearchItems, query]);
 
   const activeRoot = pathname === "/" ? "/" : `/${pathname.split("/").filter(Boolean)[0] ?? ""}`;
   const crumbs = pathname.split("/").filter(Boolean).slice(0, 3);
@@ -66,19 +64,19 @@ function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="site-shell">
       <header className="topbar">
-        <a href="/" className="wordmark" aria-label="TheQuantBateman home"><span className={`wordmark-mark${pathname === "/ask" ? " ask-character-mark" : ""}`}>{pathname === "/ask" ? <QuantBatemanImageRenderer state={quantBateman.state} dragging={false} hovered={false} talking={false} pose="default" outfit="default" /> : "TQB"}</span><span>THEQUANTBATEMAN</span></a>
-        <nav className={menuOpen ? "primary-nav is-open" : "primary-nav"} aria-label="Primary navigation">
+        <a href="/" className="wordmark" aria-label={locale === "es" ? "Inicio de TheQuantBateman" : "TheQuantBateman home"}><span className={`wordmark-mark${pathname === "/ask" ? " ask-character-mark" : ""}`}>{pathname === "/ask" ? <QuantBatemanImageRenderer state={quantBateman.state} dragging={false} hovered={false} talking={false} pose="default" outfit="default" /> : "TQB"}</span><span>THEQUANTBATEMAN</span></a>
+        <nav className={menuOpen ? "primary-nav is-open" : "primary-nav"} aria-label={locale === "es" ? "Navegación principal" : "Primary navigation"}>
           {navigation.map(([key, href]) => <a className={activeRoot === href ? "active" : ""} aria-current={activeRoot === href ? "page" : undefined} key={href} href={href} onClick={() => setMenuOpen(false)}>{t(key)}</a>)}
         </nav>
         <div className="nav-actions">
           <button className="search-trigger" type="button" onClick={() => setPaletteOpen(true)} aria-label={t("shell.search")}><span>{t("shell.search")}</span><kbd>⌘K</kbd></button>
-          <div className="locale-switch" aria-label="Language"><button className={locale === "en" ? "active" : ""} onClick={() => setLocale("en")}>EN</button><button className={locale === "es" ? "active" : ""} onClick={() => setLocale("es")}>ES</button></div>
+          <div className="locale-switch" aria-label={locale === "es" ? "Idioma" : "Language"}><button aria-label="English" className={locale === "en" ? "active" : ""} onClick={() => setLocale("en")}>EN</button><button aria-label="Español" className={locale === "es" ? "active" : ""} onClick={() => setLocale("es")}>ES</button></div>
           <button className="icon-button" type="button" onClick={toggleTheme} aria-label={dark ? t("shell.light") : t("shell.dark")}>◐</button>
-          <button className="menu-button" type="button" onClick={() => setMenuOpen((value) => !value)} aria-expanded={menuOpen} aria-label="Toggle navigation">{t("shell.menu")}</button>
+          <button className="menu-button" type="button" onClick={() => setMenuOpen((value) => !value)} aria-expanded={menuOpen} aria-label={locale === "es" ? "Alternar navegación" : "Toggle navigation"}>{t("shell.menu")}</button>
         </div>
       </header>
 
-      {pathname !== "/" && <div className="context-nav"><a href="/">TQB</a>{crumbs.map((crumb, index) => <span key={crumb}>/ <a href={`/${crumbs.slice(0, index + 1).join("/")}`}>{crumb.replaceAll("-", " ")}</a></span>)}<i /><b>{locale.toUpperCase()} · {dark ? "DARK" : "LIGHT"}</b></div>}
+      {pathname !== "/" && <div className="context-nav"><a href="/">TQB</a>{crumbs.map((crumb, index) => <span key={crumb}>/ <a href={`/${crumbs.slice(0, index + 1).join("/")}`}>{({ learn: locale === "es" ? "aprender" : "learn", markets: locale === "es" ? "mercados" : "markets", analytics: locale === "es" ? "analítica" : "analytics", intelligence: locale === "es" ? "inteligencia" : "intelligence", research: locale === "es" ? "investigación" : "research", ask: locale === "es" ? "preguntar" : "ask", volatility: locale === "es" ? "volatilidad" : "volatility" } as Record<string, string>)[crumb] ?? crumb.replaceAll("-", " ")}</a></span>)}<i /><b>{locale.toUpperCase()} · {dark ? (locale === "es" ? "OSCURO" : "DARK") : (locale === "es" ? "CLARO" : "LIGHT")}</b></div>}
       <main>{children}</main>
 
       <QuantBatemanAssistant />

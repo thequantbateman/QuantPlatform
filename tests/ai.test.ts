@@ -20,3 +20,10 @@ test("analytics requests with incomplete inputs do not invent a price", async ()
   assert.match(evidence.answer, /requires explicit model/i);
   assert.doesNotMatch(evidence.answer, /\$\d|price is \d/i);
 });
+
+test("Spanish assistant evidence stays source-grounded and localized", async () => {
+  const evidence = await resolveEvidence("calcular delta", false, "es");
+  assert.equal(evidence.tool, "analytics");
+  assert.match(evidence.answer, /requiere modelo/i);
+  assert.doesNotMatch(evidence.answer, /A numerical answer/);
+});

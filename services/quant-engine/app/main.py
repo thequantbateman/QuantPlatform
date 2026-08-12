@@ -10,6 +10,9 @@ from app.schemas.pricing import ImpliedVolRequest, PricingRequest, ScenarioReque
 DEFAULT_ALLOWED_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000"
 allowed_origins = [origin.strip() for origin in os.getenv("QUANT_ENGINE_ALLOWED_ORIGINS", DEFAULT_ALLOWED_ORIGINS).split(",") if origin.strip()]
 
+if "*" in allowed_origins:
+    raise RuntimeError("QUANT_ENGINE_ALLOWED_ORIGINS must list explicit origins")
+
 app = FastAPI(title="TheQuantBateman Quant Engine", version="0.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=allowed_origins, allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
 

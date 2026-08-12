@@ -19,6 +19,7 @@
     "test:python": "PYTHONPATH=services/quant-engine services/quant-engine/.venv/bin/python -m unittest discover -s services/quant-engine/tests -v",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+    "i18n:audit": "node scripts/i18n-audit.mjs",
     "db:generate": "drizzle-kit generate",
     "cloudflare:preflight": "node scripts/cloudflare-preflight.mjs",
     "deploy:cloudflare": "npm run cloudflare:preflight && npm run build:cloudflare && wrangler deploy",

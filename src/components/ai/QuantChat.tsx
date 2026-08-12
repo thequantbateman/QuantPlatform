@@ -153,43 +153,43 @@ export function QuantChat() {
     <div className="ask-workspace section-shell">
       <header className="ask-header">
         <div className="ask-heading">
-          <span className="eyebrow">ASK QUANT BATEMAN · SOURCE AWARE</span>
+          <span className="eyebrow">{pick(locale, { en: "ASK QUANT BATEMAN · SOURCE AWARE", es: "ASK QUANT BATEMAN · CON FUENTES" })}</span>
           <h1>{pick(locale, { en: "Ask the desk.", es: "Pregunta a la mesa." })}</h1>
           <p>{pick(locale, { en: "Markets, models and risk—grounded in displayed data, reviewed concepts and deterministic tools.", es: "Mercados, modelos y riesgo, basados en datos mostrados, conceptos revisados y herramientas deterministas." })}</p>
         </div>
         <div className="ask-agent-status" aria-live="polite">
           <AskBatemanAvatar state={qb.state} variant="status" />
-          <div><span>{quantBatemanStateLabels[qb.state]}</span><strong>{qb.message || "Ready for a precise question."}</strong><small>TOOLS → SOURCES → EXPLANATION</small></div>
+          <div><span>{quantBatemanStateLabels[qb.state]}</span><strong>{qb.message || pick(locale, { en: "Ready for a precise question.", es: "Listo para una pregunta precisa." })}</strong><small>{pick(locale, { en: "TOOLS → SOURCES → EXPLANATION", es: "HERRAMIENTAS → FUENTES → EXPLICACIÓN" })}</small></div>
         </div>
       </header>
 
-      <section className="ask-conversation" aria-label="Conversation with Quant Bateman">
+      <section className="ask-conversation" aria-label={pick(locale, { en: "Conversation with Quant Bateman", es: "Conversación con Quant Bateman" })}>
         {!messages.length && !busy ? <div className="ask-empty">
-          <div className="ask-empty-intro"><AskBatemanAvatar state={qb.state} variant="empty" /><div><span>QUANT BATEMAN · READY</span><h2>Start with a precise question.</h2><p>Numerical work is routed to product tools, with assumptions and source lineage kept visible.</p></div></div>
-          <div className="ask-prompt-grid">{promptGroups.map((item) => <button type="button" key={item.category} onPointerEnter={() => previewPrompt(item.state, item.category)} onPointerLeave={() => !busy && qb.setState("idle", "")} onFocus={() => previewPrompt(item.state, item.category)} onBlur={() => !busy && qb.setState("idle", "")} onClick={() => void submit(item.prompt)}><span>{item.category}</span><strong>{item.prompt}</strong><i>↗</i></button>)}</div>
+          <div className="ask-empty-intro"><AskBatemanAvatar state={qb.state} variant="empty" /><div><span>QUANT BATEMAN · {pick(locale, { en: "READY", es: "LISTO" })}</span><h2>{pick(locale, { en: "Start with a precise question.", es: "Empieza con una pregunta precisa." })}</h2><p>{pick(locale, { en: "Numerical work is routed to product tools, with assumptions and source lineage kept visible.", es: "El trabajo numérico se dirige a herramientas del producto, manteniendo visibles supuestos y fuentes." })}</p></div></div>
+          <div className="ask-prompt-grid">{promptGroups.map((item) => { const spanish = ({ MARKETS: ["MERCADOS", "Explica precio observado frente a precio de modelo."], PRICING: ["VALORACIÓN", "¿Qué inputs se necesitan para valorar una opción europea?"], VOL: ["VOL", "Explica la volatilidad implícita y qué no nos dice."], CURVES: ["CURVAS", "Explica cómo se propaga un bump en la curva de tipos."], RISK: ["RIESGO", "¿Por qué se concentra gamma cerca del vencimiento?"], PREDICTIONS: ["PREDICCIONES", "¿Cómo debo interpretar una probabilidad de mercado de predicción?"] } as Record<string, [string, string]>)[item.category]; const category = locale === "es" ? spanish[0] : item.category; const prompt = locale === "es" ? spanish[1] : item.prompt; return <button type="button" key={item.category} onPointerEnter={() => previewPrompt(item.state, category)} onPointerLeave={() => !busy && qb.setState("idle", "")} onFocus={() => previewPrompt(item.state, category)} onBlur={() => !busy && qb.setState("idle", "")} onClick={() => void submit(prompt)}><span>{category}</span><strong>{prompt}</strong><i>↗</i></button>; })}</div>
         </div> : <div className="ask-messages" aria-live="polite">
           {messages.map((message) => <article className={`ask-message ${message.role}`} key={message.id}>
-            <div className="ask-message-identity">{message.role === "assistant" ? <AskBatemanAvatar state={message.characterState || "success"} variant="message" /> : <span>YOU</span>}<small>{message.role === "assistant" ? "QUANT BATEMAN" : "QUESTION"}</small></div>
+            <div className="ask-message-identity">{message.role === "assistant" ? <AskBatemanAvatar state={message.characterState || "success"} variant="message" /> : <span>{pick(locale, { en: "YOU", es: "TÚ" })}</span>}<small>{message.role === "assistant" ? "QUANT BATEMAN" : pick(locale, { en: "QUESTION", es: "PREGUNTA" })}</small></div>
             <div className="ask-message-body">
               <MessageContent text={message.text} />
               {!!message.sources?.length && <nav className="ask-sources" aria-label="Answer sources">{message.sources.map((source) => <a href={source.href} key={`${source.href}-${source.label}`} target={source.href.startsWith("http") ? "_blank" : undefined} rel={source.href.startsWith("http") ? "noreferrer" : undefined}><span>{source.label}</span><small>{source.status}</small></a>)}</nav>}
-              {message.role === "assistant" && <footer><span>{message.provider || "LOCAL EVIDENCE"} · {message.tool || "EXPLANATION"}</span><button type="button" onClick={() => void copyMessage(message)}>{copied === message.id ? "COPIED" : "COPY"}</button></footer>}
+              {message.role === "assistant" && <footer><span>{message.provider || "LOCAL EVIDENCE"} · {message.tool || "EXPLANATION"}</span><button type="button" onClick={() => void copyMessage(message)}>{copied === message.id ? pick(locale, { en: "COPIED", es: "COPIADO" }) : pick(locale, { en: "COPY", es: "COPIAR" })}</button></footer>}
             </div>
           </article>)}
-          {busy && <article className="ask-message assistant is-loading"><div className="ask-message-identity"><AskBatemanAvatar state={qb.state === "pricing" ? "pricing" : "working"} variant="message" /><small>WORKING</small></div><div className="ask-message-body"><p>Checking authoritative sources and product tools...</p><div className="ask-thinking"><i /><i /><i /></div></div></article>}
+          {busy && <article className="ask-message assistant is-loading"><div className="ask-message-identity"><AskBatemanAvatar state={qb.state === "pricing" ? "pricing" : "working"} variant="message" /><small>{pick(locale, { en: "WORKING", es: "ANALIZANDO" })}</small></div><div className="ask-message-body"><p>{pick(locale, { en: "Checking authoritative sources and product tools...", es: "Consultando fuentes autorizadas y herramientas del producto..." })}</p><div className="ask-thinking"><i /><i /><i /></div></div></article>}
           <div ref={endRef} />
         </div>}
       </section>
 
       <div className="ask-composer-wrap">
-        {lastQuestion && !busy && <div className="ask-followup"><span>CONTINUE</span><button type="button" onClick={() => void submit(lastQuestion)}>RETRY LAST ANSWER</button><button type="button" onClick={() => setInput(`Go deeper: ${lastQuestion}`)}>GO DEEPER</button><button type="button" onClick={() => setInput(`Show the mathematics: ${lastQuestion}`)}>SHOW MATHEMATICS</button></div>}
+        {lastQuestion && !busy && <div className="ask-followup"><span>{pick(locale, { en: "CONTINUE", es: "CONTINUAR" })}</span><button type="button" onClick={() => void submit(lastQuestion)}>{pick(locale, { en: "RETRY LAST ANSWER", es: "REINTENTAR RESPUESTA" })}</button><button type="button" onClick={() => setInput(locale === "es" ? `Profundiza: ${lastQuestion}` : `Go deeper: ${lastQuestion}`)}>{pick(locale, { en: "GO DEEPER", es: "PROFUNDIZAR" })}</button><button type="button" onClick={() => setInput(locale === "es" ? `Muestra las matemáticas: ${lastQuestion}` : `Show the mathematics: ${lastQuestion}`)}>{pick(locale, { en: "SHOW MATHEMATICS", es: "MOSTRAR MATEMÁTICAS" })}</button></div>}
         <form className="ask-composer" onSubmit={onSubmit}>
-          <label htmlFor="quant-question">Ask about pricing, markets, models or risk</label>
+          <label htmlFor="quant-question">{pick(locale, { en: "Ask about pricing, markets, models or risk", es: "Pregunta sobre valoración, mercados, modelos o riesgo" })}</label>
           <div>
             <textarea id="quant-question" rows={2} value={input} onFocus={() => !busy && qb.setState("thinking", "Framing the question...")} onBlur={() => !busy && qb.setState("idle", "")} onChange={(event) => { setInput(event.target.value); if (!busy && event.target.value.trim()) qb.setState("thinking", "Framing the question..."); }} onKeyDown={onComposerKeyDown} placeholder={pick(locale, { en: "Ask a precise quantitative question...", es: "Formula una pregunta cuantitativa precisa..." })} />
-            {busy ? <button className="ask-cancel" type="button" onClick={cancel}>CANCEL</button> : <button type="submit" disabled={!input.trim()}>ASK <span>↗</span></button>}
+            {busy ? <button className="ask-cancel" type="button" onClick={cancel}>{pick(locale, { en: "CANCEL", es: "CANCELAR" })}</button> : <button type="submit" disabled={!input.trim()}>{pick(locale, { en: "ASK", es: "PREGUNTAR" })} <span>↗</span></button>}
           </div>
-          <span>ENTER TO SEND · SHIFT+ENTER FOR A NEW LINE · EDUCATIONAL, NOT FINANCIAL ADVICE</span>
+          <span>{pick(locale, { en: "ENTER TO SEND · SHIFT+ENTER FOR A NEW LINE · EDUCATIONAL, NOT FINANCIAL ADVICE", es: "ENTER PARA ENVIAR · SHIFT+ENTER PARA NUEVA LÍNEA · EDUCATIVO, NO ES ASESORAMIENTO FINANCIERO" })}</span>
         </form>
       </div>
     </div>

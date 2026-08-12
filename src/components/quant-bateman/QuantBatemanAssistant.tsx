@@ -8,6 +8,7 @@ import { QuantBatemanMiniChat } from "./QuantBatemanMiniChat";
 import { quantBatemanStateLabels } from "./quantBateman.config";
 import { useQuantBateman } from "./useQuantBateman";
 import { useQuantBatemanPosition } from "./useQuantBatemanPosition";
+import { useI18n } from "@/src/i18n";
 
 function sectionFromPath(pathname: string): string {
   const root = pathname.split("/").filter(Boolean)[0];
@@ -16,6 +17,7 @@ function sectionFromPath(pathname: string): string {
 
 export function QuantBatemanAssistant() {
   const qb = useQuantBateman();
+  const { locale } = useI18n();
   const pathname = usePathname();
   const [hovered, setHovered] = useState(false);
   const toggle = qb.toggle;
@@ -57,7 +59,7 @@ export function QuantBatemanAssistant() {
       data-dragging={dragging ? "true" : "false"}
       data-page={pathname === "/ask" ? "ask" : "default"}
       data-positioned={qb.position ? "true" : "false"}
-      aria-label={`Quant Bateman · ${quantBatemanStateLabels[qb.state]}`}
+      aria-label={`Quant Bateman · ${locale === "es" ? ({ Idle: "Disponible", Thinking: "Pensando", Fetching: "Consultando", Working: "Analizando", Pricing: "Valorando", Talking: "Explicando", Success: "Completado", Warning: "Advertencia", Error: "Error", Dragging: "Moviendo" } as Record<string, string>)[quantBatemanStateLabels[qb.state]] ?? quantBatemanStateLabels[qb.state] : quantBatemanStateLabels[qb.state]}`}
     >
       <QuantBatemanBubble />
       {qb.isOpen && <QuantBatemanMiniChat />}
