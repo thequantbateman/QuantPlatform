@@ -145,6 +145,15 @@ test("canonical Academy lessons server-render compact formulas with bound deriva
   }
 });
 
+test("Spanish Academy lesson chrome uses the shared authored level label", async () => {
+  const response = await render("/learn/volatility/heston-model", { cookie: "tqb-locale=es" });
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  const lessonEyebrow = html.match(/<span class="eyebrow">([^<]*(?:<!-- -->[^<]*)*)<\/span>/i)?.[1].replaceAll("<!-- -->", "");
+
+  assert.equal(lessonEyebrow, "Volatilidad · front office");
+});
+
 test("Academy landing progressively reveals all canonical track stages", async () => {
   const response = await render("/learn");
   assert.equal(response.status, 200);

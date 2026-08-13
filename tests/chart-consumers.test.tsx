@@ -27,6 +27,15 @@ function chartReadout(html: string): string {
   return match[1];
 }
 
+function hexContrast(foreground: string, background: string): number {
+  const luminance = (hex: string) => [1, 3, 5]
+    .map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16) / 255)
+    .map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4)
+    .reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+  const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+  return (values[0] + 0.05) / (values[1] + 0.05);
+}
+
 test("dark Academy chart contexts declare the complete chart token contract", async () => {
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   const volSurfaceHtml = renderLocalized(<VolSurfaceLab />);
@@ -52,6 +61,25 @@ test("dark Academy chart contexts declare the complete chart token contract", as
       assert.equal(finalDeclarations.get(`--chart-series-${index + 1}`), value, `${selector} series ${index + 1} must preserve its established semantic color`);
     });
   }
+});
+
+test("touched analytical controls preserve focus, target, contrast and semantic border contracts", async () => {
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  const root = css.match(/:root \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  const codeSurface = root.match(/--code-surface:\s*(#[\da-f]{6})/i)?.[1];
+  const codeLineNumber = root.match(/--code-line-number:\s*(#[\da-f]{6})/i)?.[1];
+  assert.ok(codeSurface && codeLineNumber);
+  assert.ok(hexContrast(codeLineNumber, codeSurface) >= 4.5, "9px code line numbers must meet WCAG AA contrast");
+
+  const reset = css.match(/\.vol-lab-controls > header button \{([^}]*)\}/)?.[1] ?? "";
+  assert.match(reset, /min-height:\s*44px/);
+  assert.match(reset, /min-width:\s*44px/);
+
+  const textEntryFocus = css.match(/\.palette-input-row input:focus-visible[^{]*\{([^}]*)\}/)?.[1] ?? "";
+  assert.match(textEntryFocus, /outline:\s*2px solid var\(--focus-ring\)/);
+
+  const responsiveAcademy = css.slice(css.indexOf("@media (max-width: 1100px)"), css.indexOf("/* Market data workstation"));
+  assert.doesNotMatch(responsiveAcademy, /border(?:-(?:top|right|bottom|left))?:\s*1px solid #(30343b|283140|2d333c)/i);
 });
 
 test("the Spanish volatility surface has no English playback or scenario chrome", () => {
