@@ -50,6 +50,22 @@ test("renders key product routes without external services", async () => {
   }
 });
 
+test("volatility routes render the same canonical linked surface workbench", async () => {
+  for (const path of ["/analytics/volatility", "/lab?lab=surface"]) {
+    const response = await render(path);
+    assert.equal(response.status, 200, path);
+    const html = await response.text();
+
+    for (const marker of ["ONE LINKED STATE", "HEATMAP", "3D", "SMILE", "TERM STRUCTURE", "SYNTHETIC / EDUCATIONAL", "Accessible numeric surface grid"]) {
+      assert.match(html, new RegExp(marker, "i"), `${path}: ${marker}`);
+    }
+    assert.match(html, /role="tab"[^>]*id="vol-surface-tab-heatmap"[^>]*aria-controls="vol-surface-panel-heatmap"[^>]*tabIndex="0"/i, `${path}: heatmap tab semantics`);
+    assert.match(html, /role="tabpanel"[^>]*id="vol-surface-panel-heatmap"[^>]*aria-labelledby="vol-surface-tab-heatmap"/i, `${path}: heatmap panel semantics`);
+    assert.match(html, /aria-pressed="true"[^>]*aria-label="Maturity/i, `${path}: selected heatmap cell`);
+    assert.doesNotMatch(html, /CONSTANT σ|surface-canvas|WIREFRAME/i, path);
+  }
+});
+
 test("canonical Academy lessons server-render compact formulas with bound derivations and visible essentials", async () => {
   const lessons = [
     {
