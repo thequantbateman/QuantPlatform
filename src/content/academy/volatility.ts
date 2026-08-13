@@ -303,6 +303,7 @@ const flagshipVolatilityLessons: AcademyLesson[] = [
       title: "Why the Heston characteristic function is affine",
       introduction: "Fourier pricing is practical because the log-price/variance transform has an exponential-affine form.",
       steps: [
+        { title: "State the risk-neutral spot dynamics", body: "Begin with the joint risk-neutral spot and variance state; the spot diffusion uses the same stochastic variance factor that enters the affine transform.", latex: "dS_t=(r-q)S_tdt+\\sqrt{v_t}S_tdW_t^S" },
         { title: "Transform the state", body: "Use log spot x = log S so the diffusion generator is polynomial-affine in variance.", latex: "x_t=\\log S_t" },
         { title: "Propose an affine transform", body: "Conditioned on the current state, assume the characteristic function is exponential-affine in log spot and variance.", latex: "\\phi(u,\\tau)=\\exp(C(u,\\tau)+D(u,\\tau)v_t+iux_t)" },
         { title: "Insert into the backward equation", body: "Matching constant and variance coefficients produces coupled Riccati ordinary differential equations for C and D.", latex: "\\partial_\\tau D=a(u)+b(u)D+cD^2" },
