@@ -74,4 +74,5 @@ test("pointer selection follows the nearest numeric x coordinate", () => {
 test("the first four series have distinct non-color line patterns", () => {
   const patterns = [0, 1, 2, 3].map((index) => JSON.stringify(chartSeriesPattern(index)));
   assert.equal(new Set(patterns).size, 4);
+  assert.deepEqual(chartSeriesPattern(3), [10, 3, 2, 3]);
 });
