@@ -34,12 +34,14 @@ export const ratesOptionalityLesson: AcademyLesson = {
   mathematics: {
     notation: ["F_i: forward fixing", "K: strike", "A(0): swap annuity", "N: notional", "\\alpha_i: accrual fraction", "\\sigma_N,\\sigma_{LN}: normal/lognormal volatility"],
     formulas: [
-      { label: "Caplet under Black–76", latex: "V_{caplet}=N\\alpha_iP(0,T_{i+1})[F_i\\Phi(d_1)-K\\Phi(d_2)]", interpretation: "The option value is a forward-option payoff weighted by the payment-date discount factor and accrual." },
-      { label: "European payer swaption", latex: "V_{pay}=NA(0)[S_0\\Phi(d_1)-K\\Phi(d_2)]", interpretation: "The fixed-leg annuity converts the option on the forward swap rate into currency PV." },
-      { label: "Normal-model payer value", latex: "V_{pay}^{N}=NA(0)[(S_0-K)\\Phi(z)+\\sigma_N\\sqrt{T}\\,\\phi(z)]", interpretation: "Bachelier remains defined through zero and negative forwards; its volatility is quoted in absolute rate units." },
+      { label: "Caplet under Black–76", latex: "V_{caplet}=N\\alpha_iP(0,T_{i+1})[F_i\\Phi(d_1)-K\\Phi(d_2)]", interpretation: "The option value is a forward-option payoff weighted by the payment-date discount factor and accrual.", depth: 2, analyticsHref: "/lab?lab=curve" },
+      { label: "European payer swaption", latex: "V_{pay}=NA(0)[S_0\\Phi(d_1)-K\\Phi(d_2)]", interpretation: "The fixed-leg annuity converts the option on the forward swap rate into currency PV.", depth: 3, analyticsHref: "/lab?lab=curve" },
+      { label: "Normal-model payer value", latex: "V_{pay}^{N}=NA(0)[(S_0-K)\\Phi(z)+\\sigma_N\\sqrt{T}\\,\\phi(z)]", interpretation: "Bachelier remains defined through zero and negative forwards; its volatility is quoted in absolute rate units.", depth: 2, analyticsHref: "/lab?lab=curve" },
     ],
   },
   derivation: {
+    formulaIndex: 1,
+    depth: 3,
     title: "From swap exercise value to the annuity measure",
     introduction: "Write the exercise-date swap value, factor out its fixed-leg annuity and take the expectation under the annuity numeraire.",
     steps: [

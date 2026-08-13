@@ -1,4 +1,4 @@
-import type { AcademyLesson, AcademyReference, AcademyTrackNode } from "./types";
+import type { AcademyDerivation, AcademyFormula, AcademyFormulaDepth, AcademyLesson, AcademyReference, AcademyTrackNode } from "./types";
 
 const reviewed = "2026-08-12";
 
@@ -8,12 +8,25 @@ const references: AcademyReference[] = [
   { sourceId: "quantlib-upstream", locator: "Current bootstrapping, interpolation, curve, model, cap/floor and swaption tests", url: "https://github.com/lballabio/QuantLib", note: "Implementation authority for production object boundaries and regression-test patterns." },
 ];
 
-type AdvancedSeed = Omit<AcademyLesson, "domain" | "assetClass" | "lastReviewed" | "implementation" | "interactiveLabs" | "frontOffice" | "macroConnections" | "references"> & {
+type AdvancedSeed = Omit<AcademyLesson, "domain" | "assetClass" | "lastReviewed" | "mathematics" | "derivation" | "implementation" | "interactiveLabs" | "frontOffice" | "macroConnections" | "references"> & {
+  mathematics: { notation: string[]; formulas: Array<Omit<AcademyFormula, "depth" | "analyticsHref">> };
+  derivation: Omit<AcademyDerivation, "formulaIndex" | "depth">;
   quantLib: string;
   pythonLab: AcademyLesson["implementation"]["pythonLab"];
   lab: AcademyLesson["interactiveLabs"][number];
   frontOffice: AcademyLesson["frontOffice"];
   macro: AcademyLesson["macroConnections"][number];
+};
+
+type FormulaContract = { formulaDepths: AcademyFormulaDepth[]; derivationFormulaIndex: number; derivationDepth: 2 | 3 };
+
+const formulaContracts: Record<string, FormulaContract> = {
+  "rate-curve-bootstrap": { formulaDepths: [3, 1, 3], derivationFormulaIndex: 0, derivationDepth: 3 },
+  "rate-interpolation": { formulaDepths: [2, 2, 2], derivationFormulaIndex: 1, derivationDepth: 2 },
+  "rate-multicurve": { formulaDepths: [2, 1, 2], derivationFormulaIndex: 2, derivationDepth: 2 },
+  "rate-curve-risk": { formulaDepths: [2, 2, 2], derivationFormulaIndex: 0, derivationDepth: 2 },
+  "rate-hull-white": { formulaDepths: [3, 3, 3], derivationFormulaIndex: 1, derivationDepth: 3 },
+  "rate-hjm": { formulaDepths: [3, 3, 2], derivationFormulaIndex: 1, derivationDepth: 3 },
 };
 
 const seeds: AdvancedSeed[] = [
@@ -163,8 +176,12 @@ const seeds: AdvancedSeed[] = [
   },
 ];
 
-export const additionalRatesLessons: AcademyLesson[] = seeds.map(({ quantLib, pythonLab, lab, frontOffice, macro, ...lesson }) => ({
+export const additionalRatesLessons: AcademyLesson[] = seeds.map(({ quantLib, pythonLab, lab, frontOffice, macro, ...lesson }) => {
+  const formulaContract = formulaContracts[lesson.id];
+  return {
   ...lesson,
+  mathematics: { ...lesson.mathematics, formulas: lesson.mathematics.formulas.map((formula, index) => ({ ...formula, depth: formulaContract.formulaDepths[index], analyticsHref: "/lab?lab=curve" })) },
+  derivation: { ...lesson.derivation, formulaIndex: formulaContract.derivationFormulaIndex, depth: formulaContract.derivationDepth },
   domain: "rates",
   assetClass: "IR",
   lastReviewed: reviewed,
@@ -177,7 +194,8 @@ export const additionalRatesLessons: AcademyLesson[] = seeds.map(({ quantLib, py
   frontOffice,
   macroConnections: [macro],
   references,
-}));
+  };
+});
 
 export const ratesAdvancedTrackNodes: AcademyTrackNode[] = [
   { id: "bootstrap", title: "Curve bootstrapping", stage: "Flagship construction workbench", level: "front-office", href: "/learn/rates/curve-bootstrapping", academyLessonId: "rate-curve-bootstrap" },

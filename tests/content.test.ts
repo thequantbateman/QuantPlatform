@@ -29,7 +29,10 @@ test("Academy V2 lessons implement the canonical educational contract", () => {
   for (const lesson of academyLessons) {
     assert.ok(lesson.learningObjectives.length >= 3, lesson.id);
     assert.ok(lesson.mathematics.formulas.length >= 2, lesson.id);
-    assert.ok(lesson.derivation.steps.length >= 4, lesson.id);
+    assert.ok(lesson.derivation.depth === 2 || lesson.derivation.depth === 3, lesson.id);
+    assert.ok(lesson.derivation.formulaIndex >= 0 && lesson.derivation.formulaIndex < lesson.mathematics.formulas.length, lesson.id);
+    assert.equal(lesson.mathematics.formulas[lesson.derivation.formulaIndex].depth, lesson.derivation.depth, lesson.id);
+    assert.ok(lesson.derivation.steps.length >= (lesson.derivation.depth === 3 ? 4 : 2), lesson.id);
     assert.ok(lesson.implementation.pythonLab.code.includes("assert"), lesson.id);
     assert.ok(lesson.frontOffice.workflow.length >= 4, lesson.id);
     assert.ok(lesson.macroConnections.length > 0, lesson.id);

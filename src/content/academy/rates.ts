@@ -1,4 +1,4 @@
-import type { AcademyLesson, AcademyReference, AcademyTrack } from "./types";
+import type { AcademyFormula, AcademyFormulaDepth, AcademyLesson, AcademyReference, AcademyTrack } from "./types";
 import { additionalRatesLessons, ratesAdvancedTrackNodes } from "./ratesAdvancedLessons";
 import { ratesOptionalityLesson, ratesOptionalityTrackNode } from "./ratesOptionalityLesson";
 
@@ -27,7 +27,7 @@ type RateSeed = {
   instruments: string[];
   quote: string;
   notation: string[];
-  formulas: AcademyLesson["mathematics"]["formulas"];
+  formulas: Array<Omit<AcademyFormula, "depth" | "analyticsHref">>;
   derivationTitle: string;
   derivationIntro: string;
   steps: AcademyLesson["derivation"]["steps"];
@@ -46,6 +46,22 @@ type RateSeed = {
   macro: AcademyLesson["macroConnections"][number];
   pitfalls: string[];
   related: string[];
+};
+
+type FormulaContract = {
+  formulaDepths: AcademyFormulaDepth[];
+  formulaAnalyticsHrefs: string[];
+  derivationFormulaIndex: number;
+  derivationDepth: 2 | 3;
+};
+
+const formulaContracts: Record<string, FormulaContract> = {
+  "rate-discount": { formulaDepths: [1, 2, 2], formulaAnalyticsHrefs: ["/lab?lab=curve", "/lab?lab=curve", "/lab?lab=curve"], derivationFormulaIndex: 1, derivationDepth: 2 },
+  "rate-zero-forward": { formulaDepths: [2, 2, 2], formulaAnalyticsHrefs: ["/lab?lab=curve", "/lab?lab=curve", "/lab?lab=curve"], derivationFormulaIndex: 1, derivationDepth: 2 },
+  "rate-conventions": { formulaDepths: [1, 2, 1], formulaAnalyticsHrefs: ["/lab?lab=curve", "/lab?lab=curve", "/lab?lab=curve"], derivationFormulaIndex: 1, derivationDepth: 2 },
+  "rate-ois": { formulaDepths: [2, 2, 1], formulaAnalyticsHrefs: ["/lab?lab=curve", "/lab?lab=curve", "/lab?lab=curve"], derivationFormulaIndex: 0, derivationDepth: 2 },
+  "rate-fra-futures": { formulaDepths: [2, 2, 3], formulaAnalyticsHrefs: ["/lab?lab=curve", "/lab?lab=curve", "/lab?lab=curve"], derivationFormulaIndex: 1, derivationDepth: 2 },
+  "rate-swaps": { formulaDepths: [1, 2, 2], formulaAnalyticsHrefs: ["/lab?lab=curve", "/lab?lab=curve", "/lab?lab=curve"], derivationFormulaIndex: 1, derivationDepth: 2 },
 };
 
 const seeds: RateSeed[] = [
@@ -166,7 +182,9 @@ const seeds: RateSeed[] = [
   },
 ];
 
-const foundationalRatesLessons: AcademyLesson[] = seeds.map((seed) => ({
+const foundationalRatesLessons: AcademyLesson[] = seeds.map((seed) => {
+  const formulaContract = formulaContracts[seed.id];
+  return {
   id: seed.id,
   slug: seed.slug,
   title: seed.title,
@@ -182,8 +200,8 @@ const foundationalRatesLessons: AcademyLesson[] = seeds.map((seed) => ({
   legacyRoutes: seed.legacyRoutes,
   intuition: { lead: seed.lead, points: seed.points },
   marketContext: { why: seed.why, instruments: seed.instruments, quoteConvention: seed.quote },
-  mathematics: { notation: seed.notation, formulas: seed.formulas },
-  derivation: { title: seed.derivationTitle, introduction: seed.derivationIntro, steps: seed.steps, conclusion: seed.conclusion },
+  mathematics: { notation: seed.notation, formulas: seed.formulas.map((formula, index) => ({ ...formula, depth: formulaContract.formulaDepths[index], analyticsHref: formulaContract.formulaAnalyticsHrefs[index] })) },
+  derivation: { formulaIndex: formulaContract.derivationFormulaIndex, depth: formulaContract.derivationDepth, title: seed.derivationTitle, introduction: seed.derivationIntro, steps: seed.steps, conclusion: seed.conclusion },
   pricing: { method: seed.method, calibration: seed.calibration, limitations: seed.limitations },
   implementation: {
     architecture: ["Parse dated market inputs and conventions at the boundary.", "Build deterministic curve objects in the framework-free quant layer.", "Return PV, repricing residuals and sensitivities together.", "Test inversion, par conditions, monotonic dates and invalid domains."],
@@ -196,7 +214,8 @@ const foundationalRatesLessons: AcademyLesson[] = seeds.map((seed) => ({
   pitfalls: seed.pitfalls,
   references,
   relatedLessonIds: seed.related,
-}));
+  };
+});
 
 export const ratesLessons: AcademyLesson[] = [...foundationalRatesLessons, ratesOptionalityLesson, ...additionalRatesLessons];
 

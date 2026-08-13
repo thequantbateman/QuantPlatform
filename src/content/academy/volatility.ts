@@ -127,12 +127,14 @@ const flagshipVolatilityLessons: AcademyLesson[] = [
     mathematics: {
       notation: ["C_mkt: observed call premium", "C_BS(σ): Black–Scholes call value", "ν = ∂C/∂σ: raw vega", "T: ACT/365-like year fraction in this lesson"],
       formulas: [
-        { label: "Inverse definition", latex: "f(\\sigma)=C_{BS}(S,K,T,r,q,\\sigma)-C_{mkt}=0", interpretation: "Implied volatility is the root of a monotone scalar equation when vanilla no-arbitrage bounds hold." },
-        { label: "Black–Scholes call", latex: "C_{BS}=Se^{-qT}N(d_1)-Ke^{-rT}N(d_2)", interpretation: "The inverse depends on every state variable and convention used by the forward pricing model." },
-        { label: "Conditioning", latex: "\\frac{d\\sigma_{imp}}{dC}=\\frac{1}{\\nu},\\qquad \\nu=Se^{-qT}\\phi(d_1)\\sqrt{T}", interpretation: "When vega approaches zero, premium noise is magnified in volatility space." },
+        { label: "Inverse definition", latex: "f(\\sigma)=C_{BS}(S,K,T,r,q,\\sigma)-C_{mkt}=0", interpretation: "Implied volatility is the root of a monotone scalar equation when vanilla no-arbitrage bounds hold.", depth: 3, analyticsHref: "/lab?lab=vanilla" },
+        { label: "Black–Scholes call", latex: "C_{BS}=Se^{-qT}N(d_1)-Ke^{-rT}N(d_2)", interpretation: "The inverse depends on every state variable and convention used by the forward pricing model.", depth: 2, analyticsHref: "/lab?lab=vanilla" },
+        { label: "Conditioning", latex: "\\frac{d\\sigma_{imp}}{dC}=\\frac{1}{\\nu},\\qquad \\nu=Se^{-qT}\\phi(d_1)\\sqrt{T}", interpretation: "When vega approaches zero, premium noise is magnified in volatility space.", depth: 2, analyticsHref: "/lab?lab=vanilla" },
       ],
     },
     derivation: {
+      formulaIndex: 0,
+      depth: 3,
       title: "From premium to a stable volatility root",
       introduction: "The derivation is an inverse-function argument, followed by a numerical method that respects the financial domain.",
       steps: [
@@ -211,13 +213,15 @@ const flagshipVolatilityLessons: AcademyLesson[] = [
     mathematics: {
       notation: ["k = log(K/F_T): log-forward moneyness", "w(k,T) = σ_imp²(k,T)T: total implied variance", "C(K,T): call-price surface", "σ_loc(K,T): local volatility"],
       formulas: [
-        { label: "Surface coordinate", latex: "(k,T)\\mapsto \\sigma_{imp}(k,T),\\qquad k=\\log(K/F_T)", interpretation: "Forward log-moneyness makes strike geometry comparable across maturities." },
-        { label: "Total variance", latex: "w(k,T)=\\sigma_{imp}^2(k,T)T", interpretation: "Many no-arbitrage and interpolation questions are more naturally expressed in total variance than volatility." },
-        { label: "Risk-neutral density", latex: "\\partial_{KK}C(K,T)=D(0,T)\\,f_{S_T}^{\\mathbb Q}(K)\\ge 0", interpretation: "Convex call prices imply a non-negative risk-neutral terminal density." },
-        { label: "Dupire local variance", latex: "\\sigma_{loc}^2(K,T)=\\frac{\\partial_T C+(r-q)K\\partial_K C+qC}{\\tfrac12K^2\\partial_{KK}C}", interpretation: "A sufficiently smooth arbitrage-consistent vanilla surface identifies one local-volatility diffusion." },
+        { label: "Surface coordinate", latex: "(k,T)\\mapsto \\sigma_{imp}(k,T),\\qquad k=\\log(K/F_T)", interpretation: "Forward log-moneyness makes strike geometry comparable across maturities.", depth: 1, analyticsHref: "/analytics/volatility" },
+        { label: "Total variance", latex: "w(k,T)=\\sigma_{imp}^2(k,T)T", interpretation: "Many no-arbitrage and interpolation questions are more naturally expressed in total variance than volatility.", depth: 1, analyticsHref: "/analytics/volatility" },
+        { label: "Risk-neutral density", latex: "\\partial_{KK}C(K,T)=D(0,T)\\,f_{S_T}^{\\mathbb Q}(K)\\ge 0", interpretation: "Convex call prices imply a non-negative risk-neutral terminal density.", depth: 3, analyticsHref: "/analytics/volatility" },
+        { label: "Dupire local variance", latex: "\\sigma_{loc}^2(K,T)=\\frac{\\partial_T C+(r-q)K\\partial_K C+qC}{\\tfrac12K^2\\partial_{KK}C}", interpretation: "A sufficiently smooth arbitrage-consistent vanilla surface identifies one local-volatility diffusion.", depth: 3, analyticsHref: "/analytics/volatility" },
       ],
     },
     derivation: {
+      formulaIndex: 3,
+      depth: 3,
       title: "From a call-price surface to local volatility",
       introduction: "Dupire’s result is an inversion of the forward equation. It shows why surface smoothness and convexity are numerical requirements, not styling preferences.",
       steps: [
@@ -287,13 +291,15 @@ const flagshipVolatilityLessons: AcademyLesson[] = [
     mathematics: {
       notation: ["vₜ: instantaneous variance", "κ: mean-reversion speed", "θ: long-run variance", "σᵥ: vol-of-vol", "ρ: Brownian correlation"],
       formulas: [
-        { label: "Risk-neutral dynamics", latex: "dS_t=(r-q)S_tdt+\\sqrt{v_t}S_tdW_t^S", interpretation: "Spot diffusion uses the stochastic variance state." },
-        { label: "Variance process", latex: "dv_t=\\kappa(\\theta-v_t)dt+\\sigma_v\\sqrt{v_t}dW_t^v", interpretation: "CIR-style mean reversion supports a non-negative variance state under suitable schemes." },
-        { label: "Leverage correlation", latex: "d\\langle W^S,W^v\\rangle_t=\\rho\\,dt", interpretation: "Negative correlation links spot selloffs to variance shocks and generates downside skew." },
-        { label: "Feller condition", latex: "2\\kappa\\theta\\ge\\sigma_v^2", interpretation: "A sufficient condition for the continuous-time variance process to stay strictly positive; market calibrations can violate it, demanding careful numerics." },
+        { label: "Risk-neutral dynamics", latex: "dS_t=(r-q)S_tdt+\\sqrt{v_t}S_tdW_t^S", interpretation: "Spot diffusion uses the stochastic variance state.", depth: 3, analyticsHref: "/analytics/volatility" },
+        { label: "Variance process", latex: "dv_t=\\kappa(\\theta-v_t)dt+\\sigma_v\\sqrt{v_t}dW_t^v", interpretation: "CIR-style mean reversion supports a non-negative variance state under suitable schemes.", depth: 3, analyticsHref: "/analytics/volatility" },
+        { label: "Leverage correlation", latex: "d\\langle W^S,W^v\\rangle_t=\\rho\\,dt", interpretation: "Negative correlation links spot selloffs to variance shocks and generates downside skew.", depth: 1, analyticsHref: "/analytics/volatility" },
+        { label: "Feller condition", latex: "2\\kappa\\theta\\ge\\sigma_v^2", interpretation: "A sufficient condition for the continuous-time variance process to stay strictly positive; market calibrations can violate it, demanding careful numerics.", depth: 2, analyticsHref: "/analytics/volatility" },
       ],
     },
     derivation: {
+      formulaIndex: 0,
+      depth: 3,
       title: "Why the Heston characteristic function is affine",
       introduction: "Fourier pricing is practical because the log-price/variance transform has an exponential-affine form.",
       steps: [

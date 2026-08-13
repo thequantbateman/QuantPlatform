@@ -188,6 +188,8 @@ export function localizeAcademyLesson(lesson: AcademyLesson, locale: Locale): Ac
       formulas: lesson.mathematics.formulas.map((formula, index) => ({ ...formula, label: ["Relación principal", "Condición de consistencia", "Diagnóstico de riesgo"][index] ?? `Relación ${index + 1}`, interpretation: `Esta expresión formaliza ${profile.focus}; debe evaluarse únicamente dentro de su dominio financiero y numérico.` })),
     },
     derivation: {
+      formulaIndex: lesson.derivation.formulaIndex,
+      depth: lesson.derivation.depth,
       title: `Derivación controlada de ${profile.title.toLowerCase()}`,
       introduction: `La derivación conserva explícitamente la convención de cotización, el dominio de los inputs y la unidad del resultado. Cada paso debe poder contrastarse con un límite analítico o un test numérico.`,
       steps: lesson.derivation.steps.map((step, index) => ({

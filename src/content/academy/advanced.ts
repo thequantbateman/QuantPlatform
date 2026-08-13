@@ -1,4 +1,4 @@
-import type { AcademyDomain, AcademyLabId, AcademyLesson, AcademyLevel, AcademyTrack } from "./types";
+import type { AcademyDomain, AcademyFormulaDepth, AcademyLabId, AcademyLesson, AcademyLevel, AcademyTrack } from "./types";
 
 type Copy = readonly [en: string, es: string];
 type FormulaSeed = { label: Copy; latex: string; interpretation: Copy };
@@ -35,6 +35,32 @@ const c = (en: string, es: string): Copy => [en, es];
 const at = (copy: Copy, locale: 0 | 1): string => copy[locale];
 const map = (copies: Copy[], locale: 0 | 1): string[] => copies.map((copy) => at(copy, locale));
 
+type FormulaContract = {
+  formulaDepths: AcademyFormulaDepth[];
+  formulaAnalyticsHrefs?: Array<string | undefined>;
+  derivationFormulaIndex: number;
+  derivationDepth: 2 | 3;
+};
+
+const formulaContracts: Record<string, FormulaContract> = {
+  "foundation-filtrations": { formulaDepths: [2, 1], derivationFormulaIndex: 0, derivationDepth: 2 },
+  "foundation-conditional-expectation": { formulaDepths: [2, 1], derivationFormulaIndex: 0, derivationDepth: 2 },
+  "foundation-measure-change": { formulaDepths: [3, 3], derivationFormulaIndex: 0, derivationDepth: 3 },
+  "foundation-girsanov": { formulaDepths: [3, 3], derivationFormulaIndex: 1, derivationDepth: 3 },
+  "foundation-forward-measures": { formulaDepths: [3, 1], derivationFormulaIndex: 0, derivationDepth: 3 },
+  "numerical-monte-carlo": { formulaDepths: [3, 2], derivationFormulaIndex: 0, derivationDepth: 3 },
+  "numerical-schemes": { formulaDepths: [3, 3], derivationFormulaIndex: 1, derivationDepth: 3 },
+  "numerical-variance-reduction": { formulaDepths: [2, 2], derivationFormulaIndex: 1, derivationDepth: 2 },
+  "numerical-fourier-cos": { formulaDepths: [1, 3], derivationFormulaIndex: 1, derivationDepth: 3 },
+  "greeks-first-order": { formulaDepths: [2, 1], formulaAnalyticsHrefs: ["/lab?lab=greeks", "/lab?lab=greeks"], derivationFormulaIndex: 0, derivationDepth: 2 },
+  "greeks-higher-order": { formulaDepths: [2, 1], formulaAnalyticsHrefs: ["/lab?lab=greeks", "/lab?lab=greeks"], derivationFormulaIndex: 0, derivationDepth: 2 },
+  "hedging-pnl": { formulaDepths: [2, 2], formulaAnalyticsHrefs: ["/lab?lab=greeks", "/lab?lab=greeks"], derivationFormulaIndex: 0, derivationDepth: 2 },
+  "risk-exposure-profile": { formulaDepths: [2, 1], derivationFormulaIndex: 0, derivationDepth: 2 },
+  "xva-adjustments": { formulaDepths: [3, 2], derivationFormulaIndex: 0, derivationDepth: 3 },
+  "risk-var-es": { formulaDepths: [1, 2], derivationFormulaIndex: 1, derivationDepth: 2 },
+  "risk-model-governance": { formulaDepths: [1, 2], derivationFormulaIndex: 1, derivationDepth: 2 },
+};
+
 const reference = (domain: AcademyDomain) => ({
   sourceId: domain === "xva" ? "grzelak-ir-xva" : "grzelak-computational-finance",
   locator: domain === "xva" ? "Exposure, counterparty credit and xVA notebooks" : "Measure theory, simulation and computational-finance lectures",
@@ -55,6 +81,7 @@ function pythonLab(seed: LessonSeed, locale: 0 | 1): AcademyLesson["implementati
 
 function buildLesson(seed: LessonSeed, locale: 0 | 1): Omit<AcademyLesson, "localized"> {
   const source = reference(seed.domain);
+  const formulaContract = formulaContracts[seed.id];
   return {
     id: seed.id,
     slug: seed.slug,
@@ -70,8 +97,10 @@ function buildLesson(seed: LessonSeed, locale: 0 | 1): Omit<AcademyLesson, "loca
     lastReviewed: "2026-08-13",
     intuition: { lead: at(seed.lead, locale), points: map(seed.points, locale) },
     marketContext: { why: at(seed.why, locale), instruments: map(seed.instruments, locale), quoteConvention: at(seed.quote, locale) },
-    mathematics: { notation: map(seed.notation, locale), formulas: seed.formulas.map((formula) => ({ label: at(formula.label, locale), latex: formula.latex, interpretation: at(formula.interpretation, locale) })) },
+    mathematics: { notation: map(seed.notation, locale), formulas: seed.formulas.map((formula, index) => ({ label: at(formula.label, locale), latex: formula.latex, interpretation: at(formula.interpretation, locale), depth: formulaContract.formulaDepths[index], analyticsHref: formulaContract.formulaAnalyticsHrefs?.[index] })) },
     derivation: {
+      formulaIndex: formulaContract.derivationFormulaIndex,
+      depth: formulaContract.derivationDepth,
       title: at(c("From information set to computable quantity", "Del conjunto de información a la magnitud calculable"), locale),
       introduction: at(c("Each line states the information, measure and unit before manipulating the expression.", "Cada línea declara la información, la medida y la unidad antes de manipular la expresión."), locale),
       steps: seed.derivation.map((step) => ({ title: at(step.title, locale), body: at(step.body, locale), latex: step.latex, check: step.check ? at(step.check, locale) : undefined })),
