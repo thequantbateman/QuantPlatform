@@ -64,6 +64,14 @@ const formulaContracts: Record<string, FormulaContract> = {
   "rate-swaps": { formulaDepths: [1, 2, 2], formulaAnalyticsHrefs: ["/lab?lab=curve", "/lab?lab=curve", "/lab?lab=curve"], derivationFormulaIndex: 1, derivationDepth: 2 },
 };
 
+function formulaContractFor(seed: RateSeed): FormulaContract {
+  const contract = formulaContracts[seed.id];
+  if (!contract || contract.formulaDepths.length !== seed.formulas.length || contract.formulaAnalyticsHrefs.length !== seed.formulas.length) {
+    throw new Error(`Invalid formula contract for ${seed.id}`);
+  }
+  return contract;
+}
+
 const seeds: RateSeed[] = [
   {
     id: "rate-discount", slug: "discount-factors", title: "Discount factors and present value", subtitle: "Making time value an observable curve object rather than a single-rate shortcut", level: "foundation", minutes: 48,
@@ -182,8 +190,10 @@ const seeds: RateSeed[] = [
   },
 ];
 
+if (Object.keys(formulaContracts).length !== seeds.length) throw new Error("Rates formula contracts must match lesson seeds exactly");
+
 const foundationalRatesLessons: AcademyLesson[] = seeds.map((seed) => {
-  const formulaContract = formulaContracts[seed.id];
+  const formulaContract = formulaContractFor(seed);
   return {
   id: seed.id,
   slug: seed.slug,

@@ -29,6 +29,14 @@ const formulaContracts: Record<string, FormulaContract> = {
   "rate-hjm": { formulaDepths: [3, 3, 2], derivationFormulaIndex: 1, derivationDepth: 3 },
 };
 
+function formulaContractFor(lessonId: string, formulaCount: number): FormulaContract {
+  const contract = formulaContracts[lessonId];
+  if (!contract || contract.formulaDepths.length !== formulaCount) {
+    throw new Error(`Invalid formula contract for ${lessonId}`);
+  }
+  return contract;
+}
+
 const seeds: AdvancedSeed[] = [
   {
     id: "rate-curve-bootstrap", slug: "curve-bootstrapping", title: "Curve construction and bootstrapping", subtitle: "Solving a dated system of market instruments with repricing residuals at every pillar", level: "front-office", estimatedMinutes: 84,
@@ -176,8 +184,10 @@ const seeds: AdvancedSeed[] = [
   },
 ];
 
+if (Object.keys(formulaContracts).length !== seeds.length) throw new Error("Advanced rates formula contracts must match lesson seeds exactly");
+
 export const additionalRatesLessons: AcademyLesson[] = seeds.map(({ quantLib, pythonLab, lab, frontOffice, macro, ...lesson }) => {
-  const formulaContract = formulaContracts[lesson.id];
+  const formulaContract = formulaContractFor(lesson.id, lesson.mathematics.formulas.length);
   return {
   ...lesson,
   mathematics: { ...lesson.mathematics, formulas: lesson.mathematics.formulas.map((formula, index) => ({ ...formula, depth: formulaContract.formulaDepths[index], analyticsHref: "/lab?lab=curve" })) },

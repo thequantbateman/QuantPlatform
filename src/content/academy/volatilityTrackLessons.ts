@@ -63,6 +63,14 @@ const formulaContracts: Record<string, FormulaContract> = {
   "vol-higher-risk": { formulaDepths: [1, 2, 2], formulaAnalyticsHrefs: ["/lab?lab=greeks", "/lab?lab=greeks", "/lab?lab=greeks"], derivationFormulaIndex: 1, derivationDepth: 2 },
 };
 
+function formulaContractFor(seed: LessonSeed): FormulaContract {
+  const contract = formulaContracts[seed.id];
+  if (!contract || contract.formulaDepths.length !== seed.formulas.length || (contract.formulaAnalyticsHrefs && contract.formulaAnalyticsHrefs.length !== seed.formulas.length)) {
+    throw new Error(`Invalid formula contract for ${seed.id}`);
+  }
+  return contract;
+}
+
 const seeds: LessonSeed[] = [
   {
     id: "vol-realized", slug: "realized-volatility", title: "Realized volatility", subtitle: "Measuring path dispersion without confusing an estimator for an observable truth", level: "foundation", minutes: 52,
@@ -244,8 +252,10 @@ const seeds: LessonSeed[] = [
   },
 ];
 
+if (Object.keys(formulaContracts).length !== seeds.length) throw new Error("Volatility formula contracts must match lesson seeds exactly");
+
 export const additionalVolatilityLessons: AcademyLesson[] = seeds.map((seed) => {
-  const formulaContract = formulaContracts[seed.id];
+  const formulaContract = formulaContractFor(seed);
   return {
   id: seed.id,
   slug: seed.slug,
