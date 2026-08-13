@@ -50,6 +50,62 @@ test("renders key product routes without external services", async () => {
   }
 });
 
+test("canonical Academy lessons server-render compact formulas with bound derivations and visible essentials", async () => {
+  const lessons = [
+    {
+      path: "/learn/foundations/girsanov-risk-neutral-pricing",
+      lessonId: "foundation-girsanov",
+      derivationIndex: 1,
+      essentials: ["Girsanov does not remove risk", "continuous-time bridge", "Pricing identity", "MEASURE-CHANGE ENGINE"],
+    },
+    {
+      path: "/learn/volatility/heston-model",
+      lessonId: "vol-heston",
+      derivationIndex: 0,
+      essentials: ["Heston replaces constant volatility", "durable benchmark for exotics", "Affine characteristic function", "HESTON VARIANCE STATE"],
+      formulaHref: "/analytics/volatility",
+    },
+    {
+      path: "/learn/rates/interest-rate-swaps",
+      lessonId: "rate-swaps",
+      derivationIndex: 1,
+      essentials: ["A vanilla swap exchanges", "core instruments for duration transfer", "Fixed-leg annuity", "Swap par/PV laboratory"],
+      formulaHref: "/lab?lab=curve",
+    },
+  ];
+
+  for (const lesson of lessons) {
+    const response = await render(lesson.path);
+    assert.equal(response.status, 200, lesson.path);
+    const html = await response.text();
+    const formulaAnchor = `${lesson.lessonId}-formula-${lesson.derivationIndex}`;
+
+    assert.match(html, new RegExp(`class="quant-formula" id="${formulaAnchor}"`), lesson.path);
+    assert.match(html, /<math xmlns="http:\/\/www\.w3\.org\/1998\/Math\/MathML"/, lesson.path);
+    assert.match(html, new RegExp(`<details class="quant-formula-disclosure" id="${formulaAnchor}-derivation">[\\s\\S]*?<div id="derivation" class="academy-hash-anchor"`), lesson.path);
+    assert.doesNotMatch(html, new RegExp(`<details[^>]*id="${formulaAnchor}-derivation"[^>]*\\sopen(?:=|\\s|>)`), lesson.path);
+    assert.doesNotMatch(html, /<section class="academy-section" id="derivation">/, lesson.path);
+    assert.match(html, /href="#derivation"/, lesson.path);
+    assert.match(html, /<section class="academy-section academy-section-wide" id="interactive">/, lesson.path);
+    for (const essential of lesson.essentials) assert.match(html, new RegExp(essential, "i"), `${lesson.path}: ${essential}`);
+    if (lesson.formulaHref) assert.match(html, new RegExp(`href="${lesson.formulaHref.replace(/[?]/g, "\\?")}"`), lesson.path);
+    assert.match(html, new RegExp(`href="/ask\\?topic=[^"]+&amp;lessonId=${lesson.lessonId}&amp;section=overview"`), lesson.path);
+  }
+});
+
+test("Academy landing progressively reveals all canonical track stages", async () => {
+  const response = await render("/learn");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.equal((html.match(/<details class="academy-track-disclosure"/g) ?? []).length, 6);
+  assert.equal((html.match(/class="academy-track-start"/g) ?? []).length, 6);
+  assert.equal((html.match(/class="deep"/g) ?? []).length, 41);
+  assert.match(html, /id="academy-catalog"/);
+  const legacyDestinations = (html.match(/class="concept-card"/g) ?? []).length;
+  assert.ok(legacyDestinations >= 100);
+  assert.match(html, new RegExp(`<dt>Legacy concepts</dt><dd>${String(legacyDestinations).padStart(2, "0")}</dd>`));
+});
+
 test("Ask renders a compact approved Quant Bateman chat identity", async () => {
   const response = await render("/ask");
   assert.equal(response.status, 200);
