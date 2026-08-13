@@ -164,12 +164,13 @@ test("all Academy derivations bind to an existing formula and satisfy their dept
   }
 });
 
-test("Heston's displayed derivation target is the affine characteristic function", () => {
+test("Heston derivation preserves the joint state SDE before targeting the affine characteristic function", () => {
   const lesson = academyLessons.find((item) => item.id === "vol-heston");
   assert.ok(lesson);
   const boundFormula = lesson.mathematics.formulas[lesson.derivation.formulaIndex];
   assert.equal(boundFormula.latex, "\\phi(u,\\tau)=\\exp(C(u,\\tau)+D(u,\\tau)v_t+iux_t)");
   assert.ok(lesson.derivation.steps.some((step) => step.latex === boundFormula.latex));
+  assert.equal(lesson.derivation.steps[0]?.latex, "dS_t=(r-q)S_tdt+\\sqrt{v_t}S_tdW_t^S");
 });
 
 test("Spanish Academy localization preserves formula depth and derivation binding", () => {
