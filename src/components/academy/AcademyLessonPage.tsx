@@ -4,7 +4,7 @@
 import { useEffect, useMemo } from "react";
 import type { AcademyLesson } from "@/src/content/academy/types";
 import { findAcademyLessonById } from "@/src/content/academy/catalog";
-import { localizeAcademyLesson } from "@/src/content/academy/localization";
+import { localizeAcademyLesson, localizeAcademyLevel } from "@/src/content/academy/localization";
 import { pick, useI18n } from "@/src/i18n";
 import { LessonDisclosure, LessonSection, MacroFlow, ModelComparison, OnTheDesk, PythonLab, QuantFormula, QuantVisual, SourceReferences } from "./AcademyComponents";
 import { LazyVolSurfaceLab } from "./LazyVolSurfaceLab";
@@ -36,7 +36,7 @@ export function AcademyLessonPage({ lesson }: { lesson: AcademyLesson }) {
   } as Partial<Record<AcademyLesson["domain"], [string, string]>>)[localized.domain] ?? [localized.domain, localized.domain];
   const [trackTitle, trackId] = trackMeta;
   const isAdvancedTrack = ["foundations", "numerical-finance", "risk", "xva"].includes(localized.domain);
-  const level = pick(locale, { en: localized.level, es: ({ foundation: "fundamentos", intermediate: "intermedio", advanced: "avanzado", "front-office": "front-office" } as Record<AcademyLesson["level"], string>)[localized.level] });
+  const level = localizeAcademyLevel(localized.level, locale);
   const modelComparisonCopy = [lesson.intuition.lead, lesson.marketContext.why, lesson.pricing.method, ...lesson.pricing.limitations].join(" ");
   const hasAuthoredModelComparison = /model comparison/i.test(modelComparisonCopy) && /Heston/i.test(modelComparisonCopy) && /Black.?Scholes/i.test(modelComparisonCopy);
   const formulaLabels = {
