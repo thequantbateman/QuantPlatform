@@ -3,11 +3,14 @@ import type { AssetClass } from "@/src/content/types";
 export type AcademyLevel = "foundation" | "intermediate" | "advanced" | "front-office";
 export type AcademyDomain = "foundations" | "derivatives" | "volatility" | "rates" | "numerical-finance" | "risk" | "xva" | "macro" | "front-office";
 export type AcademyLabId = AcademyLesson["interactiveLabs"][number]["id"];
+export type AcademyFormulaDepth = 1 | 2 | 3;
 
 export interface AcademyFormula {
   label: string;
   latex: string;
   interpretation: string;
+  depth: AcademyFormulaDepth;
+  analyticsHref?: string;
 }
 
 export interface AcademyDerivationStep {
@@ -15,6 +18,15 @@ export interface AcademyDerivationStep {
   body: string;
   latex?: string;
   check?: string;
+}
+
+export interface AcademyDerivation {
+  formulaIndex: number;
+  depth: 2 | 3;
+  title: string;
+  introduction: string;
+  steps: AcademyDerivationStep[];
+  conclusion: string;
 }
 
 export interface AcademyPythonLab {
@@ -64,7 +76,7 @@ export interface AcademyLesson {
   intuition: { lead: string; points: string[] };
   marketContext: { why: string; instruments: string[]; quoteConvention: string };
   mathematics: { notation: string[]; formulas: AcademyFormula[] };
-  derivation: { title: string; introduction: string; steps: AcademyDerivationStep[]; conclusion: string };
+  derivation: AcademyDerivation;
   pricing: { method: string; calibration: string; limitations: string[] };
   implementation: { architecture: string[]; quantLib?: string; pythonLab: AcademyPythonLab };
   interactiveLabs: Array<{

@@ -1,4 +1,4 @@
-import type { AcademyLesson, AcademyReference } from "./types";
+import type { AcademyFormula, AcademyFormulaDepth, AcademyLesson, AcademyReference } from "./types";
 
 const reviewed = "2026-08-12";
 
@@ -24,7 +24,7 @@ type LessonSeed = {
   instruments: string[];
   quote: string;
   notation: string[];
-  formulas: AcademyLesson["mathematics"]["formulas"];
+  formulas: Array<Omit<AcademyFormula, "depth" | "analyticsHref">>;
   derivationTitle: string;
   derivationIntro: string;
   steps: AcademyLesson["derivation"]["steps"];
@@ -42,6 +42,25 @@ type LessonSeed = {
   macro: AcademyLesson["macroConnections"][number];
   pitfalls: string[];
   related: string[];
+};
+
+type FormulaContract = {
+  formulaDepths: AcademyFormulaDepth[];
+  formulaAnalyticsHrefs?: Array<string | undefined>;
+  derivationFormulaIndex: number;
+  derivationDepth: 2 | 3;
+};
+
+const formulaContracts: Record<string, FormulaContract> = {
+  "vol-realized": { formulaDepths: [2, 2, 1], derivationFormulaIndex: 0, derivationDepth: 2 },
+  "vol-realized-implied": { formulaDepths: [3, 1], formulaAnalyticsHrefs: ["/analytics/volatility", "/analytics/volatility"], derivationFormulaIndex: 0, derivationDepth: 3 },
+  "vol-smile": { formulaDepths: [1, 3, 1], formulaAnalyticsHrefs: ["/analytics/volatility", "/analytics/volatility", "/analytics/volatility"], derivationFormulaIndex: 1, derivationDepth: 3 },
+  "vol-term": { formulaDepths: [1, 2, 1], formulaAnalyticsHrefs: ["/analytics/volatility", "/analytics/volatility", "/analytics/volatility"], derivationFormulaIndex: 1, derivationDepth: 2 },
+  "vol-local": { formulaDepths: [3, 3, 1], formulaAnalyticsHrefs: ["/analytics/volatility", "/analytics/volatility", "/analytics/volatility"], derivationFormulaIndex: 1, derivationDepth: 3 },
+  "vol-stochastic": { formulaDepths: [3, 1, 2], formulaAnalyticsHrefs: ["/analytics/volatility", "/analytics/volatility", "/analytics/volatility"], derivationFormulaIndex: 2, derivationDepth: 2 },
+  "vol-sabr": { formulaDepths: [3, 1, 3], formulaAnalyticsHrefs: ["/analytics/volatility", "/analytics/volatility", "/analytics/volatility"], derivationFormulaIndex: 2, derivationDepth: 3 },
+  "vol-calibration": { formulaDepths: [3, 3, 2], formulaAnalyticsHrefs: ["/analytics/volatility", "/analytics/volatility", "/analytics/volatility"], derivationFormulaIndex: 1, derivationDepth: 3 },
+  "vol-higher-risk": { formulaDepths: [1, 2, 2], formulaAnalyticsHrefs: ["/lab?lab=greeks", "/lab?lab=greeks", "/lab?lab=greeks"], derivationFormulaIndex: 1, derivationDepth: 2 },
 };
 
 const seeds: LessonSeed[] = [
@@ -225,7 +244,9 @@ const seeds: LessonSeed[] = [
   },
 ];
 
-export const additionalVolatilityLessons: AcademyLesson[] = seeds.map((seed) => ({
+export const additionalVolatilityLessons: AcademyLesson[] = seeds.map((seed) => {
+  const formulaContract = formulaContracts[seed.id];
+  return {
   id: seed.id,
   slug: seed.slug,
   title: seed.title,
@@ -241,8 +262,8 @@ export const additionalVolatilityLessons: AcademyLesson[] = seeds.map((seed) => 
   legacyRoutes: seed.legacyRoutes,
   intuition: { lead: seed.lead, points: seed.points },
   marketContext: { why: seed.why, instruments: seed.instruments, quoteConvention: seed.quote },
-  mathematics: { notation: seed.notation, formulas: seed.formulas },
-  derivation: { title: seed.derivationTitle, introduction: seed.derivationIntro, steps: seed.steps, conclusion: seed.conclusion },
+  mathematics: { notation: seed.notation, formulas: seed.formulas.map((formula, index) => ({ ...formula, depth: formulaContract.formulaDepths[index], analyticsHref: formulaContract.formulaAnalyticsHrefs?.[index] })) },
+  derivation: { formulaIndex: formulaContract.derivationFormulaIndex, depth: formulaContract.derivationDepth, title: seed.derivationTitle, introduction: seed.derivationIntro, steps: seed.steps, conclusion: seed.conclusion },
   pricing: { method: seed.method, calibration: seed.calibration, limitations: seed.limitations },
   implementation: {
     architecture: ["Validate domains and units at the boundary.", "Keep the numerical kernel framework-free and deterministic.", "Return diagnostics with values.", "Test analytical limits and failure states."],
@@ -255,4 +276,5 @@ export const additionalVolatilityLessons: AcademyLesson[] = seeds.map((seed) => 
   pitfalls: seed.pitfalls,
   references,
   relatedLessonIds: seed.related,
-}));
+  };
+});
