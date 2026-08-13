@@ -61,6 +61,14 @@ const formulaContracts: Record<string, FormulaContract> = {
   "risk-model-governance": { formulaDepths: [1, 2], derivationFormulaIndex: 1, derivationDepth: 2 },
 };
 
+function formulaContractFor(seed: LessonSeed): FormulaContract {
+  const contract = formulaContracts[seed.id];
+  if (!contract || contract.formulaDepths.length !== seed.formulas.length) {
+    throw new Error(`Invalid formula contract for ${seed.id}`);
+  }
+  return contract;
+}
+
 const reference = (domain: AcademyDomain) => ({
   sourceId: domain === "xva" ? "grzelak-ir-xva" : "grzelak-computational-finance",
   locator: domain === "xva" ? "Exposure, counterparty credit and xVA notebooks" : "Measure theory, simulation and computational-finance lectures",
@@ -81,7 +89,7 @@ function pythonLab(seed: LessonSeed, locale: 0 | 1): AcademyLesson["implementati
 
 function buildLesson(seed: LessonSeed, locale: 0 | 1): Omit<AcademyLesson, "localized"> {
   const source = reference(seed.domain);
-  const formulaContract = formulaContracts[seed.id];
+  const formulaContract = formulaContractFor(seed);
   return {
     id: seed.id,
     slug: seed.slug,
@@ -287,6 +295,7 @@ const riskSeeds: LessonSeed[] = [
 ];
 
 const allSeeds = [...seeds, ...numericalSeeds, ...riskSeeds];
+if (Object.keys(formulaContracts).length !== allSeeds.length) throw new Error("Advanced formula contracts must match lesson seeds exactly");
 export const advancedAcademyLessons: AcademyLesson[] = allSeeds.map((seed) => {
   const english = buildLesson(seed, 0);
   const spanish = buildLesson(seed, 1);

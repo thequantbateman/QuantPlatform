@@ -289,9 +289,9 @@ const flagshipVolatilityLessons: AcademyLesson[] = [
       quoteConvention: "Calibration inputs must first be normalized under the asset class’s actual quote and forward conventions. Heston parameters are not portable across inconsistent surfaces.",
     },
     mathematics: {
-      notation: ["vₜ: instantaneous variance", "κ: mean-reversion speed", "θ: long-run variance", "σᵥ: vol-of-vol", "ρ: Brownian correlation"],
+      notation: ["vₜ: instantaneous variance", "κ: mean-reversion speed", "θ: long-run variance", "σᵥ: vol-of-vol", "ρ: Brownian correlation", "φ(u,τ): conditional characteristic function"],
       formulas: [
-        { label: "Risk-neutral dynamics", latex: "dS_t=(r-q)S_tdt+\\sqrt{v_t}S_tdW_t^S", interpretation: "Spot diffusion uses the stochastic variance state.", depth: 3, analyticsHref: "/analytics/volatility" },
+        { label: "Affine characteristic function", latex: "\\phi(u,\\tau)=\\exp(C(u,\\tau)+D(u,\\tau)v_t+iux_t)", interpretation: "The conditional log-price transform is exponential-affine in the current variance and log spot, reducing the pricing problem to Riccati equations.", depth: 3, analyticsHref: "/analytics/volatility" },
         { label: "Variance process", latex: "dv_t=\\kappa(\\theta-v_t)dt+\\sigma_v\\sqrt{v_t}dW_t^v", interpretation: "CIR-style mean reversion supports a non-negative variance state under suitable schemes.", depth: 3, analyticsHref: "/analytics/volatility" },
         { label: "Leverage correlation", latex: "d\\langle W^S,W^v\\rangle_t=\\rho\\,dt", interpretation: "Negative correlation links spot selloffs to variance shocks and generates downside skew.", depth: 1, analyticsHref: "/analytics/volatility" },
         { label: "Feller condition", latex: "2\\kappa\\theta\\ge\\sigma_v^2", interpretation: "A sufficient condition for the continuous-time variance process to stay strictly positive; market calibrations can violate it, demanding careful numerics.", depth: 2, analyticsHref: "/analytics/volatility" },
