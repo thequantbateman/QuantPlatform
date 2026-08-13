@@ -23,12 +23,48 @@ test("server-renders the finished landing page and production metadata", async (
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   const html = await response.text();
   assert.match(html, /<title>TheQuantBateman — Quant Finance, Visually Explained<\/title>/i);
-  assert.match(html, /QUANTITATIVE FINANCE/);
-  assert.match(html, /MARKETS, MODELS &amp; ANALYTICS/);
+  assert.match(html, /LEARN THE MODEL/i);
+  assert.match(html, /TEST THE ASSUMPTIONS/i);
   assert.match(html, /source-aware workspace/i);
   assert.match(html, /educational and research platform/i);
   assert.match(html, /http:\/\/localhost\/og\.png/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Your site is taking shape/i);
+});
+
+test("homepage server-renders a semantic platform discovery map in English and Spanish", async () => {
+  const englishResponse = await render();
+  assert.equal(englishResponse.status, 200);
+  const english = await englishResponse.text();
+
+  assert.match(english, /<section[^>]+class="[^"]*platform-knowledge-map[^"]*"[^>]+aria-labelledby="platform-map-title"/i);
+  assert.match(english, /<h2[^>]+id="platform-map-title"[^>]*>Choose your quantitative path<\/h2>/i);
+  assert.equal((english.match(/data-map-node=/g) ?? []).length, 10);
+  assert.match(english, /<button[^>]+aria-controls="platform-map-detail"[^>]+aria-pressed=/i);
+  assert.match(english, /id="platform-map-detail"[^>]+aria-live="polite"/i);
+  for (const [label, href] of [
+    ["Foundations", "/learn#track-foundations"],
+    ["Volatility", "/learn#track-volatility"],
+    ["Rates", "/learn#track-rates"],
+    ["Numerical Finance", "/learn#track-numerical-finance"],
+    ["Risk &amp; xVA", "/learn#track-risk-xva"],
+    ["Analytics / Pricing", "/analytics"],
+    ["Markets", "/markets"],
+    ["Ask", "/ask"],
+  ]) {
+    assert.match(english, new RegExp(`href="${href}"[^>]*[^<]*${label}`, "i"), `${label}: ${href}`);
+  }
+  for (const task of ["learn", "analyze", "markets", "ask"]) {
+    assert.match(english, new RegExp(`data-home-task="${task}"[^>]+href=`), task);
+  }
+  assert.doesNotMatch(english, /<canvas\b|100\+\s*(?:concepts|conceptos)/i);
+
+  const spanishResponse = await render("/", { cookie: "tqb-locale=es" });
+  assert.equal(spanishResponse.status, 200);
+  const spanish = await spanishResponse.text();
+  assert.match(spanish, /<h2[^>]+id="platform-map-title"[^>]*>Elige tu ruta cuantitativa<\/h2>/i);
+  for (const label of ["Fundamentos", "Volatilidad", "Tipos", "Finanzas numéricas", "Riesgo y xVA", "Analítica / Valoración", "Mercados", "Preguntar"]) {
+    assert.match(spanish, new RegExp(label, "i"), label);
+  }
 });
 
 test("renders key product routes without external services", async () => {

@@ -3,13 +3,11 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { assetPath, contentCatalog } from "@/src/content/catalog";
-import { localizeEntry } from "@/src/content/localization";
 import { QuantBatemanAssistant } from "@/src/components/quant-bateman/QuantBatemanAssistant";
 import { QuantBatemanImageRenderer } from "@/src/components/quant-bateman/renderers/QuantBatemanImageRenderer";
 import { QuantBatemanProvider } from "@/src/components/quant-bateman/QuantBatemanProvider";
 import { useQuantBateman } from "@/src/components/quant-bateman/useQuantBateman";
-import { demoMarketQuotes, marketDetailPath } from "@/src/data/markets";
+import { createCoreSearchItems, mergeSearchItems, searchPlatformItems, type PlatformSearchItem } from "@/src/content/search";
 import { useI18n } from "@/src/i18n";
 
 const navigation = [
@@ -29,6 +27,7 @@ function Shell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [dark, setDark] = useState(true);
+  const [academyIndex, setAcademyIndex] = useState<{ locale: "en" | "es"; items: PlatformSearchItem[] } | null>(null);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -38,22 +37,27 @@ function Shell({ children }: { children: ReactNode }) {
     window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
   }, []);
   useEffect(() => { const id = window.setTimeout(() => setDark(document.documentElement.dataset.theme !== "light"), 0); return () => window.clearTimeout(id); }, []);
+  useEffect(() => {
+    if (!paletteOpen || academyIndex?.locale === locale) return;
+    let active = true;
+    const requestedLocale = locale;
+    void import("@/src/content/academy/search").then(({ createAcademySearchItems }) => {
+      if (!active) return;
+      setAcademyIndex({ locale: requestedLocale, items: createAcademySearchItems(requestedLocale) });
+    }).catch(() => {
+      if (active) setAcademyIndex({ locale: requestedLocale, items: [] });
+    });
+    return () => { active = false; };
+  }, [academyIndex?.locale, locale, paletteOpen]);
 
-  const platformSearchItems = useMemo(() => [
-    ...contentCatalog.map((source) => { const entry = localizeEntry(source, locale); return { title: entry.title, description: entry.description, meta: `${entry.assetClass} · ${entry.difficulty}`, href: `/learn/${assetPath(entry.assetClass)}/${entry.slug}`, keywords: [source.title, entry.title, source.description, entry.description, entry.assetClass, entry.type, entry.difficulty, ...entry.tags].join(" ") }; }),
-    ...demoMarketQuotes.map((quote) => ({ title: quote.displaySymbol, description: quote.name, meta: `${quote.assetClass} · ${quote.status}`, href: marketDetailPath(quote.symbol), keywords: `${quote.symbol} ${quote.name} ${quote.assetClass} market quote cotización mercado` })),
-    { title: locale === "es" ? "Valorador de opciones europeas" : "European option pricer", description: "BSM, Garman–Kohlhagen and Black-76", meta: "ANALYTICS · LAB", href: "/lab?lab=vanilla", keywords: "price option precio opción bsm black scholes garman kohlhagen black 76 analytics lab" },
-    { title: locale === "es" ? "Panel de griegas" : "Greeks dashboard", description: "Delta, Gamma, Vega, Theta and Rho", meta: "ANALYTICS · LAB", href: "/lab?lab=greeks", keywords: "greeks griegas delta gamma vega theta rho analytics lab" },
-    { title: locale === "es" ? "Estación de mercados de predicción" : "Prediction workstation", description: locale === "es" ? "Eventos en vivo, libros L2, operaciones y analítica pública" : "Live events, L2 books, trades and public analytics", meta: "MARKETS · LIVE PUBLIC", href: "/markets/predictions", keywords: "polymarket predictions predicción probability events order book trades screener" },
-    { title: locale === "es" ? "Inteligencia de mercado" : "Market intelligence", description: locale === "es" ? "Retornos, volatilidad realizada, z-scores y rangos" : "Returns, realized volatility, z-scores and range", meta: "INTELLIGENCE", href: "/intelligence", keywords: "market mercado intelligence inteligencia return realized volatility z score range analytics" },
-    { title: locale === "es" ? "Investigación cuantitativa" : "Quant research", description: locale === "es" ? "Modelos de frontera y notas de implementación" : "Frontier models and implementation notes", meta: "RESEARCH", href: "/research", keywords: "research investigación rough volatility differentiable pricing monte carlo" },
-  ], [locale]);
+  const coreSearchItems = useMemo(() => createCoreSearchItems(locale), [locale]);
+  const platformSearchItems = useMemo(
+    () => academyIndex?.locale === locale ? mergeSearchItems(coreSearchItems, academyIndex.items) : coreSearchItems,
+    [academyIndex, coreSearchItems, locale],
+  );
 
-  const results = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    if (!term) return platformSearchItems.slice(0, 8);
-    return platformSearchItems.filter((entry) => entry.keywords.toLowerCase().includes(term)).slice(0, 10);
-  }, [platformSearchItems, query]);
+  const results = useMemo(() => searchPlatformItems(platformSearchItems, query), [platformSearchItems, query]);
+  const academyLoading = paletteOpen && academyIndex?.locale !== locale;
 
   const activeRoot = pathname === "/" ? "/" : `/${pathname.split("/").filter(Boolean)[0] ?? ""}`;
   const crumbs = pathname.split("/").filter(Boolean).slice(0, 3);
@@ -83,7 +87,7 @@ function Shell({ children }: { children: ReactNode }) {
 
       <footer className="site-footer"><div className="footer-brand"><span className="wordmark-mark">TQB</span><div><strong>THEQUANTBATEMAN</strong><span>{t("shell.footer")}</span></div></div><p>{t("shell.disclaimer")}</p><span className="footer-meta">© 2026 · {t("shell.demo")} · {locale.toUpperCase()}</span></footer>
 
-      {paletteOpen && <div className="palette-backdrop"><button className="palette-dismiss" type="button" onClick={() => setPaletteOpen(false)} aria-label={t("shell.close")} /><section className="command-palette" role="dialog" aria-modal="true" aria-label={t("shell.search")}><div className="palette-input-row"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("shell.searchPlaceholder")} aria-label={t("shell.search")} /><kbd>ESC</kbd></div><div className="palette-results"><span className="eyebrow">{query ? `${results.length} ${t("shell.results")}` : t("shell.suggested")}</span>{results.map((entry) => <a key={entry.href} href={entry.href} onClick={() => setPaletteOpen(false)}><span className="asset-dot asset-foundations" /><div><strong>{entry.title}</strong><small>{entry.description}</small></div><span className="result-meta">{entry.meta}</span></a>)}{!results.length && <p className="empty-state">{t("shell.noResults")}</p>}</div></section></div>}
+      {paletteOpen && <div className="palette-backdrop"><button className="palette-dismiss" type="button" onClick={() => setPaletteOpen(false)} aria-label={t("shell.close")} /><section className="command-palette" role="dialog" aria-modal="true" aria-label={t("shell.search")}><div className="palette-input-row"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("shell.searchPlaceholder")} aria-label={t("shell.search")} /><kbd>ESC</kbd></div><div className="palette-results" aria-busy={academyLoading}><span className="eyebrow">{query ? `${results.length} ${t("shell.results")}` : t("shell.suggested")}</span>{academyLoading && <p className="palette-loading" role="status">{t("shell.academyLoading")}</p>}{results.map((entry) => <a key={entry.href} href={entry.href} onClick={() => setPaletteOpen(false)}><span className="asset-dot asset-foundations" /><div><strong>{entry.title}</strong><small>{entry.description}</small></div><span className="result-meta"><b>{entry.source === "academy" ? t("shell.searchCategoryAcademy") : t("shell.searchCategoryPlatform")}</b>{entry.meta}</span></a>)}{!academyLoading && !results.length && <p className="empty-state">{t("shell.noResults")}</p>}</div></section></div>}
     </div>
   );
 }
