@@ -54,6 +54,16 @@ test("dark Academy chart contexts declare the complete chart token contract", as
   }
 });
 
+test("the Spanish volatility surface has no English playback or scenario chrome", () => {
+  const html = renderLocalized(<VolSurfaceLab />, "es");
+
+  assert.match(html, />REPRODUCIR</);
+  assert.match(html, /Superficie educativa estática/);
+  assert.match(html, /Simulación controlada únicamente/);
+  assert.doesNotMatch(html, />PLAY</);
+  assert.doesNotMatch(html, /Static teaching surface|Controlled simulation only/);
+});
+
 test("the fourth legend key uses the same dash-dot pattern as the plotted series", () => {
   const series: Series[] = ["One", "Two", "Three", "Four"].map((name, index) => ({ name, values: [index, index + 1] }));
   const html = renderToStaticMarkup(<LineChart x={[0, 1]} series={series} xLabel="Time" yLabel="Value" />);

@@ -89,11 +89,23 @@ function BlackScholesLab() {
   const { locale } = useI18n();
   const [input, setInput] = useState(baseOption);
   const [animating, setAnimating] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const animationStartRef = useRef(baseOption.time);
   const analytics = useMemo(() => blackScholes(input), [input]);
   const spots = useMemo(() => Array.from({ length: 61 }, (_, index) => input.strike * (0.45 + index * 0.0185)), [input.strike]);
   const prices = useMemo(() => spots.map((spot) => blackScholes({ ...input, spot }).price), [spots, input]);
   const intrinsic = useMemo(() => spots.map((spot) => Math.max((input.type === "call" ? 1 : -1) * (spot - input.strike), 0)), [spots, input]);
+
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const syncPreference = () => {
+      setReducedMotion(preference.matches);
+      if (preference.matches) setAnimating(false);
+    };
+    syncPreference();
+    preference.addEventListener("change", syncPreference);
+    return () => preference.removeEventListener("change", syncPreference);
+  }, []);
 
   useEffect(() => {
     if (!animating) return;
@@ -124,7 +136,7 @@ function BlackScholesLab() {
           <ParameterInput label={pick(locale, { en: "Dividend yield", es: "Rentabilidad por dividendo" })} suffix="decimal" value={input.dividend} min={0} max={0.12} step={0.001} onChange={(value) => update("dividend", value)} />
           <ParameterInput label={pick(locale, { en: "Volatility", es: "Volatilidad" })} suffix="decimal" value={input.volatility} min={0.001} max={0.8} step={0.005} onChange={(value) => update("volatility", value)} />
           <div className="presets"><span>{pick(locale, { en: "PRESETS", es: "ESCENARIOS" })}</span><button onClick={() => setInput({ ...baseOption, spot: 120 })}>ITM</button><button onClick={() => setInput(baseOption)}>ATM</button><button onClick={() => setInput({ ...baseOption, spot: 80 })}>OTM</button></div>
-          <button className="animate-button" type="button" onClick={() => { if (!animating) { const startTime = input.time < 0.05 ? 1 : input.time; animationStartRef.current = startTime; setInput((current) => ({ ...current, time: startTime })); } setAnimating((value) => !value); }}>{animating ? pick(locale, { en: "Pause expiry animation", es: "Pausar animación al vencimiento" }) : pick(locale, { en: "Animate time → expiry", es: "Animar tiempo → vencimiento" })}</button>
+          <button className="animate-button" type="button" disabled={reducedMotion} aria-label={reducedMotion ? pick(locale, { en: "Expiry autoplay unavailable with reduced motion", es: "Animación automática al vencimiento no disponible con movimiento reducido" }) : undefined} onClick={() => { if (!animating) { const startTime = input.time < 0.05 ? 1 : input.time; animationStartRef.current = startTime; setInput((current) => ({ ...current, time: startTime })); } setAnimating((value) => !value); }}>{animating ? pick(locale, { en: "Pause expiry animation", es: "Pausar animación al vencimiento" }) : pick(locale, { en: "Animate time → expiry", es: "Animar tiempo → vencimiento" })}</button>
         </aside>
         <div className="output-panel">
           <div className="metric-grid"><Metric label="Price" value={analytics.price} primary /><Metric label="Delta" value={analytics.delta} /><Metric label="Gamma" value={analytics.gamma} /><Metric label="Vega / 1 vol pt" value={analytics.vega} /><Metric label="Theta / day" value={analytics.theta} /><Metric label="Rho / 100bp" value={analytics.rho} /></div>
