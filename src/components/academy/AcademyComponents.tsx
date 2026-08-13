@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Formula } from "@/src/components/content/Formula";
 import { findAcademySource } from "@/src/content/academy/sources";
-import type { AcademyDerivationStep, AcademyReference, DeskSection, MacroConnection } from "@/src/content/academy/types";
+import type { AcademyDerivation, AcademyDerivationStep, AcademyFormula, AcademyReference, DeskSection, MacroConnection } from "@/src/content/academy/types";
 import { QuantFlow } from "./QuantFlow";
 
 export function LessonSection({ index, label, title, children, id }: { index: string; label: string; title: string; children: ReactNode; id: string }) {
@@ -12,8 +12,54 @@ export function QuantVisual({ title, eyebrow, equation, annotation, caption, chi
   return <figure className={`quant-visual quant-visual-${format}`}><header><span>{eyebrow}</span><b>SYNTHETIC · EDUCATIONAL</b></header><div className="quant-visual-stage"><div><h3>{title}</h3><p>{annotation}</p>{equation && <Formula latex={equation} />}</div>{children && <div className="quant-visual-media">{children}</div>}</div><figcaption>{caption}</figcaption></figure>;
 }
 
-export function DerivationSteps({ title, introduction, steps, conclusion }: { title: string; introduction: string; steps: AcademyDerivationStep[]; conclusion: string }) {
-  return <div className="derivation"><div className="derivation-lead"><span>DERIVATION</span><h3>{title}</h3><p>{introduction}</p></div><ol>{steps.map((step, index) => <li key={step.title}><span>{String(index + 1).padStart(2, "0")}</span><div><h4>{step.title}</h4><p>{step.body}</p>{step.latex && <Formula latex={step.latex} />}{step.check && <aside><b>NUMERICAL CHECK</b>{step.check}</aside>}</div></li>)}</ol><p className="derivation-conclusion">{conclusion}</p></div>;
+export function DerivationSteps({ title, introduction, steps, conclusion, eyebrow = "DERIVATION", numericalCheckLabel = "NUMERICAL CHECK" }: { title: string; introduction: string; steps: AcademyDerivationStep[]; conclusion: string; eyebrow?: string; numericalCheckLabel?: string }) {
+  return <div className="derivation"><div className="derivation-lead"><span>{eyebrow}</span><h3>{title}</h3><p>{introduction}</p></div><ol>{steps.map((step, index) => <li key={step.title}><span>{String(index + 1).padStart(2, "0")}</span><div><h4>{step.title}</h4><p>{step.body}</p>{step.latex && <Formula latex={step.latex} />}{step.check && <aside><b>{numericalCheckLabel}</b>{step.check}</aside>}</div></li>)}</ol><p className="derivation-conclusion">{conclusion}</p></div>;
+}
+
+export interface QuantFormulaLabels {
+  formula: string;
+  definition: string;
+  shortDerivation: string;
+  fullDerivation: string;
+  inputs: string;
+  assumptions: string;
+  openLab: string;
+  numericalCheck: string;
+}
+
+function FormulaDisclosure({ anchorId, kind, label, children }: { anchorId: string; kind: "derivation" | "inputs" | "assumptions"; label: string; children: ReactNode }): ReactNode {
+  const summaryId = `${anchorId}-${kind}-summary`;
+  const regionId = `${anchorId}-${kind}-region`;
+  return <details className="quant-formula-disclosure"><summary id={summaryId} aria-controls={regionId}>{label}</summary><div id={regionId} role="region" aria-labelledby={summaryId}>{children}</div></details>;
+}
+
+export function QuantFormula({
+  formula,
+  derivation,
+  notation,
+  limitations,
+  labels,
+  anchorId,
+}: {
+  formula: AcademyFormula;
+  derivation?: AcademyDerivation;
+  notation: string[];
+  limitations: string[];
+  labels: QuantFormulaLabels;
+  anchorId: string;
+}): ReactNode {
+  const depthLabel = formula.depth === 1 ? labels.definition : formula.depth === 2 ? labels.shortDerivation : labels.fullDerivation;
+  return <article className="quant-formula" id={anchorId} aria-labelledby={`${anchorId}-title`}>
+    <header><span>{labels.formula} · {depthLabel}</span><h3 id={`${anchorId}-title`}>{formula.label}</h3></header>
+    <div className="quant-formula-equation"><Formula latex={formula.latex} /></div>
+    <p className="quant-formula-interpretation">{formula.interpretation}</p>
+    {formula.analyticsHref && <a className="quant-formula-lab" href={formula.analyticsHref}>{labels.openLab} <span aria-hidden="true">↗</span></a>}
+    <div className="quant-formula-disclosures">
+      {formula.depth > 1 && derivation && <FormulaDisclosure anchorId={anchorId} kind="derivation" label={depthLabel}><DerivationSteps {...derivation} eyebrow={depthLabel} numericalCheckLabel={labels.numericalCheck} /></FormulaDisclosure>}
+      {notation.length > 0 && <FormulaDisclosure anchorId={anchorId} kind="inputs" label={labels.inputs}><ul>{notation.map((item) => <li key={item}><code>{item}</code></li>)}</ul></FormulaDisclosure>}
+      {limitations.length > 0 && <FormulaDisclosure anchorId={anchorId} kind="assumptions" label={labels.assumptions}><ul>{limitations.map((item) => <li key={item}>{item}</li>)}</ul></FormulaDisclosure>}
+    </div>
+  </article>;
 }
 
 export function PythonLab({ title, objective, code, output, checks }: { title: string; objective: string; code: string; output: string[]; checks: string[] }) {
