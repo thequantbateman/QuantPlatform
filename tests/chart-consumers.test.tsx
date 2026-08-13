@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { AdvancedConceptLab } from "../src/components/academy/AdvancedConceptLab";
 import { RatesConceptLab } from "../src/components/academy/RatesConceptLab";
+import { VolSurfaceLab } from "../src/components/academy/VolSurfaceLab";
 import { LineChart, type Series } from "../src/components/charts/LineChart";
 import { academyLessons } from "../src/content/academy/catalog";
 import type { AcademyLabId, AcademyLesson } from "../src/content/academy/types";
@@ -28,15 +29,18 @@ function chartReadout(html: string): string {
 
 test("dark Academy chart contexts declare the complete chart token contract", async () => {
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  const volSurfaceHtml = renderLocalized(<VolSurfaceLab />);
+  assert.match(volSurfaceHtml, /class="academy-vol-lab /, "the volatility surface owner must use the selector covered by the chart theme contract");
   const expectedSeries = {
     "advanced-lab": ["rgb(var(--academy-chart-heat-2))", "rgb(var(--academy-chart-heat-5))", "rgb(var(--academy-chart-heat-3))", "var(--academy-chart-pink)"],
+    "academy-vol-lab": ["var(--academy-chart-accent)", "var(--academy-chart-amber)", "var(--academy-chart-cyan)", "var(--academy-chart-pink)"],
     "vol-concept-lab": ["var(--academy-chart-coral)", "var(--academy-chart-amber)", "var(--academy-chart-cyan)", "var(--academy-chart-pink)"],
     "rates-curve-lab": ["var(--academy-chart-rates)", "var(--academy-chart-amber)", "var(--academy-chart-cyan)", "var(--academy-chart-pink)"],
   } as const;
 
   for (const selector of Object.keys(expectedSeries) as Array<keyof typeof expectedSeries>) {
     const blocks = [...css.matchAll(new RegExp(`\\.${selector} \\{([^}]*)\\}`, "g"))].map((match) => match[1]);
-    const block = blocks[0] ?? "";
+    const block = blocks.find((candidate) => ["ink", "muted", "grid", "series-1", "series-2", "series-3", "series-4"].every((token) => new RegExp(`--chart-${token}\\s*:`).test(candidate))) ?? "";
     for (const token of ["ink", "muted", "grid", "series-1", "series-2", "series-3", "series-4"]) {
       assert.match(block, new RegExp(`--chart-${token}\\s*:`), `${selector} must directly declare --chart-${token}`);
     }
