@@ -28,9 +28,10 @@ export interface QuantFormulaLabels {
 }
 
 function FormulaDisclosure({ anchorId, kind, label, children }: { anchorId: string; kind: "derivation" | "inputs" | "assumptions"; label: string; children: ReactNode }): ReactNode {
+  const detailsId = `${anchorId}-${kind}`;
   const summaryId = `${anchorId}-${kind}-summary`;
   const regionId = `${anchorId}-${kind}-region`;
-  return <details className="quant-formula-disclosure"><summary id={summaryId} aria-controls={regionId}>{label}</summary><div id={regionId} role="region" aria-labelledby={summaryId}>{children}</div></details>;
+  return <details className="quant-formula-disclosure" id={detailsId}><summary id={summaryId} aria-controls={regionId}>{label}</summary><div id={regionId} role="region" aria-labelledby={summaryId}>{children}</div></details>;
 }
 
 export function QuantFormula({
@@ -46,6 +47,7 @@ export function QuantFormula({
   notation: string[];
   limitations: string[];
   labels: QuantFormulaLabels;
+  /** Unique within the page, normally `${lessonId}-formula-${formulaIndex}`. */
   anchorId: string;
 }): ReactNode {
   const depthLabel = formula.depth === 1 ? labels.definition : formula.depth === 2 ? labels.shortDerivation : labels.fullDerivation;

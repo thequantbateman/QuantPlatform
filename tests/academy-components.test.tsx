@@ -52,12 +52,14 @@ function renderFormula({
   derivationOverride = derivation,
   notation = ["r = continuously compounded zero rate", "T = maturity in years"],
   limitations = ["Assumes a flat deterministic rate."],
+  anchorId = "discount-factor",
 }: {
   labels?: QuantFormulaLabels;
   formulaOverride?: AcademyFormula;
   derivationOverride?: AcademyDerivation;
   notation?: string[];
   limitations?: string[];
+  anchorId?: string;
 } = {}): string {
   return renderToStaticMarkup(
     <QuantFormula
@@ -66,7 +68,7 @@ function renderFormula({
       notation={notation}
       limitations={limitations}
       labels={labels}
-      anchorId="discount-factor"
+      anchorId={anchorId}
     />,
   );
 }
@@ -112,4 +114,49 @@ test("preserves localized disclosure structure, ordered math steps, and numerica
   assert.ok(spanish.indexOf("Accumulate") < spanish.indexOf("Invert"));
   assert.ok(spanish.indexOf("Invert") < spanish.indexOf("r=5%"));
   assert.equal((spanish.match(/<li\b/g) ?? []).length, 5);
+});
+
+test("keeps formula-index anchors and disclosure relationships unique across a lesson", () => {
+  const html = renderToStaticMarkup(<>
+    <QuantFormula
+      formula={formula}
+      derivation={derivation}
+      notation={["r = zero rate"]}
+      limitations={["Deterministic rates only."]}
+      labels={englishLabels}
+      anchorId="rate-discount-formula-0"
+    />
+    <QuantFormula
+      formula={{ ...formula, label: "Forward discount factor" }}
+      derivation={derivation}
+      notation={["T_1, T_2 = tenor dates"]}
+      limitations={["Uses one curve."]}
+      labels={englishLabels}
+      anchorId="rate-discount-formula-1"
+    />
+  </>);
+  const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]);
+  const detailsIds = [...html.matchAll(/<details class="quant-formula-disclosure" id="([^"]+)">/g)].map((match) => match[1]);
+  const summaries = [...html.matchAll(/<summary id="([^"]+)" aria-controls="([^"]+)">/g)];
+  const regions = new Map(
+    [...html.matchAll(/<div id="([^"]+)" role="region" aria-labelledby="([^"]+)">/g)]
+      .map((match) => [match[1], match[2]]),
+  );
+
+  assert.match(html, /<article class="quant-formula" id="rate-discount-formula-0"/);
+  assert.match(html, /<article class="quant-formula" id="rate-discount-formula-1"/);
+  assert.equal(new Set(ids).size, ids.length);
+  assert.equal(detailsIds.length, 6);
+  assert.equal(new Set(detailsIds).size, detailsIds.length);
+  assert.equal(summaries.length, 6);
+  assert.equal(regions.size, 6);
+  for (const [, summaryId, regionId] of summaries) {
+    assert.equal(regions.get(regionId), summaryId);
+  }
+  for (const formulaIndex of [0, 1]) {
+    assert.match(
+      html,
+      new RegExp(`id="rate-discount-formula-${formulaIndex}" aria-labelledby="rate-discount-formula-${formulaIndex}-title"`),
+    );
+  }
 });
