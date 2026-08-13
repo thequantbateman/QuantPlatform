@@ -593,6 +593,7 @@ body { background-image: linear-gradient(rgb(255 255 255 / 1.4%) 1px, transparen
 }
 
 /* Accessible shared financial charts */
+.academy-vol-lab { --chart-ink: var(--academy-chart-ink); --chart-muted: var(--academy-chart-muted); --chart-grid: var(--academy-chart-grid); --chart-series-1: var(--academy-chart-accent); --chart-series-2: var(--academy-chart-amber); --chart-series-3: var(--academy-chart-cyan); --chart-series-4: var(--academy-chart-pink); }
 .vol-concept-lab { --chart-series-3: var(--academy-chart-cyan); }
 .rates-curve-lab { --chart-series-3: var(--academy-chart-cyan); }
 .line-chart-figure { min-width: 0; margin: 0; }
