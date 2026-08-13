@@ -44,6 +44,21 @@ test("Academy V2 lessons implement the canonical educational contract", () => {
   assert.equal(findAcademyLesson("volatility-surface")?.id, "vol-surface");
 });
 
+test("six Academy tracks preserve every canonical lesson destination exactly once", () => {
+  assert.equal(academyTracks.length, 6);
+  const destinations = academyTracks.flatMap((track) => track.nodes.map((node) => ({ trackId: track.id, node })));
+  assert.equal(destinations.length, 41);
+  assert.equal(new Set(destinations.map(({ node }) => node.academyLessonId)).size, academyLessons.length);
+  assert.equal(new Set(destinations.map(({ node }) => node.href)).size, academyLessons.length);
+  for (const { trackId, node } of destinations) {
+    const lesson = academyLessons.find((item) => item.id === node.academyLessonId);
+    assert.ok(lesson, `${trackId}:${node.id}`);
+    assert.equal(node.href, `/learn/${lesson.domain}/${lesson.slug}`, lesson.id);
+    assert.ok(lesson.intuition.lead && lesson.marketContext.why && lesson.implementation.pythonLab.code, lesson.id);
+    assert.ok(lesson.interactiveLabs[0] && lesson.references[0], lesson.id);
+  }
+});
+
 test("flagship volatility track is sequenced and cross-links deep lessons", () => {
   const track = academyTracks.find((item) => item.id === "volatility");
   assert.ok(track);

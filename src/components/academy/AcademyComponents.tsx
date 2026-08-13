@@ -4,8 +4,13 @@ import { findAcademySource } from "@/src/content/academy/sources";
 import type { AcademyDerivation, AcademyDerivationStep, AcademyFormula, AcademyReference, DeskSection, MacroConnection } from "@/src/content/academy/types";
 import { QuantFlow } from "./QuantFlow";
 
-export function LessonSection({ index, label, title, children, id }: { index: string; label: string; title: string; children: ReactNode; id: string }) {
-  return <section className="academy-section" id={id}><header><span>{index}</span><div><b>{label}</b><h2>{title}</h2></div></header>{children}</section>;
+export function LessonSection({ index, label, title, children, id, wide = false }: { index: string; label: string; title: string; children: ReactNode; id: string; wide?: boolean }) {
+  return <section className={`academy-section${wide ? " academy-section-wide" : ""}`} id={id}><header><span>{index}</span><div><b>{label}</b><h2>{title}</h2></div></header>{children}</section>;
+}
+
+export function LessonDisclosure({ index, label, title, children, id }: { index: string; label: string; title: string; children: ReactNode; id: string }) {
+  const summaryId = `${id}-summary`;
+  return <section className="academy-section academy-section-disclosure"><details className="academy-section-details"><summary id={summaryId}><span>{index}</span><span className="academy-section-summary-copy"><b>{label}</b><strong>{title}</strong></span></summary><div className="academy-section-details-body" id={id} role="region" aria-labelledby={summaryId}>{children}</div></details></section>;
 }
 
 export function QuantVisual({ title, eyebrow, equation, annotation, caption, children, format = "wide" }: { title: string; eyebrow: string; equation?: string; annotation: string; caption: string; children?: ReactNode; format?: "wide" | "portrait" }) {
@@ -41,6 +46,7 @@ export function QuantFormula({
   limitations,
   labels,
   anchorId,
+  derivationAnchorId,
 }: {
   formula: AcademyFormula;
   derivation?: AcademyDerivation;
@@ -49,6 +55,8 @@ export function QuantFormula({
   labels: QuantFormulaLabels;
   /** Unique within the page, normally `${lessonId}-formula-${formulaIndex}`. */
   anchorId: string;
+  /** Stable lesson hash placed inside the bound, closed derivation disclosure. */
+  derivationAnchorId?: string;
 }): ReactNode {
   const depthLabel = formula.depth === 1 ? labels.definition : formula.depth === 2 ? labels.shortDerivation : labels.fullDerivation;
   return <article className="quant-formula" id={anchorId} aria-labelledby={`${anchorId}-title`}>
@@ -57,7 +65,7 @@ export function QuantFormula({
     <p className="quant-formula-interpretation">{formula.interpretation}</p>
     {formula.analyticsHref && <a className="quant-formula-lab" href={formula.analyticsHref}>{labels.openLab} <span aria-hidden="true">↗</span></a>}
     <div className="quant-formula-disclosures">
-      {formula.depth > 1 && derivation && <FormulaDisclosure anchorId={anchorId} kind="derivation" label={depthLabel}><DerivationSteps {...derivation} eyebrow={depthLabel} numericalCheckLabel={labels.numericalCheck} /></FormulaDisclosure>}
+      {formula.depth > 1 && derivation && <FormulaDisclosure anchorId={anchorId} kind="derivation" label={depthLabel}><div id={derivationAnchorId} className={derivationAnchorId ? "academy-hash-anchor" : undefined}><DerivationSteps {...derivation} eyebrow={depthLabel} numericalCheckLabel={labels.numericalCheck} /></div></FormulaDisclosure>}
       {notation.length > 0 && <FormulaDisclosure anchorId={anchorId} kind="inputs" label={labels.inputs}><ul>{notation.map((item) => <li key={item}><code>{item}</code></li>)}</ul></FormulaDisclosure>}
       {limitations.length > 0 && <FormulaDisclosure anchorId={anchorId} kind="assumptions" label={labels.assumptions}><ul>{limitations.map((item) => <li key={item}>{item}</li>)}</ul></FormulaDisclosure>}
     </div>
