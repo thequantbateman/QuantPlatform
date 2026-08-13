@@ -23,6 +23,8 @@
   --chart-muted: var(--muted);
   --chart-series-1: var(--accent);
   --chart-series-2: var(--gold);
+  --chart-series-3: var(--positive);
+  --chart-series-4: var(--negative);
   --focus-ring: var(--accent-strong);
   --academy-chart-ink: #eee7dc;
   --academy-chart-muted: #8d929e;
@@ -583,4 +585,45 @@ body { background-image: linear-gradient(rgb(255 255 255 / 1.4%) 1px, transparen
   .ask-composer > div > button { min-height: 48px; }
   .ask-composer > span { line-height: 1.4; }
   .vol-analytics-intro { align-items: start; flex-direction: column; }
+}
+
+/* Accessible shared financial charts */
+.line-chart-figure { min-width: 0; margin: 0; }
+.line-chart-figure > figcaption { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; padding: 9px 12px 0; }
+.line-chart-figure > figcaption strong { font: 700 8px ui-monospace, monospace; text-transform: uppercase; }
+.line-chart-figure > figcaption p { max-width: 66ch; margin: 0; color: var(--chart-muted); font: 8px/1.45 ui-monospace, monospace; text-align: right; }
+.line-chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 0; padding: 8px 12px 0; list-style: none; color: var(--chart-muted); font: 8px ui-monospace, monospace; }
+.line-chart-legend li { display: inline-flex; gap: 5px; align-items: center; }
+.line-chart-key { --series-color: var(--chart-series-1); width: 18px; height: 14px; display: inline-grid; place-items: center; border-top: 2px solid var(--series-color); color: var(--chart-ink); font: 700 6px ui-monospace, monospace; font-style: normal; }
+.line-chart-legend li:nth-child(2) .line-chart-key { --series-color: var(--chart-series-2); }
+.line-chart-legend li:nth-child(3) .line-chart-key { --series-color: var(--chart-series-3); }
+.line-chart-legend li:nth-child(4) .line-chart-key { --series-color: var(--chart-series-4); }
+.line-chart-key-1 { border-top-style: dashed; }
+.line-chart-key-2 { border-top-style: dotted; }
+.line-chart-key-3 { border-top-style: double; }
+.line-chart:focus-visible { outline: 2px solid var(--chart-series-1); outline-offset: -3px; }
+.line-chart-readout { display: block; padding: 7px 12px; border-top: 1px solid var(--chart-grid); color: var(--chart-ink); font: 8px/1.45 ui-monospace, monospace; }
+.line-chart-help { margin: 0; padding: 0 12px 8px; color: var(--chart-muted); font: 7px/1.4 ui-monospace, monospace; }
+.line-chart-table { margin: 0 12px 10px; border: 1px solid var(--chart-grid); }
+.line-chart-table summary { padding: 8px 10px; color: var(--chart-muted); cursor: pointer; font: 700 7px ui-monospace, monospace; text-transform: uppercase; }
+.line-chart-table > div { max-height: 270px; overflow: auto; }
+.line-chart-table table { width: 100%; border-collapse: collapse; font: 8px ui-monospace, monospace; }
+.line-chart-table caption { padding: 8px; color: var(--chart-muted); text-align: left; }
+.line-chart-table th, .line-chart-table td { padding: 6px 8px; border-top: 1px solid var(--chart-grid); text-align: right; white-space: nowrap; }
+.line-chart-table th:first-child { text-align: left; }
+
+.scenario-table-wrap, .greek-heatmap-wrap { overflow-x: auto; }
+.scenario-matrix, .greek-heatmap { width: 100%; min-width: 560px; display: table; border-collapse: collapse; border: 1px solid var(--border); font: 7px ui-monospace, monospace; }
+.scenario-matrix caption, .greek-heatmap caption, .curve-table caption { padding: 8px 10px; color: var(--muted); text-align: left; }
+.scenario-matrix th, .scenario-matrix td, .greek-heatmap th, .greek-heatmap td { min-width: 0; height: auto; padding: 8px 7px; border: 1px solid var(--border); text-align: right; font: 7px ui-monospace, monospace; font-style: normal; }
+.scenario-matrix th, .greek-heatmap th { color: var(--muted); background: var(--paper-muted); }
+.scenario-matrix th:first-child, .greek-heatmap th:first-child { text-align: left; }
+.scenario-matrix td, .greek-heatmap td { background: color-mix(in srgb, var(--chart-series-1) calc(var(--cell-intensity) * 72%), var(--paper-strong)); color: var(--ink); }
+.greek-heatmap { height: auto; }
+.curve-table input[type="number"] { width: 92px; padding: 6px; border: 1px solid var(--border); background: var(--paper-strong); color: var(--ink); font: 9px ui-monospace, monospace; }
+
+@media (max-width: 600px) {
+  .line-chart-figure > figcaption { align-items: start; flex-direction: column; gap: 4px; }
+  .line-chart-figure > figcaption p { text-align: left; }
+  .line-chart-help { display: none; }
 }
