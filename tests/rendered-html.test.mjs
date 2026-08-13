@@ -4,12 +4,14 @@ import test from "node:test";
 
 const root = new URL("../", import.meta.url);
 
-async function render(path = "/") {
+async function render(path = "/", options = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}-${path}`);
   const { default: worker } = await import(workerUrl.href);
   return worker.fetch(
-    new Request(new URL(path, "http://localhost"), { headers: { accept: "text/html", host: "localhost" } }),
+    new Request(new URL(path, "http://localhost"), {
+      headers: { accept: "text/html", host: "localhost", ...(options.cookie ? { cookie: options.cookie } : {}) },
+    }),
     { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
     { waitUntil() {}, passThroughOnException() {} },
   );
@@ -36,6 +38,11 @@ test("renders key product routes without external services", async () => {
     ["/ask", "TOOLS → SOURCES → EXPLANATION"],
     ["/research", "ACTIVE RESEARCH"],
     ["/learn/equity/black-scholes", "Build the mental model first"],
+    ["/learn/foundations/girsanov-risk-neutral-pricing", "Girsanov"],
+    ["/learn/rates/interest-rate-swaps", "Interest-rate swaps"],
+    ["/learn/volatility/heston-model", "Heston"],
+    ["/analytics/volatility", "ONE LINKED STATE"],
+    ["/lab?lab=surface", "ONE LINKED STATE"],
   ]) {
     const response = await render(path);
     assert.equal(response.status, 200, path);
