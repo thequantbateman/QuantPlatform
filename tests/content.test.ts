@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { contentCatalog, findContent } from "../src/content/catalog";
 import { localizeEntry } from "../src/content/localization";
 import { academyLessons, academyTracks, findAcademyLesson, findAcademyLessonForRoute } from "../src/content/academy/catalog";
+import { localizeAcademyLesson, localizeAcademyLevel, localizeAcademyTrack } from "../src/content/academy/localization";
 import { academySources } from "../src/content/academy/sources";
 
 test("expanded knowledge graph covers all major asset families", () => {
@@ -103,6 +104,30 @@ test("new advanced lessons carry complete Spanish payloads", () => {
     assert.equal(lesson.localized?.es.derivation?.steps.length, lesson.derivation.steps.length, lesson.id);
     assert.equal(lesson.localized?.es.interactiveLabs?.length, 1, lesson.id);
   }
+});
+
+test("canonical formula and track metadata use authored Spanish labels", () => {
+  const heston = academyLessons.find((lesson) => lesson.id === "vol-heston");
+  const discounting = academyLessons.find((lesson) => lesson.id === "rate-discount");
+  const volatilityTrack = academyTracks.find((track) => track.id === "volatility");
+  assert.ok(heston && discounting && volatilityTrack);
+
+  assert.deepEqual(
+    localizeAcademyLesson(heston, "es").mathematics.formulas.map((formula) => formula.label),
+    ["Función característica afín", "Proceso de varianza", "Correlación de apalancamiento", "Condición de Feller"],
+  );
+  assert.deepEqual(
+    localizeAcademyLesson(discounting, "es").mathematics.formulas.map((formula) => formula.label),
+    ["Precio del bono cupón cero", "Valor actual del flujo de caja", "Rentabilidad por cociente de descuentos"],
+  );
+  for (const lesson of academyLessons.filter((item) => item.domain === "volatility" || item.domain === "rates")) {
+    const labels = localizeAcademyLesson(lesson, "es").mathematics.formulas.map((formula) => formula.label);
+    assert.equal(labels.length, lesson.mathematics.formulas.length, lesson.id);
+    labels.forEach((label, index) => assert.notEqual(label, lesson.mathematics.formulas[index].label, `${lesson.id}:${index}`));
+  }
+  assert.equal(localizeAcademyTrack(volatilityTrack, "es").nodes[0].stage, "Medición y estimadores");
+  assert.equal(localizeAcademyLevel("front-office", "es"), "front office");
+  assert.equal(localizeAcademyLevel("foundation", "es"), "fundamentos");
 });
 
 test("legacy volatility routes resolve to the canonical deep lessons", () => {

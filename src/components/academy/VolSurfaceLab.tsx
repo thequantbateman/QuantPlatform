@@ -10,13 +10,13 @@ import { buildVolSurface, defaultVolSurfaceParameters, educationalVolatility, ne
 type View = "heatmap" | "3d" | "smile" | "term";
 const views: readonly View[] = ["heatmap", "3d", "smile", "term"];
 
-const scenarios: Array<{ id: VolSurfaceScenario; label: string; note: string }> = [
-  { id: "base", label: "Base", note: "Static teaching surface" },
-  { id: "spot-crash", label: "Spot crash", note: "Spot −18%, front vol and downside skew rise" },
-  { id: "vol-spike", label: "Vol spike", note: "Broad level shock with stronger front end" },
-  { id: "term-inversion", label: "Term inversion", note: "Short-dated uncertainty dominates" },
-  { id: "skew-steepening", label: "Skew steepening", note: "Downside wing reprices most" },
-  { id: "normalization", label: "Normalization", note: "A stressed surface decays toward base" },
+const scenarios: Array<{ id: VolSurfaceScenario; en: { label: string; note: string }; es: { label: string; note: string } }> = [
+  { id: "base", en: { label: "Base", note: "Static teaching surface" }, es: { label: "Base", note: "Superficie educativa estática" } },
+  { id: "spot-crash", en: { label: "Spot crash", note: "Spot −18%; front vol and downside skew rise" }, es: { label: "Caída de spot", note: "Spot −18%; suben la vol corta y el skew bajista" } },
+  { id: "vol-spike", en: { label: "Vol spike", note: "Broad level shock with stronger front end" }, es: { label: "Pico de volatilidad", note: "Shock amplio con mayor impacto frontal" } },
+  { id: "term-inversion", en: { label: "Term inversion", note: "Short-dated uncertainty dominates" }, es: { label: "Inversión temporal", note: "Domina la incertidumbre de corto plazo" } },
+  { id: "skew-steepening", en: { label: "Skew steepening", note: "Downside wing reprices most" }, es: { label: "Aumento del skew", note: "El ala bajista se revaloriza más" } },
+  { id: "normalization", en: { label: "Normalization", note: "A stressed surface decays toward base" }, es: { label: "Normalización", note: "La superficie tensionada revierte hacia la base" } },
 ];
 
 const tenors = [{ label: "1W", value: 7 / 365 }, { label: "1M", value: 30 / 365 }, { label: "3M", value: 0.25 }, { label: "6M", value: 0.5 }, { label: "1Y", value: 1 }, { label: "2Y", value: 2 }];
@@ -28,6 +28,7 @@ export function VolSurfaceLab({ compact = false }: { compact?: boolean }) {
   const [maturity, setMaturity] = useState(0.5);
   const [moneyness, setMoneyness] = useState(1);
   const [playing, setPlaying] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const grid = useMemo(() => view === "3d"
     ? buildVolSurface(params, Array.from({ length: 19 }, (_, index) => 7 / 365 + index * ((2 - 7 / 365) / 18)), Array.from({ length: 31 }, (_, index) => 0.7 + index * 0.02))
     : buildVolSurface(params), [params, view]);
@@ -35,6 +36,17 @@ export function VolSurfaceLab({ compact = false }: { compact?: boolean }) {
   const currentScenario = scenarios.find((scenario) => scenario.id === params.scenario) ?? scenarios[0];
   const smile = useMemo(() => Array.from({ length: 41 }, (_, index) => 0.7 + index * 0.015).map((ratio) => ({ x: ratio, y: educationalVolatility(ratio, maturity, params) })), [maturity, params]);
   const term = useMemo(() => Array.from({ length: 41 }, (_, index) => 7 / 365 + index * ((2 - 7 / 365) / 40)).map((time) => ({ x: time, y: educationalVolatility(moneyness, time, params) })), [moneyness, params]);
+
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const syncPreference = () => {
+      setReducedMotion(preference.matches);
+      if (preference.matches) setPlaying(false);
+    };
+    syncPreference();
+    preference.addEventListener("change", syncPreference);
+    return () => preference.removeEventListener("change", syncPreference);
+  }, []);
 
   useEffect(() => {
     if (!playing) return;
@@ -61,7 +73,7 @@ export function VolSurfaceLab({ compact = false }: { compact?: boolean }) {
 
   return <div className={`academy-vol-lab ${compact ? "is-compact" : ""}`}>
     <header className="vol-lab-header"><div><span>{pick(locale, { en: "VOL SURFACE LAB · ONE LINKED STATE", es: "LAB DE SUPERFICIE · UN ESTADO CONECTADO" })}</span><h3>{pick(locale, { en: "Implied volatility surface", es: "Superficie de volatilidad implícita" })}</h3><p>{pick(locale, { en: "Inspect the same deterministic grid as a heatmap, rotatable surface, smile or term slice.", es: "Inspecciona la misma malla determinista como heatmap, superficie rotatoria, sonrisa o corte temporal." })}</p></div><div className="vol-data-label"><b>{pick(locale, { en: "SYNTHETIC / EDUCATIONAL", es: "SINTÉTICO / EDUCATIVO" })}</b><span>{pick(locale, { en: "NOT MARKET DATA · NOT A PREDICTION", es: "NO SON DATOS DE MERCADO · NO ES UNA PREDICCIÓN" })}</span></div></header>
-    <div className="vol-lab-tabs" role="tablist" aria-label={pick(locale, { en: "Volatility surface views", es: "Vistas de la superficie de volatilidad" })}>{views.map((item) => <button role="tab" id={`vol-surface-tab-${item}`} aria-controls={`vol-surface-panel-${item}`} aria-selected={view === item} tabIndex={view === item ? 0 : -1} className={view === item ? "active" : ""} type="button" onClick={() => setView(item)} onKeyDown={(event) => selectViewFromKeyboard(event, item)} key={item}>{item === "term" ? pick(locale, { en: "TERM STRUCTURE", es: "ESTRUCTURA TEMPORAL" }) : item.toUpperCase()}</button>)}</div>
+    <div className="vol-lab-tabs" role="tablist" aria-label={pick(locale, { en: "Volatility surface views", es: "Vistas de la superficie de volatilidad" })}>{views.map((item) => <button role="tab" id={`vol-surface-tab-${item}`} aria-controls={`vol-surface-panel-${item}`} aria-selected={view === item} tabIndex={view === item ? 0 : -1} className={view === item ? "active" : ""} type="button" onClick={() => setView(item)} onKeyDown={(event) => selectViewFromKeyboard(event, item)} key={item}>{({ heatmap: pick(locale, { en: "HEATMAP", es: "MAPA TÉRMICO" }), "3d": "3D", smile: pick(locale, { en: "SMILE", es: "SONRISA" }), term: pick(locale, { en: "TERM STRUCTURE", es: "ESTRUCTURA TEMPORAL" }) })[item]}</button>)}</div>
     <div className="vol-lab-layout"><aside className="vol-lab-controls">
       <header><span>{pick(locale, { en: "SURFACE STATE", es: "ESTADO DE LA SUPERFICIE" })}</span><button type="button" onClick={() => { setPlaying(false); setParams(defaultVolSurfaceParameters); setMaturity(0.5); setMoneyness(1); }}>{pick(locale, { en: "RESET", es: "RESTABLECER" })}</button></header>
       <Control label="Spot" value={params.spot} min={50} max={150} step={1} format={(value) => value.toFixed(0)} onChange={(value) => update("spot", value)} />
@@ -69,8 +81,8 @@ export function VolSurfaceLab({ compact = false }: { compact?: boolean }) {
       <Control label={pick(locale, { en: "Skew", es: "Sesgo" })} value={params.skew} min={-0.8} max={0.3} step={0.01} format={(value) => value.toFixed(2)} onChange={(value) => update("skew", value)} />
       <Control label={pick(locale, { en: "Curvature", es: "Curvatura" })} value={params.curvature} min={0} max={1.5} step={0.01} format={(value) => value.toFixed(2)} onChange={(value) => update("curvature", value)} />
       <Control label={pick(locale, { en: "Term slope", es: "Pendiente temporal" })} value={params.termSlope} min={-0.15} max={0.18} step={0.005} format={(value) => value.toFixed(3)} onChange={(value) => update("termSlope", value)} />
-      <div className="vol-scenario-picker"><span>{pick(locale, { en: "CONTROLLED SCENARIO", es: "ESCENARIO CONTROLADO" })}</span>{scenarios.map((scenario) => <button type="button" aria-pressed={params.scenario === scenario.id} className={params.scenario === scenario.id ? "active" : ""} onClick={() => selectScenario(scenario.id)} key={scenario.id}><b>{locale === "es" ? ({ Base: "Base", "Spot crash": "Caída de spot", "Vol spike": "Pico de volatilidad", "Term inversion": "Inversión temporal", "Skew steepening": "Aumento del skew", Normalization: "Normalización" } as Record<string, string>)[scenario.label] : scenario.label}</b><small>{locale === "es" ? ({ base: "Superficie educativa estática", "spot-crash": "Spot −18%; suben la vol corta y el skew bajista", "vol-spike": "Shock amplio con mayor impacto frontal", "term-inversion": "Domina la incertidumbre de corto plazo", "skew-steepening": "El ala bajista se revaloriza más", normalization: "La superficie tensionada revierte hacia la base" } as Record<string, string>)[scenario.id] : scenario.note}</small></button>)}</div>
-      <div className="vol-playback"><div><button type="button" onClick={() => { if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; setPlaying((current) => !current); }} disabled={params.scenario === "base"}>{playing ? pick(locale, { en: "PAUSE", es: "PAUSA" }) : "PLAY"}</button><output>T{Math.round(params.phase * 4)}</output></div><input aria-label={pick(locale, { en: "Scenario time", es: "Tiempo del escenario" })} type="range" min="0" max="1" step="0.01" value={params.phase} onChange={(event) => { setPlaying(false); update("phase", Number(event.target.value)); }} /><p>{locale === "es" ? "Simulación controlada únicamente." : `${currentScenario.note}. Controlled simulation only.`}</p></div>
+      <div className="vol-scenario-picker"><span>{pick(locale, { en: "CONTROLLED SCENARIO", es: "ESCENARIO CONTROLADO" })}</span>{scenarios.map((scenario) => <button type="button" aria-pressed={params.scenario === scenario.id} className={params.scenario === scenario.id ? "active" : ""} onClick={() => selectScenario(scenario.id)} key={scenario.id}><b>{scenario[locale].label}</b><small>{scenario[locale].note}</small></button>)}</div>
+      <div className="vol-playback"><div><button type="button" aria-label={reducedMotion ? pick(locale, { en: "Autoplay unavailable with reduced motion", es: "Reproducción automática no disponible con movimiento reducido" }) : undefined} onClick={() => setPlaying((current) => !current)} disabled={params.scenario === "base" || reducedMotion}>{playing ? pick(locale, { en: "PAUSE", es: "PAUSA" }) : pick(locale, { en: "PLAY", es: "REPRODUCIR" })}</button><output>T{Math.round(params.phase * 4)}</output></div><input aria-label={pick(locale, { en: "Scenario time", es: "Tiempo del escenario" })} type="range" min="0" max="1" step="0.01" value={params.phase} onChange={(event) => { setPlaying(false); update("phase", Number(event.target.value)); }} /><p>{currentScenario[locale].note}. {pick(locale, { en: "Controlled simulation only.", es: "Simulación controlada únicamente." })}</p></div>
     </aside><div className="vol-lab-output">
       <div className="vol-lab-readout"><div><span>{pick(locale, { en: "SELECTED NODE", es: "NODO SELECCIONADO" })}</span><b>{selected.maturity < 0.1 ? `${Math.round(selected.maturity * 365)}D` : `${selected.maturity.toFixed(2)}Y`}</b></div><div><span>{pick(locale, { en: "STRIKE / MONEYNESS", es: "STRIKE / MONETICIDAD" })}</span><b>{selected.strike.toFixed(1)} / {selected.moneyness.toFixed(2)}</b></div><div><span>{pick(locale, { en: "IMPLIED VOL", es: "VOL. IMPLÍCITA" })}</span><b>{(selected.volatility * 100).toFixed(2)}%</b></div><div><span>{pick(locale, { en: "SCENARIO SPOT", es: "SPOT DEL ESCENARIO" })}</span><b>{(selected.strike / selected.moneyness).toFixed(1)}</b></div></div>
       <div role="tabpanel" id="vol-surface-panel-heatmap" aria-labelledby="vol-surface-tab-heatmap" tabIndex={0} hidden={view !== "heatmap"}>{view === "heatmap" && <Heatmap grid={grid} selected={selected} onSelect={selectPoint} locale={locale} />}</div>

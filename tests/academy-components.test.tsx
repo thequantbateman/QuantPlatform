@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { QuantFormula, type QuantFormulaLabels } from "../src/components/academy/AcademyComponents";
+import { ModelComparison, QuantFormula, type QuantFormulaLabels } from "../src/components/academy/AcademyComponents";
 import type { AcademyDerivation, AcademyFormula } from "../src/content/academy/types";
 
 const englishLabels: QuantFormulaLabels = {
@@ -159,4 +159,17 @@ test("keeps formula-index anchors and disclosure relationships unique across a l
       new RegExp(`id="rate-discount-formula-${formulaIndex}" aria-labelledby="rate-discount-formula-${formulaIndex}-title"`),
     );
   }
+});
+
+test("authors the model comparison chrome and row labels in Spanish", () => {
+  const html = renderToStaticMarkup(<ModelComparison locale="es" />);
+
+  assert.match(html, /COMPARACIÓN DE MODELOS/);
+  assert.match(html, /El ajuste estático no define la dinámica\./);
+  assert.match(html, /Estado de volatilidad/);
+  assert.match(html, /Ajusta la superficie actual/);
+  assert.match(html, /Implicación para la cobertura/);
+  assert.match(html, /Black–Scholes/);
+  assert.match(html, /Heston/);
+  assert.doesNotMatch(html, /Primary strength|Primary failure|Hedge implication/);
 });

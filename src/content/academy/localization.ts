@@ -1,5 +1,5 @@
 import type { Locale } from "@/src/i18n";
-import type { AcademyLesson, AcademyTrack } from "./types";
+import type { AcademyLesson, AcademyLevel, AcademyTrack } from "./types";
 
 const phrases: Array<[string, string]> = [
   ["Realized volatility", "Volatilidad realizada"],
@@ -117,6 +117,11 @@ export function localizeAcademyText(value: string, locale: Locale): string {
 
 const map = (items: string[], locale: Locale): string[] => items.map((item) => localizeAcademyText(item, locale));
 
+export function localizeAcademyLevel(level: AcademyLevel, locale: Locale): string {
+  if (locale === "en") return level;
+  return ({ foundation: "fundamentos", intermediate: "intermedio", advanced: "avanzado", "front-office": "front office" })[level];
+}
+
 type SpanishProfile = { title: string; subtitle: string; focus: string; market: string; desk: string };
 
 const spanishProfiles: Record<string, SpanishProfile> = {
@@ -147,6 +152,45 @@ const spanishProfiles: Record<string, SpanishProfile> = {
   "rate-hjm": { title: "HJM y modelos de mercado", subtitle: "Dinámica de toda la curva forward bajo una restricción de drift sin arbitraje", focus: "la volatilidad forward, la restricción HJM, la medida, el numeraire y los factores", market: "caps, swaptions, CMS y estructuras dependientes de trayectoria", desk: "vega de factores, correlación, discretización y base de modelo" },
 };
 
+const spanishFormulaLabels: Record<string, string[]> = {
+  "vol-realized": ["Estimador cierre a cierre", "Estimador de rango de Parkinson", "Varianza EWMA"],
+  "vol-realized-implied": ["Convención de la prima de riesgo de varianza", "Diferencial de varianza ex post"],
+  "vol-implied": ["Definición inversa", "Call de Black–Scholes", "Condicionamiento"],
+  "vol-smile": ["Pendiente de la sonrisa", "Densidad de Breeden–Litzenberger", "Convexidad del ala"],
+  "vol-term": ["Varianza total", "Varianza forward", "Condición de calendario"],
+  "vol-surface": ["Coordenada de superficie", "Varianza total", "Densidad neutral al riesgo", "Varianza local de Dupire"],
+  "vol-local": ["Difusión de volatilidad local", "Fórmula de Dupire", "Requisito de densidad"],
+  "vol-stochastic": ["Dinámica genérica de varianza", "Canal de apalancamiento", "Media condicional"],
+  "vol-heston": ["Función característica afín", "Proceso de varianza", "Correlación de apalancamiento", "Condición de Feller"],
+  "vol-sabr": ["Dinámica SABR", "Correlación", "Orden principal ATM"],
+  "vol-calibration": ["Mínimos cuadrados ponderados", "Paso de Gauss–Newton", "Condicionamiento"],
+  "vol-higher-risk": ["Unidad de vega por punto", "Expansión spot-vol de segundo orden", "Volga de Black–Scholes"],
+  "rate-discount": ["Precio del bono cupón cero", "Valor actual del flujo de caja", "Rentabilidad por cociente de descuentos"],
+  "rate-zero-forward": ["Forward continuo de intervalo", "Forward simple", "Forward instantáneo"],
+  "rate-conventions": ["Capitalización simple", "Conversión de periódica a continua", "Cupón stub"],
+  "rate-ois": ["Cupón overnight capitalizado", "Tipo par OIS con inicio spot", "Separación entre conocido y proyectado"],
+  "rate-fra-futures": ["Valor actual del FRA liquidado al final", "Payoff del FRA liquidado al inicio", "Ajuste futuro-forward"],
+  "rate-swaps": ["Anualidad de la pata fija", "Tipo par multicurva", "Valor actual receptor fijo"],
+  "rate-optionality": ["Caplet bajo Black–76", "Swaption payer europea", "Valor payer en modelo normal"],
+  "rate-curve-bootstrap": ["Ecuación de bootstrap", "Residuo de repricing", "Objetivo de curva para ajustes globales"],
+  "rate-interpolation": ["Descuento log-lineal", "Forward de segmento", "Identidad de reconstrucción"],
+  "rate-multicurve": ["Pata flotante proyectada", "Condición par de basis", "Diferencial de basis"],
+  "rate-curve-risk": ["DV01 firmado de cotización", "P&L de escenario de primer orden", "Descomposición de carry y roll"],
+  "rate-hull-white": ["Dinámica de Hull–White", "Varianza condicional", "Precio afín del bono"],
+  "rate-hjm": ["Dinámica forward HJM", "Drift HJM neutral al riesgo", "Reconstrucción del bono"],
+};
+
+function localizeFormulaLabels(lesson: AcademyLesson): AcademyLesson["mathematics"] {
+  const labels = spanishFormulaLabels[lesson.id];
+  return {
+    ...lesson.mathematics,
+    formulas: lesson.mathematics.formulas.map((formula, index) => ({
+      ...formula,
+      label: labels?.[index] ?? formula.label,
+    })),
+  };
+}
+
 export function localizeAcademyLesson(lesson: AcademyLesson, locale: Locale): AcademyLesson {
   if (locale === "en") return lesson;
   if (lesson.localized?.es) return { ...lesson, ...lesson.localized.es, localized: lesson.localized };
@@ -156,6 +200,7 @@ export function localizeAcademyLesson(lesson: AcademyLesson, locale: Locale): Ac
       ...lesson,
       title: profile.title,
       subtitle: profile.subtitle,
+      mathematics: localizeFormulaLabels(lesson),
       interactiveLabs: lesson.interactiveLabs.map((lab) => ({
         ...lab,
         title: `${profile.title} · laboratorio`,
@@ -185,7 +230,7 @@ export function localizeAcademyLesson(lesson: AcademyLesson, locale: Locale): Ac
     },
     mathematics: {
       notation: lesson.mathematics.notation.map((item) => `${item.split(":")[0]}: variable definida bajo las convenciones y unidades de esta lección.`),
-      formulas: lesson.mathematics.formulas.map((formula, index) => ({ ...formula, label: ["Relación principal", "Condición de consistencia", "Diagnóstico de riesgo"][index] ?? `Relación ${index + 1}`, interpretation: `Esta expresión formaliza ${profile.focus}; debe evaluarse únicamente dentro de su dominio financiero y numérico.` })),
+      formulas: localizeFormulaLabels(lesson).formulas.map((formula) => ({ ...formula, interpretation: `Esta expresión formaliza ${profile.focus}; debe evaluarse únicamente dentro de su dominio financiero y numérico.` })),
     },
     derivation: {
       formulaIndex: lesson.derivation.formulaIndex,
@@ -268,6 +313,7 @@ export function localizeAcademyTrack(track: AcademyTrack, locale: Locale): Acade
         ois: { title: "Capitalización OIS", stage: "Colateral y senda monetaria" },
         "fra-futures": { title: "FRAs y futuros", stage: "Fixing forward y convexidad" },
         swaps: { title: "Swaps de tipos de interés", stage: "Tipo par y valor de las patas" },
+        optionality: { title: "Caps, floors y swaptions", stage: "Opcionalidad de tipos y calibración" },
         bootstrap: { title: "Bootstrap de curvas", stage: "Workbench principal de construcción" },
         interpolation: { title: "Interpolación y arbitraje", stage: "Forma fuera de nodos" },
         multicurve: { title: "Multicurva y base", stage: "Separación descuento/proyección" },
@@ -275,11 +321,25 @@ export function localizeAcademyTrack(track: AcademyTrack, locale: Locale): Acade
         "hull-white": { title: "Hull–White", stage: "Tipo corto con reversión a la media" },
         hjm: { title: "HJM y modelos de mercado", stage: "Dinámica de curva sin arbitraje" },
       };
-      const ratesNode = track.id === "rates" ? ratesNodes[node.id] : undefined;
+      const volatilityNodes: Record<string, { title: string; stage: string }> = {
+        volatility: { title: "Volatilidad realizada", stage: "Medición y estimadores" },
+        "realized-implied": { title: "Realizada frente a implícita", stage: "Prima de riesgo de varianza" },
+        "implied-volatility": { title: "Volatilidad implícita Black–Scholes", stage: "Inversión" },
+        smile: { title: "Sonrisa y skew", stage: "Geometría por strike" },
+        term: { title: "Estructura temporal", stage: "Geometría por vencimiento" },
+        surface: { title: "Superficie de volatilidad", stage: "Workbench principal" },
+        "local-vol": { title: "Volatilidad local", stage: "Difusión dependiente del estado" },
+        "stochastic-vol": { title: "Volatilidad estocástica", stage: "Varianza aleatoria" },
+        heston: { title: "Heston", stage: "Varianza estocástica afín" },
+        sabr: { title: "SABR", stage: "Dinámica de sonrisa forward" },
+        calibration: { title: "Calibración", stage: "Ajuste, estabilidad y gobernanza" },
+        "higher-order-risk": { title: "Vega, vanna y volga", stage: "Geometría de cobertura" },
+      };
+      const authoredNode = track.id === "rates" ? ratesNodes[node.id] : track.id === "volatility" ? volatilityNodes[node.id] : undefined;
       return {
         ...node,
-        title: ratesNode?.title ?? localizeAcademyText(node.title, locale),
-        stage: ratesNode?.stage ?? localizeAcademyText(node.stage, locale),
+        title: authoredNode?.title ?? localizeAcademyText(node.title, locale),
+        stage: authoredNode?.stage ?? localizeAcademyText(node.stage, locale),
       };
     }),
   };

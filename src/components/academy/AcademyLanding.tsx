@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { LearnCatalog } from "@/src/components/content/LearnCatalog";
 import { contentCatalog } from "@/src/content/catalog";
 import { academyLessons, academyTracks } from "@/src/content/academy/catalog";
-import { localizeAcademyTrack } from "@/src/content/academy/localization";
+import { localizeAcademyLevel, localizeAcademyTrack } from "@/src/content/academy/localization";
 import type { AcademyTrack } from "@/src/content/academy/types";
 import { pick, useI18n } from "@/src/i18n";
 
@@ -13,7 +13,7 @@ function TrackSection({ track, index }: { track: AcademyTrack; index: number }) 
   const firstNode = track.nodes[0];
   return <section className={`academy-track section-shell track-${track.id}`} id={`track-${track.id}`}>
     <header><div><span className="eyebrow">{String(index + 1).padStart(2, "0")} · {track.subtitle}</span><h2>{track.title}</h2><p>{track.description}</p></div><div className="academy-track-actions"><span>{track.nodes.length} {pick(locale, { en: "STAGES", es: "ETAPAS" })}</span><a className="academy-track-start" href={firstNode.href}>{pick(locale, { en: "START TRACK", es: "EMPEZAR ITINERARIO" })} →</a></div></header>
-    <details className="academy-track-disclosure"><summary><span>{pick(locale, { en: `View all ${track.nodes.length} stages`, es: `Ver las ${track.nodes.length} etapas` })}</span></summary><div className="track-path">{track.nodes.map((node, nodeIndex) => <a href={node.href} className="deep" key={node.id}><span>{String(nodeIndex + 1).padStart(2, "0")}</span><div><small>{node.stage}</small><b>{node.title}</b></div><em>{node.level} · LAB</em><i>→</i></a>)}</div></details>
+    <details className="academy-track-disclosure"><summary><span>{pick(locale, { en: `View all ${track.nodes.length} stages`, es: `Ver las ${track.nodes.length} etapas` })}</span></summary><div className="track-path">{track.nodes.map((node, nodeIndex) => <a href={node.href} className="deep" key={node.id}><span>{String(nodeIndex + 1).padStart(2, "0")}</span><div><small>{node.stage}</small><b>{node.title}</b></div><em>{localizeAcademyLevel(node.level, locale)} · {pick(locale, { en: "LAB", es: "LABORATORIO" })}</em><i>→</i></a>)}</div></details>
   </section>;
 }
 
