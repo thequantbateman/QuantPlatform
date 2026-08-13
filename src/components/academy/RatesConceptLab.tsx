@@ -11,16 +11,29 @@ type LabId = AcademyLesson["interactiveLabs"][number]["id"];
 type Copy = { en: string; es: string };
 type Scenario = { id: string; label: Copy; note: Copy; primary: number; secondary: number };
 type LabResult = { x: number[]; series: Series[]; metrics: Array<[Copy, string]> };
-type Definition = { eyebrow: Copy; xLabel: Copy; yLabel: Copy; scenarios: Scenario[]; build: (scenario: Scenario, intensity: number, locale: Locale) => LabResult };
+type AxisContract = { unit: string; formatter: (value: number) => string };
+type Definition = { eyebrow: Copy; xLabel: Copy; yLabel: Copy; xAxis: AxisContract; yAxis: AxisContract; scenarios: Scenario[]; build: (scenario: Scenario, intensity: number, locale: Locale) => LabResult };
 
 const range = (count: number, start: number, end: number): number[] => Array.from({ length: count }, (_, index) => start + index * ((end - start) / (count - 1)));
 const percent = (value: number): string => `${(value * 100).toFixed(2)}%`;
 const basisPoints = (value: number): string => `${(value * 10_000).toFixed(1)} bp`;
 const c = (en: string, es: string): Copy => ({ en, es });
+const axes = {
+  years: { unit: "years", formatter: formatYear },
+  days: { unit: "days", formatter: (value: number): string => value.toFixed(0) },
+  rate: { unit: "decimal annual rate", formatter: (value: number): string => formatRate(value, 3) },
+  strikeRate: { unit: "decimal annual rate", formatter: (value: number): string => formatRate(value, 2) },
+  basisPoints: { unit: "basis points", formatter: (value: number): string => `${value.toFixed(2)} bp` },
+  discountFactor: { unit: "discount factor", formatter: (value: number): string => value.toFixed(5) },
+  currencyUnits: { unit: "currency units", formatter: (value: number): string => `${value.toFixed(1)} CU` },
+  factorValue: { unit: "factor response / decimal volatility", formatter: (value: number): string => value.toFixed(5) },
+  premium: { unit: "premium per unit notional", formatter: (value: number): string => value.toFixed(5) },
+} satisfies Record<string, AxisContract>;
 
 const definitions: Partial<Record<LabId, Definition>> = {
   discounting: {
     eyebrow: c("DATED PRICE WEIGHTS AND PRESENT VALUE", "PESOS DE PRECIO FECHADOS Y VALOR ACTUAL"), xLabel: c("Maturity (years)", "Vencimiento (años)"), yLabel: c("Discount factor", "Factor de descuento"),
+    xAxis: axes.years, yAxis: axes.discountFactor,
     scenarios: [
       { id: "normal", label: c("Normal curve", "Curva normal"), note: c("Positive upward zero curve", "Curva cero positiva y creciente"), primary: 0.025, secondary: 0.015 },
       { id: "inverted", label: c("Inverted", "Invertida"), note: c("High front end, lower long end", "Tramo corto alto y largo bajo"), primary: 0.052, secondary: -0.025 },
@@ -30,6 +43,7 @@ const definitions: Partial<Record<LabId, Definition>> = {
   },
   "zero-forward-rates": {
     eyebrow: c("AVERAGE ZERO VS MARGINAL FORWARD", "TIPO CERO MEDIO FRENTE A FORWARD MARGINAL"), xLabel: c("Maturity (years)", "Vencimiento (años)"), yLabel: c("Annualised rate", "Tipo anualizado"),
+    xAxis: axes.years, yAxis: axes.rate,
     scenarios: [
       { id: "normal", label: c("Normal", "Normal"), note: c("Rising zeros and forwards", "Tipos cero y forward crecientes"), primary: 0.022, secondary: 0.025 },
       { id: "inverted", label: c("Inverted", "Invertida"), note: c("Front-loaded policy restriction", "Restricción monetaria concentrada al inicio"), primary: 0.052, secondary: -0.027 },
@@ -39,6 +53,7 @@ const definitions: Partial<Record<LabId, Definition>> = {
   },
   "rate-conventions": {
     eyebrow: c("ONE PAYOFF · MULTIPLE QUOTE CONVENTIONS", "UN PAYOFF · VARIAS CONVENCIONES"), xLabel: c("Accrual days", "Días de devengo"), yLabel: c("Accumulated interest (bp)", "Interés acumulado (pb)"),
+    xAxis: axes.days, yAxis: axes.basisPoints,
     scenarios: [
       { id: "quarter", label: c("3M period", "Periodo 3M"), note: c("Standard money-market accrual", "Devengo monetario estándar"), primary: 91, secondary: 0.0425 },
       { id: "stub", label: c("Long stub", "Stub largo"), note: c("Irregular first coupon", "Primer cupón irregular"), primary: 184, secondary: 0.0425 },
@@ -48,6 +63,7 @@ const definitions: Partial<Record<LabId, Definition>> = {
   },
   "ois-compounding": {
     eyebrow: c("DAILY FIXINGS → COMPOUNDED COUPON", "FIXINGS DIARIOS → CUPÓN COMPUESTO"), xLabel: c("Observation day", "Día de observación"), yLabel: c("Annualised overnight rate", "Tipo overnight anualizado"),
+    xAxis: axes.days, yAxis: axes.rate,
     scenarios: [
       { id: "hold", label: c("Policy hold", "Tipos sin cambio"), note: c("Stable overnight path", "Trayectoria overnight estable"), primary: 0.041, secondary: 0 },
       { id: "hike", label: c("Meeting hike", "Subida en reunión"), note: c("Step-up after day 15", "Escalón al alza tras el día 15"), primary: 0.041, secondary: 0.005 },
@@ -57,6 +73,7 @@ const definitions: Partial<Record<LabId, Definition>> = {
   },
   "fra-futures": {
     eyebrow: c("FORWARD FIXING AND MARGINING CONVEXITY", "FIXING FORWARD Y CONVEXIDAD DE MÁRGENES"), xLabel: c("Contract start (years)", "Inicio del contrato (años)"), yLabel: c("Annualised rate", "Tipo anualizado"),
+    xAxis: axes.years, yAxis: axes.rate,
     scenarios: [
       { id: "low", label: c("Low volatility", "Volatilidad baja"), note: c("Forward and futures nearly coincide", "Forward y futuro casi coinciden"), primary: 0.008, secondary: 0.15 },
       { id: "high", label: c("High volatility", "Volatilidad alta"), note: c("Convexity grows with horizon", "La convexidad crece con el horizonte"), primary: 0.018, secondary: 0.45 },
@@ -66,6 +83,7 @@ const definitions: Partial<Record<LabId, Definition>> = {
   },
   "interest-rate-swaps": {
     eyebrow: c("FIXED ANNUITY · FLOATING PV · PAR RATE", "ANUALIDAD FIJA · VA FLOTANTE · TIPO PAR"), xLabel: c("Swap maturity (years)", "Vencimiento del swap (años)"), yLabel: c("Par / fixed rate", "Tipo par / fijo"),
+    xAxis: axes.years, yAxis: axes.rate,
     scenarios: [
       { id: "base", label: c("Base", "Base"), note: c("Gently upward par curve", "Curva par suavemente creciente"), primary: 0.03, secondary: 0.015 },
       { id: "payer", label: c("Rates +50bp", "Tipos +50pb"), note: c("Payer-fixed gains", "Paga fijo gana"), primary: 0.035, secondary: 0.015 },
@@ -75,6 +93,7 @@ const definitions: Partial<Record<LabId, Definition>> = {
   },
   "curve-interpolation": {
     eyebrow: c("OFF-GRID FORWARD STABILITY", "ESTABILIDAD FORWARD FUERA DE NODOS"), xLabel: c("Maturity (years)", "Vencimiento (años)"), yLabel: c("Instantaneous forward", "Forward instantáneo"),
+    xAxis: axes.years, yAxis: axes.rate,
     scenarios: [
       { id: "clean", label: c("Clean pillars", "Nodos limpios"), note: c("Methods remain controlled", "Los métodos permanecen controlados"), primary: 0.015, secondary: 0.006 },
       { id: "kink", label: c("5Y kink", "Quiebro 5A"), note: c("Node noise creates forward jumps", "El ruido crea saltos forward"), primary: 0.03, secondary: 0.012 },
@@ -84,6 +103,7 @@ const definitions: Partial<Record<LabId, Definition>> = {
   },
   "multi-curve": {
     eyebrow: c("DISCOUNT CURVE ≠ PROJECTION CURVE", "CURVA DE DESCUENTO ≠ CURVA DE PROYECCIÓN"), xLabel: c("Maturity (years)", "Vencimiento (años)"), yLabel: c("Annualised rate", "Tipo anualizado"),
+    xAxis: axes.years, yAxis: axes.rate,
     scenarios: [
       { id: "normal", label: c("Normal basis", "Base normal"), note: c("Term projection above OIS", "Proyección term por encima de OIS"), primary: 0.0035, secondary: 0.001 },
       { id: "stress", label: c("Funding stress", "Estrés de financiación"), note: c("Basis widens at the front", "La base se amplía en el corto"), primary: 0.009, secondary: -0.004 },
@@ -92,7 +112,8 @@ const definitions: Partial<Record<LabId, Definition>> = {
     build: (scenario, intensity, locale) => { const x = range(41, 0.25, 20); const ois = x.map((t) => 0.028 + 0.014 * (1 - Math.exp(-t / 6))); const basis = x.map((t) => scenario.primary * intensity + scenario.secondary * Math.exp(-t / 3)); const projection = ois.map((rate, index) => rate + basis[index]); return { x, series: [{ name: "OIS", values: ois, color: "--chart-series-3" }, { name: pick(locale, c("term projection", "proyección term")), values: projection, color: "--chart-series-2" }, { name: pick(locale, c("basis", "base")), values: basis, color: "--chart-series-4" }], metrics: [[c("1Y basis", "Base 1A"), basisPoints(basis[2])], [c("5Y basis", "Base 5A"), basisPoints(basis[10])], [c("10Y projection", "Proyección 10A"), percent(projection[20])]] }; },
   },
   "curve-risk": {
-    eyebrow: c("QUOTE-SPACE DV01 AND CURVE FACTORS", "DV01 EN ESPACIO DE COTIZACIONES Y FACTORES"), xLabel: c("Key-rate tenor (years)", "Tenor clave (años)"), yLabel: c("PV change for +1bp", "Cambio de VA por +1pb"),
+    eyebrow: c("QUOTE-SPACE DV01 AND CURVE FACTORS", "DV01 EN ESPACIO DE COTIZACIONES Y FACTORES"), xLabel: c("Key-rate tenor (years)", "Tenor clave (años)"), yLabel: c("PV / DV01 (currency units)", "VA / DV01 (unidades monetarias)"),
+    xAxis: axes.years, yAxis: axes.currencyUnits,
     scenarios: [
       { id: "level", label: c("Parallel +25bp", "Paralelo +25pb"), note: c("Level factor", "Factor de nivel"), primary: 1, secondary: 1 },
       { id: "steepen", label: c("Bear steepener", "Pronunciamiento bajista"), note: c("Long end sells off", "Se vende el tramo largo"), primary: -0.5, secondary: 1.5 },
@@ -102,6 +123,7 @@ const definitions: Partial<Record<LabId, Definition>> = {
   },
   "hull-white": {
     eyebrow: c("MEAN REVERSION AND GAUSSIAN RATE DISPERSION", "REVERSIÓN A LA MEDIA Y DISPERSIÓN GAUSSIANA"), xLabel: c("Horizon (years)", "Horizonte (años)"), yLabel: c("Factor response / volatility", "Respuesta del factor / volatilidad"),
+    xAxis: axes.years, yAxis: axes.factorValue,
     scenarios: [
       { id: "slow", label: c("Slow reversion", "Reversión lenta"), note: c("Shocks persist across the curve", "Los shocks persisten en la curva"), primary: 0.03, secondary: 0.01 },
       { id: "fast", label: c("Fast reversion", "Reversión rápida"), note: c("Short-rate shock decays quickly", "El shock corto decae rápido"), primary: 0.2, secondary: 0.01 },
@@ -111,6 +133,7 @@ const definitions: Partial<Record<LabId, Definition>> = {
   },
   "rate-optionality": {
     eyebrow: c("ONE PAYOFF · EXPLICIT VOLATILITY COORDINATE", "UN PAYOFF · COORDENADA DE VOLATILIDAD EXPLÍCITA"), xLabel: c("Strike (annual rate)", "Strike (tipo anual)"), yLabel: c("Premium per unit notional", "Prima por unidad de nocional"),
+    xAxis: axes.strikeRate, yAxis: axes.premium,
     scenarios: [
       { id: "black", label: c("Lognormal Black", "Black lognormal"), note: c("Positive forward and strike", "Forward y strike positivos"), primary: 0.24, secondary: 0.032 },
       { id: "normal", label: c("Normal Bachelier", "Bachelier normal"), note: c("Absolute rate volatility", "Volatilidad en unidades absolutas de tipo"), primary: 0.009, secondary: 0.012 },
@@ -124,6 +147,7 @@ const definitions: Partial<Record<LabId, Definition>> = {
   },
   hjm: {
     eyebrow: c("FORWARD VOLATILITY DETERMINES RISK-NEUTRAL DRIFT", "LA VOLATILIDAD FORWARD DETERMINA EL DRIFT"), xLabel: c("Forward maturity (years)", "Vencimiento forward (años)"), yLabel: c("Instantaneous forward", "Forward instantáneo"),
+    xAxis: axes.years, yAxis: axes.rate,
     scenarios: [
       { id: "one", label: c("One-factor decay", "Decaimiento unifactorial"), note: c("Linked level-like curve move", "Movimiento ligado tipo nivel"), primary: 0.012, secondary: 0.15 },
       { id: "persistent", label: c("Persistent volatility", "Volatilidad persistente"), note: c("Long-end forwards remain volatile", "Los forwards largos siguen volátiles"), primary: 0.016, secondary: 0.04 },
@@ -144,15 +168,13 @@ export function RatesConceptLab({ lesson }: { lesson: AcademyLesson }) {
   if (!definition || !scenario || !result) return null;
   const xLabel = pick(locale, definition.xLabel);
   const yLabel = pick(locale, definition.yLabel);
-  const xFormatter = lab.id === "rate-optionality" ? (value: number) => formatRate(value, 2) : xLabel.includes("year") || xLabel.includes("año") ? formatYear : (value: number) => value.toFixed(0);
-  const yFormatter = yLabel.includes("rate") || yLabel.includes("Tipo") || yLabel.includes("Forward") ? (value: number) => formatRate(value, 3) : yLabel.includes("bp") || yLabel.includes("pb") ? (value: number) => `${value.toFixed(2)} bp` : (value: number) => value.toFixed(5);
 
   return <div className="vol-concept-lab rates-concept-lab">
     <header><div><span>{pick(locale, definition.eyebrow)}</span><h3>{lab.title}</h3><p>{lab.description}</p></div><b>{pick(locale, c("SYNTHETIC · CONTROLLED SCENARIOS", "SINTÉTICO · ESCENARIOS CONTROLADOS"))}</b></header>
     <div className="vol-concept-scenarios" aria-label={pick(locale, c(`${lesson.title} scenarios`, `Escenarios de ${lesson.title}`))}>{definition.scenarios.map((item, index) => <button type="button" className={index === scenarioIndex ? "active" : ""} aria-pressed={index === scenarioIndex} onClick={() => setScenarioIndex(index)} key={item.id}><b>{pick(locale, item.label)}</b><small>{pick(locale, item.note)}</small></button>)}</div>
     <label className="vol-concept-intensity"><span><b>{pick(locale, c("SCENARIO INTENSITY", "INTENSIDAD DEL ESCENARIO"))}</b><output>{Math.round(intensity * 100)}%</output></span><input aria-label={pick(locale, c("Scenario intensity", "Intensidad del escenario"))} type="range" min="0" max="1" step="0.01" value={intensity} onChange={(event) => setIntensity(Number(event.target.value))} /></label>
     <div className="vol-concept-metrics">{result.metrics.map(([label, value]) => <div key={label.en}><span>{pick(locale, label)}</span><b>{value}</b></div>)}</div>
-    <div className="vol-concept-chart"><LineChart x={result.x} series={result.series} xLabel={xLabel} yLabel={yLabel} description={`${pick(locale, scenario.label)}: ${pick(locale, scenario.note)}.`} xFormatter={xFormatter} yFormatter={yFormatter} height={410} /></div>
+    <div className="vol-concept-chart"><LineChart x={result.x} series={result.series} xLabel={xLabel} yLabel={yLabel} description={`${pick(locale, scenario.label)}: ${pick(locale, scenario.note)}.`} xFormatter={definition.xAxis.formatter} yFormatter={definition.yAxis.formatter} height={410} /></div>
     <footer><span>{pick(locale, c("ACTIVE STATE", "ESTADO ACTIVO"))}</span><p><b>{pick(locale, scenario.label)}</b> — {pick(locale, scenario.note)}. {pick(locale, c("Move the control and inspect every series with pointer or touch.", "Mueve el control e inspecciona cada serie con puntero o toque."))}</p></footer>
   </div>;
 }

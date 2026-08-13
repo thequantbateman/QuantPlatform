@@ -210,7 +210,21 @@ export function LineChart({
 
   return <figure className="line-chart-figure" aria-labelledby={captionId} aria-describedby={`${descriptionId} ${readoutId}`}>
     <figcaption><strong id={captionId}>{yLabel} by {xLabel}</strong><p id={descriptionId}>{chartDescription}</p></figcaption>
-    <ul className="line-chart-legend" aria-label="Series legend">{series.map((item, index) => <li key={item.name}><i className={`line-chart-key line-chart-key-${index % 4}`} style={item.color ? { "--series-color": item.color.startsWith("--") ? `var(${item.color})` : item.color } as React.CSSProperties : undefined}>{index + 1}</i><span>{item.name}</span></li>)}</ul>
+    <ul className="line-chart-legend" aria-label="Series legend">{series.map((item, index) => {
+      const pattern = chartSeriesPattern(index);
+      return <li key={item.name}>
+        <svg
+          className={`line-chart-key line-chart-key-${index % 4}`}
+          viewBox="0 0 18 14"
+          aria-hidden="true"
+          style={item.color ? { "--series-color": item.color.startsWith("--") ? `var(${item.color})` : item.color } as React.CSSProperties : undefined}
+        >
+          <line x1="0" y1="2" x2="18" y2="2" strokeDasharray={pattern.length > 0 ? pattern.join(" ") : undefined} />
+          <text x="9" y="12" textAnchor="middle">{index + 1}</text>
+        </svg>
+        <span>{item.name}</span>
+      </li>;
+    })}</ul>
     <div className="line-chart-wrap">
       <canvas
         ref={canvasRef}
