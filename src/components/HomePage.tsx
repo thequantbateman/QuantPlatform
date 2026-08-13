@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 
 import { PredictionsDashboard } from "./markets/PredictionsDashboard";
+import { PlatformKnowledgeMap } from "./home/PlatformKnowledgeMap";
 import { marketIntelligenceMetrics } from "@/src/data/marketMetrics";
 import { homeTickerIds, instrumentMaster } from "@/src/market-data/instrumentMaster";
 import type { MarketInstrument } from "@/src/market-data/domain";
@@ -10,19 +11,30 @@ import { formatMarketPrice, formatSessionMove } from "@/src/market-data/normaliz
 import { pick, useI18n } from "@/src/i18n";
 
 export function HomePage() {
-  const { locale } = useI18n(); const lead = instrumentMaster.filter((instrument) => homeTickerIds.includes(instrument.id)); useMarketSnapshot(homeTickerIds, "LIVE_STREAM");
-  const learn = pick(locale, { en: [["Foundations", "Probability · pricing measure · numerics", "/learn?asset=Foundations"], ["Equity", "Forwards · BSM · Greeks · volatility", "/learn?asset=EQ"], ["FX", "Spot · forwards · GK · smile conventions", "/learn?asset=FX"], ["Rates", "Discounting · curves · swaps · DV01", "/learn?asset=IR"], ["Commodities", "Carry · curves · Black-76 · Asians", "/learn?asset=COMM"]], es: [["Fundamentos", "Probabilidad · medida de valoración · métodos numéricos", "/learn?asset=Foundations"], ["Renta variable", "Forwards · BSM · griegas · volatilidad", "/learn?asset=EQ"], ["FX", "Spot · forwards · GK · convenciones de sonrisa", "/learn?asset=FX"], ["Tipos", "Descuento · curvas · swaps · DV01", "/learn?asset=IR"], ["Materias primas", "Carry · curvas · Black-76 · asiáticas", "/learn?asset=COMM"]] });
+  const { locale, t } = useI18n();
+  const lead = instrumentMaster.filter((instrument) => homeTickerIds.includes(instrument.id));
+  useMarketSnapshot(homeTickerIds, "LIVE_STREAM");
+  const tasks = [
+    { id: "learn", href: "/learn", title: t("home.tasks.learn.title"), copy: t("home.tasks.learn.copy"), cta: t("home.tasks.learn.cta") },
+    { id: "analyze", href: "/analytics", title: t("home.tasks.analyze.title"), copy: t("home.tasks.analyze.copy"), cta: t("home.tasks.analyze.cta") },
+    { id: "markets", href: "/markets", title: t("home.tasks.markets.title"), copy: t("home.tasks.markets.copy"), cta: t("home.tasks.markets.cta") },
+    { id: "ask", href: "/ask", title: t("home.tasks.ask.title"), copy: t("home.tasks.ask.copy"), cta: t("home.tasks.ask.cta") },
+  ];
   return <div className="home-terminal">
     <section className="home-lead section-shell">
-      <div className="home-title"><span className="eyebrow">THEQUANTBATEMAN · {pick(locale, { en: "EDUCATION × MARKET INTELLIGENCE", es: "FORMACIÓN × INTELIGENCIA DE MERCADO" })}</span><h1>{pick(locale, { en: <>QUANTITATIVE FINANCE.<br /><em>MARKETS, MODELS & ANALYTICS.</em></>, es: <>FINANZAS CUANTITATIVAS.<br /><em>MERCADOS, MODELOS Y ANALÍTICA.</em></> })}</h1><p>{pick(locale, { en: "Learn the theory, inspect observed market context, then test the model in one source-aware workspace.", es: "Aprende la teoría, inspecciona el contexto de mercado y prueba el modelo en un espacio con fuentes explícitas." })}</p><div className="hero-actions"><a className="button button-primary" href="/learn">{pick(locale, { en: "START LEARNING", es: "EMPEZAR A APRENDER" })} <span>→</span></a><a className="button button-secondary" href="/markets">{pick(locale, { en: "OPEN MARKETS", es: "ABRIR MERCADOS" })} <span>→</span></a><a className="text-link" href="/analytics">{pick(locale, { en: "Run analytics", es: "Ejecutar analítica" })} ↗</a></div></div>
+      <div className="home-title"><span className="eyebrow">{t("home.hero.eyebrow")}</span><h1>{t("home.hero.title")}</h1><p>{t("home.hero.copy")}</p><div className="hero-actions"><a className="button button-primary" href="/learn">{t("home.hero.primary")} <span aria-hidden="true">→</span></a></div></div>
+    </section>
+
+    <PlatformKnowledgeMap />
+
+    <section className="home-tasks section-shell" aria-labelledby="home-tasks-title">
+      <header><h2 id="home-tasks-title">{t("home.tasks.title")}</h2><p>{t("home.tasks.copy")}</p></header>
+      <div className="home-task-grid">
+        {tasks.map((task) => <a data-home-task={task.id} href={task.href} key={task.id}><strong>{task.title}</strong><p>{task.copy}</p><span>{task.cta} <i aria-hidden="true">→</i></span></a>)}
+      </div>
     </section>
 
     <section className="home-market-strip section-shell"><div className="module-head"><div><span className="eyebrow">{pick(locale, { en: "MARKET PULSE · SOURCE AWARE", es: "PULSO DE MERCADO · FUENTES EXPLÍCITAS" })}</span><h2>{pick(locale, { en: "Visible inputs, explicit status", es: "Inputs visibles, estado explícito" })}</h2></div><a href="/markets">{pick(locale, { en: "All instruments", es: "Todos los instrumentos" })} →</a></div><div className="home-quotes">{lead.map((instrument) => <HomeQuote instrument={instrument} locale={locale} key={instrument.id} />)}</div></section>
-
-    <section className="home-dual section-shell">
-      <article className="home-module learn-module"><div className="module-head"><div><span className="eyebrow">{pick(locale, { en: "LEARN · KNOWLEDGE GRAPH", es: "APRENDER · GRAFO DE CONOCIMIENTO" })}</span><h2>{pick(locale, { en: "From intuition to desk use", es: "De la intuición a la mesa" })}</h2></div><a href="/learn">100+ {pick(locale, { en: "concepts", es: "conceptos" })} →</a></div><div className="learn-list">{learn.map(([title, copy, href], index) => <a href={href} key={title}><span>0{index + 1}</span><div><strong>{title}</strong><small>{copy}</small></div><i>→</i></a>)}</div></article>
-      <article className="home-module analytics-module"><div className="module-head"><div><span className="eyebrow">{pick(locale, { en: "ANALYTICS · LOCAL QUANT ENGINE", es: "ANALÍTICA · MOTOR QUANT LOCAL" })}</span><h2>{pick(locale, { en: "Touch the assumptions", es: "Toca los supuestos" })}</h2></div><a href="/analytics">{pick(locale, { en: "All tools", es: "Todas las herramientas" })} →</a></div><div className="analytics-mini"><a href="/lab?lab=vanilla"><b>{pick(locale, { en: "EUROPEAN OPTIONS", es: "OPCIONES EUROPEAS" })}</b><span>BSM · GK · BLACK-76</span><i>↗</i></a><a href="/lab?lab=greeks"><b>{pick(locale, { en: "RISK GEOMETRY", es: "GEOMETRÍA DE RIESGO" })}</b><span>Δ · Γ · ν · Θ · ρ</span><i>↗</i></a><a href="/lab?lab=surface"><b>{pick(locale, { en: "VOLATILITY", es: "VOLATILIDAD" })}</b><span>SMILE · SURFACE · SKEW</span><i>↗</i></a><a href="/lab?lab=curve"><b>{pick(locale, { en: "CURVES", es: "CURVAS" })}</b><span>DF · ZERO · FORWARD</span><i>↗</i></a></div><div className="formula-ribbon">∂V/∂t + ½σ²S²∂²V/∂S² + (r−q)S∂V/∂S − rV = 0</div></article>
-    </section>
 
     <section className="home-predictions section-shell"><PredictionsDashboard compactView /></section>
 
