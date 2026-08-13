@@ -30,6 +30,8 @@ export const defaultVolSurfaceParameters: VolSurfaceParameters = {
   phase: 0,
 };
 
+const VOL_SURFACE_SCENARIOS: readonly VolSurfaceScenario[] = ["base", "spot-crash", "vol-spike", "term-inversion", "skew-steepening", "normalization"];
+
 function finiteInRange(label: string, value: number, minimum: number, maximum: number): void {
   if (!Number.isFinite(value) || value < minimum || value > maximum) throw new RangeError(`${label} must be between ${minimum} and ${maximum}`);
 }
@@ -41,6 +43,7 @@ export function validateVolSurfaceParameters(params: VolSurfaceParameters): void
   finiteInRange("curvature", params.curvature, 0, 5);
   finiteInRange("term slope", params.termSlope, -0.5, 0.5);
   finiteInRange("phase", params.phase, 0, 1);
+  if (!VOL_SURFACE_SCENARIOS.includes(params.scenario)) throw new RangeError("scenario must be a supported volatility surface scenario");
 }
 
 export function scenarioSpot(params: VolSurfaceParameters): number {
@@ -90,6 +93,11 @@ export function educationalVolatility(moneyness: number, maturity: number, param
 }
 
 export function buildVolSurface(params: VolSurfaceParameters, maturities: readonly number[] = VOL_SURFACE_MATURITIES, moneyness: readonly number[] = VOL_SURFACE_MONEYNESS): VolSurfacePoint[][] {
+  validateVolSurfaceParameters(params);
+  if (!maturities.length) throw new RangeError("maturities cannot be empty");
+  if (!moneyness.length) throw new RangeError("moneyness cannot be empty");
+  maturities.forEach((maturity) => finiteInRange("maturity", maturity, 1 / 3650, 50));
+  moneyness.forEach((ratio) => finiteInRange("moneyness", ratio, 0.1, 5));
   const spot = scenarioSpot(params);
   return maturities.map((maturity) => moneyness.map((ratio) => ({
     moneyness: ratio,
@@ -100,8 +108,16 @@ export function buildVolSurface(params: VolSurfaceParameters, maturities: readon
 }
 
 export function nearestSurfacePoint(grid: VolSurfacePoint[][], moneyness: number, maturity: number): VolSurfacePoint {
+  finiteInRange("moneyness", moneyness, 0.1, 5);
+  finiteInRange("maturity", maturity, 1 / 3650, 50);
   const points = grid.flat();
   if (!points.length) throw new RangeError("surface grid cannot be empty");
+  points.forEach((point) => {
+    finiteInRange("surface point moneyness", point.moneyness, 0.1, 5);
+    finiteInRange("surface point strike", point.strike, 1e-6, 5e9);
+    finiteInRange("surface point maturity", point.maturity, 1 / 3650, 50);
+    finiteInRange("surface point volatility", point.volatility, 0.01, 2);
+  });
   return points.reduce((nearest, point) => {
     const distance = Math.hypot(point.moneyness - moneyness, (point.maturity - maturity) / 3);
     const current = Math.hypot(nearest.moneyness - moneyness, (nearest.maturity - maturity) / 3);

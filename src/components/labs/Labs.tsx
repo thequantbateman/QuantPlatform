@@ -3,12 +3,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LineChart } from "@/src/components/charts/LineChart";
-import { SurfaceCanvas } from "@/src/components/charts/SurfaceCanvas";
+import { LazyVolSurfaceLab } from "@/src/components/academy/LazyVolSurfaceLab";
 import { blackScholes, type BlackScholesInput } from "@/src/quant/models/blackScholes";
 import { impliedVolatility } from "@/src/quant/volatility/impliedVolatility";
 import { priceVanilla, scenarioGrid, type GreekMetric, type VanillaInput, type VanillaMode } from "@/src/quant/pricing/vanilla";
 import { bootstrapCurve, type CurveNode } from "@/src/quant/curves/rates";
-import { syntheticVolatility, type SurfaceParameters } from "@/src/quant/volatility/syntheticSurface";
 import { pick, useI18n } from "@/src/i18n";
 import { useQuantBateman } from "@/src/components/quant-bateman/useQuantBateman";
 import { validateWithQuantEngine, type QuantEngineState } from "@/src/data/quantEngineClient";
@@ -17,7 +16,7 @@ type LabId = "vanilla" | "black-scholes" | "greeks" | "surface" | "curve";
 
 const labIds: LabId[] = ["vanilla", "black-scholes", "greeks", "surface", "curve"];
 
-export function Labs() {
+export function Labs({ initialLab }: { initialLab?: string }) {
   const { t, locale } = useI18n();
   const { setPageContext } = useQuantBateman();
   const labTabs = [
@@ -27,7 +26,7 @@ export function Labs() {
     { id: "surface" as const, index: "04", label: t("lab.vol"), description: t("lab.volDesc") },
     { id: "curve" as const, index: "05", label: t("lab.curve"), description: t("lab.curveDesc") },
   ];
-  const [active, setActive] = useState<LabId>("black-scholes");
+  const [active, setActive] = useState<LabId>(initialLab && labIds.includes(initialLab as LabId) ? initialLab as LabId : "black-scholes");
   useEffect(() => { const requested = new URLSearchParams(window.location.search).get("lab") as LabId | null; if (requested && labIds.includes(requested)) window.setTimeout(() => setActive(requested), 0); }, []);
   useEffect(() => { setPageContext({ section: "quant lab", action: active }); }, [active, setPageContext]);
   return (
@@ -44,7 +43,7 @@ export function Labs() {
         {active === "vanilla" && <VanillaOptionLab />}
         {active === "black-scholes" && <BlackScholesLab />}
         {active === "greeks" && <GreeksLab />}
-        {active === "surface" && <VolatilitySurfaceLab />}
+        {active === "surface" && <LazyVolSurfaceLab compact />}
         {active === "curve" && <YieldCurveLab />}
       </section>
     </div>
@@ -181,54 +180,6 @@ function GreeksLab() {
           <div className="greek-readout"><span>CURRENT {greek.toUpperCase()} · SPOT {input.spot}</span><strong>{current.toFixed(5)}</strong><em>{input.type.toUpperCase()} · σ {(input.volatility * 100).toFixed(1)}%</em></div>
           <div className="chart-card"><div className="chart-title"><div><span>SENSITIVITY PROFILE</span><strong>{greek[0].toUpperCase() + greek.slice(1)} against spot</strong></div></div><LineChart x={spots} series={[{ name: greek, values }]} xLabel="Spot" yLabel={greek.toUpperCase()} height={310} /></div>
           {heatmap && <div className="heatmap-card"><div className="chart-title"><div><span>SPOT × TIME</span><strong>Relative {greek} intensity</strong></div><span>2.0Y → 0.05Y</span></div><div className="greek-heatmap">{heatValues.map((value, index) => <i key={index} title={`${value.toFixed(5)}`} style={{ opacity: 0.15 + 0.85 * Math.abs(value) / heatMax }} />)}</div></div>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function VolatilitySurfaceLab() {
-  const { locale } = useI18n();
-  const [params, setParams] = useState<SurfaceParameters>({ atm: 0.184, skew: -0.075, convexity: 0.62, termStructure: 0.018 });
-  const [sliceMaturity, setSliceMaturity] = useState(1);
-  const [view, setView] = useState<"constant" | "smile" | "skew" | "term" | "surface" | "local">("surface");
-  const moneyness = useMemo(() => Array.from({ length: 41 }, (_, index) => 0.7 + index * 0.015), []);
-  const smile = useMemo(() => moneyness.map((m) => syntheticVolatility(m, sliceMaturity, params)), [moneyness, sliceMaturity, params]);
-  const maturities = useMemo(() => Array.from({ length: 41 }, (_, index) => 0.05 + index * 0.075), []);
-  const term = useMemo(() => maturities.map((time) => syntheticVolatility(1, time, params)), [maturities, params]);
-  const update = (key: keyof SurfaceParameters, value: number) => setParams((current) => ({ ...current, [key]: value }));
-  const tenors = [{ label: "1M", value: 1 / 12 }, { label: "3M", value: 0.25 }, { label: "6M", value: 0.5 }, { label: "1Y", value: 1 }, { label: "2Y", value: 2 }, { label: "5Y", value: 5 }];
-  useEffect(() => { localStorage.setItem("tqb-lab-context", JSON.stringify({ model: "Synthetic volatility surface", view, sliceMaturity, ...params })); }, [params, sliceMaturity, view]);
-  const viewCopy = {
-    constant: pick(locale, { en: "One volatility for every strike and expiry: useful as a baseline, never a description of the market.", es: "Una volatilidad para cada strike y vencimiento: útil como base, nunca como descripción del mercado." }),
-    smile: pick(locale, { en: "Wing richness reveals that terminal returns are not priced as lognormal.", es: "La riqueza de las alas revela que los retornos terminales no se valoran como lognormales." }),
-    skew: pick(locale, { en: "Skew prices directional asymmetry and crash protection across strikes.", es: "El skew valora la asimetría direccional y la protección ante caídas." }),
-    term: pick(locale, { en: "Term structure separates event risk, short-dated flow and long-run uncertainty.", es: "La estructura temporal separa eventos, flujos de corto plazo e incertidumbre de largo plazo." }),
-    surface: pick(locale, { en: "The surface joins smile and term. Rotate, deform and inspect linked slices.", es: "La superficie une sonrisa y plazo. Rótala, defórmala e inspecciona cortes vinculados." }),
-    local: pick(locale, { en: "Local volatility converts today’s vanilla surface into state-dependent instantaneous variance; hedge dynamics remain a separate question.", es: "La volatilidad local convierte la superficie vanilla de hoy en varianza instantánea dependiente del estado; la dinámica de cobertura es otra cuestión." }),
-  }[view];
-  return (
-    <div className="experiment">
-      <LabHeader index="03" title={pick(locale, { en: "Unified Volatility Explorer", es: "Explorador unificado de volatilidad" })} copy={pick(locale, { en: "Move from constant volatility to smile, skew, term structure, surface and local-vol interpretation.", es: "Avanza de volatilidad constante a sonrisa, skew, estructura temporal, superficie e interpretación local." })} note={pick(locale, { en: "Pedagogical synthetic surface · not live market data", es: "Superficie sintética educativa · no son datos en vivo" })} />
-      <div className="vol-progression" role="tablist" aria-label="Volatility model progression">{(["constant", "smile", "skew", "term", "surface", "local"] as const).map((item, index) => <button role="tab" aria-selected={view === item} className={view === item ? "active" : ""} onClick={() => setView(item)} key={item}><span>0{index + 1}</span>{item === "local" ? "local vol" : item}</button>)}</div>
-      <div className="vol-explainer"><span>{view.toUpperCase()}</span><p>{viewCopy}</p></div>
-      <div className="surface-lab-grid">
-        <aside className="control-panel">
-          <div className="control-heading"><span>SURFACE PARAMETERS</span><button onClick={() => setParams({ atm: 0.184, skew: -0.075, convexity: 0.62, termStructure: 0.018 })}>Reset</button></div>
-          <ParameterInput label="ATM volatility" suffix="decimal" value={params.atm} min={0.05} max={0.6} step={0.005} onChange={(value) => update("atm", value)} />
-          <ParameterInput label="Skew" suffix="slope" value={params.skew} min={-0.5} max={0.5} step={0.005} onChange={(value) => update("skew", value)} />
-          <ParameterInput label="Convexity" suffix="curvature" value={params.convexity} min={0} max={1.5} step={0.01} onChange={(value) => update("convexity", value)} />
-          <ParameterInput label="Term structure" suffix="slope" value={params.termStructure} min={-0.08} max={0.12} step={0.002} onChange={(value) => update("termStructure", value)} />
-          <div className="surface-summary"><span>ATM 1Y</span><strong>{(syntheticVolatility(1, 1, params) * 100).toFixed(2)}%</strong><span>80% / 120% wing</span><strong>{(syntheticVolatility(0.8, 1, params) * 100).toFixed(2)} / {(syntheticVolatility(1.2, 1, params) * 100).toFixed(2)}</strong></div>
-          <div className="tenor-picker"><span>{pick(locale, { en: "MATURITY SLICE", es: "CORTE DE VENCIMIENTO" })}</span><div>{tenors.map((tenor) => <button className={Math.abs(sliceMaturity - tenor.value) < 0.001 ? "active" : ""} onClick={() => setSliceMaturity(tenor.value)} key={tenor.label}>{tenor.label}</button>)}</div></div>
-          <div className="desk-panel"><span>DESK VIEW</span><p>{pick(locale, { en: "A fitted surface marks vanillas. A dynamics assumption decides tomorrow’s hedge. Do not confuse the two.", es: "Una superficie ajustada marca vanillas. Un supuesto dinámico decide la cobertura de mañana. No los confundas." })}</p></div>
-        </aside>
-        <div className="surface-output">
-          <div className="chart-card surface-main"><div className="chart-title"><div><span>VOLATILITY SURFACE</span><strong>Implied volatility · moneyness × maturity</strong></div><span className="demo-chip">SYNTHETIC</span></div><SurfaceCanvas params={params} /></div>
-          <div className="slice-grid">
-            <div className="chart-card"><div className="chart-title"><div><span>SMILE SLICE</span><strong>Maturity {sliceMaturity.toFixed(2)}y</strong></div><input aria-label="Smile maturity" type="range" min="0.08" max="5" step="0.01" value={sliceMaturity} onChange={(event) => setSliceMaturity(Number(event.target.value))} /></div><LineChart x={moneyness} series={[{ name: "vol", values: smile }]} xLabel="Moneyness" yLabel="IV" height={210} /></div>
-            <div className="chart-card"><div className="chart-title"><div><span>TERM SLICE</span><strong>ATM moneyness</strong></div></div><LineChart x={maturities} series={[{ name: "vol", values: term }]} xLabel="Maturity" yLabel="IV" height={210} /></div>
-          </div>
         </div>
       </div>
     </div>

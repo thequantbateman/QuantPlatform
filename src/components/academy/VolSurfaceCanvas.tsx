@@ -6,23 +6,23 @@ import { pick, useI18n } from "@/src/i18n";
 
 type Camera = { yaw: number; pitch: number; zoom: number };
 type Projected = VolSurfacePoint & { x: number; y: number; depth: number };
+type HeatStop = { at: number; rgb: readonly [number, number, number] };
 
-const HEAT_STOPS = [
-  { at: 0, rgb: [75, 30, 168] },
-  { at: 0.18, rgb: [37, 79, 222] },
-  { at: 0.36, rgb: [16, 190, 224] },
-  { at: 0.54, rgb: [49, 210, 123] },
-  { at: 0.72, rgb: [238, 225, 72] },
-  { at: 0.86, rgb: [255, 142, 43] },
-  { at: 1, rgb: [238, 48, 55] },
-] as const;
+const HEAT_STOP_POSITIONS = [0, 0.18, 0.36, 0.54, 0.72, 0.86, 1] as const;
 
-function heatColor(value: number): string {
+function readHeatStops(style: CSSStyleDeclaration): HeatStop[] {
+  return HEAT_STOP_POSITIONS.map((at, index) => {
+    const channels = style.getPropertyValue(`--academy-chart-heat-${index}`).trim().split(/\s+/).map(Number);
+    return { at, rgb: [channels[0] ?? 0, channels[1] ?? 0, channels[2] ?? 0] };
+  });
+}
+
+function heatColor(value: number, stops: readonly HeatStop[]): string {
   const normalized = Math.max(0, Math.min(1, value));
-  const upperIndex = HEAT_STOPS.findIndex((stop) => stop.at >= normalized);
-  if (upperIndex <= 0) return `rgb(${HEAT_STOPS[0].rgb.join(",")})`;
-  const lower = HEAT_STOPS[upperIndex - 1];
-  const upper = HEAT_STOPS[upperIndex];
+  const upperIndex = stops.findIndex((stop) => stop.at >= normalized);
+  if (upperIndex <= 0) return `rgb(${stops[0].rgb.join(",")})`;
+  const lower = stops[upperIndex - 1];
+  const upper = stops[upperIndex];
   const weight = (normalized - lower.at) / Math.max(upper.at - lower.at, 1e-8);
   const channels = lower.rgb.map((channel, index) => Math.round(channel + (upper.rgb[index] - channel) * weight));
   return `rgb(${channels.join(",")})`;
@@ -49,9 +49,13 @@ export function VolSurfaceCanvas({ grid, selected, onSelect }: { grid: VolSurfac
     const width = rect.width;
     const height = rect.height;
     const style = getComputedStyle(canvas);
-    const ink = style.getPropertyValue("--academy-chart-ink").trim() || "#eee7dc";
-    const muted = style.getPropertyValue("--academy-chart-muted").trim() || "#8d929e";
-    const gridColor = style.getPropertyValue("--academy-chart-grid").trim() || "#283140";
+    const ink = style.getPropertyValue("--academy-chart-ink").trim() || style.color;
+    const muted = style.getPropertyValue("--academy-chart-muted").trim() || style.color;
+    const gridColor = style.getPropertyValue("--academy-chart-grid").trim() || style.color;
+    const surfaceBackground = style.getPropertyValue("--academy-chart-surface").trim() || "transparent";
+    const cellEdge = style.getPropertyValue("--academy-chart-cell-edge").trim() || gridColor;
+    const meshLine = style.getPropertyValue("--academy-chart-mesh-line").trim() || ink;
+    const heatStops = readHeatStops(style);
     const values = grid.flat().map((point) => point.volatility);
     const minVol = Math.min(...values);
     const maxVol = Math.max(...values);
@@ -71,7 +75,7 @@ export function VolSurfaceCanvas({ grid, selected, onSelect }: { grid: VolSurfac
     const projected = grid.map((row) => row.map(project));
     pointsRef.current = projected.flat();
     context.clearRect(0, 0, width, height);
-    context.fillStyle = "#0c1220";
+    context.fillStyle = surfaceBackground;
     context.fillRect(0, 0, width, height);
 
     for (let index = 0; index <= 6; index += 1) {
@@ -90,24 +94,24 @@ export function VolSurfaceCanvas({ grid, selected, onSelect }: { grid: VolSurfac
     }
     cells.sort((a, b) => a.depth - b.depth).forEach((cell) => {
       const normalized = (cell.value - minVol) / volRange;
-      context.fillStyle = heatColor(normalized);
-      context.strokeStyle = "rgba(7, 12, 24, .48)";
+      context.fillStyle = heatColor(normalized, heatStops);
+      context.strokeStyle = cellEdge;
       context.beginPath(); cell.corners.forEach((point, index) => index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)); context.closePath(); context.fill(); context.stroke();
     });
 
     projected.forEach((row) => {
       context.beginPath();
       row.forEach((point, index) => index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y));
-      context.strokeStyle = "rgba(236, 244, 255, .28)"; context.lineWidth = 0.7; context.stroke();
+      context.strokeStyle = meshLine; context.lineWidth = 0.7; context.stroke();
     });
     for (let column = 0; column < projected[0].length; column += 1) {
       context.beginPath();
       projected.forEach((row, index) => index ? context.lineTo(row[column].x, row[column].y) : context.moveTo(row[column].x, row[column].y));
-      context.strokeStyle = "rgba(236, 244, 255, .24)"; context.lineWidth = 0.7; context.stroke();
+      context.strokeStyle = meshLine; context.lineWidth = 0.7; context.stroke();
     }
 
     const marker = pointsRef.current.reduce((nearest, point) => Math.hypot(point.moneyness - selected.moneyness, point.maturity - selected.maturity) < Math.hypot(nearest.moneyness - selected.moneyness, nearest.maturity - selected.maturity) ? point : nearest);
-    context.fillStyle = ink; context.strokeStyle = "#0c1220"; context.lineWidth = 2; context.beginPath(); context.arc(marker.x, marker.y, 5, 0, Math.PI * 2); context.fill(); context.stroke();
+    context.fillStyle = ink; context.strokeStyle = surfaceBackground; context.lineWidth = 2; context.beginPath(); context.arc(marker.x, marker.y, 5, 0, Math.PI * 2); context.fill(); context.stroke();
     context.fillStyle = muted; context.font = "10px ui-monospace, monospace"; context.fillText("MONEYNESS K/S →", width - 150, height - 16); context.fillText("MATURITY T", 18, height - 16);
   }, [grid, selected]);
 

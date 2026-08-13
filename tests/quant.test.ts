@@ -8,7 +8,7 @@ import { impliedVolatility } from "../src/quant/volatility/impliedVolatility";
 import { priceVanilla, scenarioGrid } from "../src/quant/pricing/vanilla";
 import { bootstrapCurve, discountFactor, forwardRate, logLinearDiscount, parSwapRate, receiverSwapPresentValue, simpleForwardRate, swapAnnuity, zeroRate } from "../src/quant/curves/rates";
 import { linearInterpolate } from "../src/quant/curves/interpolation";
-import { buildVolSurface, defaultVolSurfaceParameters, educationalVolatility, scenarioSpot } from "../src/quant/volatility/volSurface";
+import { buildVolSurface, defaultVolSurfaceParameters, educationalVolatility, nearestSurfacePoint, scenarioSpot } from "../src/quant/volatility/volSurface";
 import { brownianMarketPriceOfRisk, conditionalBinomialExpectation, girsanovDensity, measureState } from "../src/quant/probability/measureChange";
 import { buildExposureProfile, expectedPositiveExposure, historicalVarEs, unilateralCva } from "../src/quant/risk/exposure";
 import { antitheticVarianceReduction, compareGbmSchemes, monteCarloStandardError } from "../src/quant/simulation/schemes";
@@ -141,6 +141,43 @@ test("educational volatility surface is finite, positive and deterministic", () 
   assert.equal(first.length, 6);
   assert.equal(first[0].length, 11);
   assert.ok(first.flat().every((point) => Number.isFinite(point.volatility) && point.volatility > 0));
+});
+
+test("volatility surface preserves the named one-year ATM reference", () => {
+  closeTo(educationalVolatility(1, 1, defaultVolSurfaceParameters), 0.21732867951399865, 1e-12);
+});
+
+test("negative log-moneyness skew prices the downside wing above the symmetric upside wing", () => {
+  const params = { ...defaultVolSurfaceParameters, skew: -0.2, curvature: 0, termSlope: 0 };
+  const downside = educationalVolatility(Math.exp(-0.2), 1, params);
+  const upside = educationalVolatility(Math.exp(0.2), 1, params);
+  assert.ok(downside > upside);
+  closeTo(downside - upside, 0.08, 1e-12);
+});
+
+test("additional curvature raises symmetric wings without moving ATM volatility", () => {
+  const flat = { ...defaultVolSurfaceParameters, skew: 0, curvature: 0, termSlope: 0 };
+  const curved = { ...flat, curvature: 0.5 };
+  closeTo(educationalVolatility(1, 1, curved), educationalVolatility(1, 1, flat), 1e-12);
+  assert.ok(educationalVolatility(Math.exp(-0.2), 1, curved) > educationalVolatility(Math.exp(-0.2), 1, flat));
+  assert.ok(educationalVolatility(Math.exp(0.2), 1, curved) > educationalVolatility(Math.exp(0.2), 1, flat));
+});
+
+test("positive term slope raises long-tenor ATM volatility", () => {
+  const params = { ...defaultVolSurfaceParameters, termSlope: 0.05 };
+  assert.ok(educationalVolatility(1, 2, params) > educationalVolatility(1, 0.25, params));
+});
+
+test("surface grid boundary rejects invalid parameters and empty axes", () => {
+  assert.throws(() => buildVolSurface({ ...defaultVolSurfaceParameters, skew: Number.NaN }), /skew/);
+  assert.throws(() => buildVolSurface(defaultVolSurfaceParameters, [], [1]), /maturities/i);
+  assert.throws(() => buildVolSurface(defaultVolSurfaceParameters, [1], []), /moneyness/i);
+});
+
+test("nearest surface point resolves equal-distance ties in stable grid order", () => {
+  const grid = buildVolSurface(defaultVolSurfaceParameters, [0.5], [0.9, 1.1]);
+  assert.equal(nearestSurfacePoint(grid, 1, 0.5), grid[0][0]);
+  assert.equal(nearestSurfacePoint(grid, 1, 0.5), grid[0][0]);
 });
 
 test("dense 3D volatility mesh preserves domains and selected-node consistency", () => {
