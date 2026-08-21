@@ -1,6 +1,6 @@
 # Portfolio and Strategy Analytics design
 
-**Status:** Approved in chat on 2026-08-21; awaiting written-spec review.
+**Status:** Approved in chat and as a written specification on 2026-08-21.
 
 ## Outcome
 
@@ -240,7 +240,7 @@ Unique sorted strikes partition \([0,\infty)\) into linear intervals. Within eac
 \Pi(S)=aS+b.
 \]
 
-Breakevens are roots inside their valid intervals. Duplicate roots are merged within a numerical tolerance. Maximum gain/loss are determined from interval endpoints and the final slope as \(S\to\infty\):
+Breakevens are roots inside their valid intervals. Duplicate roots are merged within a numerical tolerance. Maximum gain/loss are determined from interval endpoints and the final slope as \(S\to\infty\). Finite maximum gain and maximum loss are reported as non-negative monetary magnitudes; interval and scenario P&L retain their signed values:
 
 - positive final slope implies unlimited maximum gain;
 - negative final slope implies unlimited maximum loss;
@@ -248,6 +248,8 @@ Breakevens are roots inside their valid intervals. Duplicate roots are merged wi
 - the left boundary is evaluated at \(S=0\).
 
 This exact algebra replaces grid-based guesses. Invalid or mixed expiries disable terminal strategy classification and explain why.
+
+An option-only or mixed option/underlying strategy infers the terminal horizon from the common option expiry. For an underlying-only book, the workspace’s explicit strategy horizon supplies the expiry because the underlying position itself has no maturity.
 
 ### Put-call parity and synthetic identities
 
