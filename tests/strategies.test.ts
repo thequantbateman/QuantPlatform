@@ -6,6 +6,16 @@ import {
   terminalLegPayoff,
   terminalLegProfit,
 } from "../src/quant/strategies/payoff";
+import {
+  buildStrategyPreset,
+  strategyPresets,
+} from "../src/quant/strategies/presets";
+import {
+  parseStrategyTransfer,
+  serializeStrategyTransfer,
+  STRATEGY_TRANSFER_KEY,
+  STRATEGY_TRANSFER_VERSION,
+} from "../src/quant/strategies/transfer";
 import type {
   OptionPosition,
   PortfolioPosition,
@@ -198,4 +208,126 @@ test("terminal analysis validates spot, books and underlying-only horizon", () =
   };
   assert.throws(() => analyzeTerminalStrategy([stock]), /expiry/i);
   assert.equal(analyzeTerminalStrategy([stock], 0.5).expiry, 0.5);
+});
+
+test("every approved preset produces a deterministic common-expiry strategy", () => {
+  assert.equal(strategyPresets.length, 22);
+  assert.equal(new Set(strategyPresets.map((preset) => preset.id)).size, 22);
+
+  for (const preset of strategyPresets) {
+    const context = { spot: 100, expiry: 1, multiplier: 100 };
+    const first = buildStrategyPreset(preset.id, context);
+    const second = buildStrategyPreset(preset.id, context);
+    const expiries = new Set(
+      first.flatMap((leg) => (leg.instrument === "option" ? [leg.maturity] : [])),
+    );
+
+    assert.deepEqual(first, second, preset.id);
+    assert.equal(first.length, preset.legCount, preset.id);
+    assert.equal(new Set(first.map((leg) => leg.id)).size, first.length, preset.id);
+    assert.equal(expiries.size, 1, preset.id);
+    assert.doesNotThrow(() => analyzeTerminalStrategy(first), preset.id);
+  }
+});
+
+test("preset definitions preserve signed stock-option and bounded strike structures", () => {
+  const covered = buildStrategyPreset("covered-call", {
+    spot: 100,
+    expiry: 1,
+    multiplier: 100,
+  });
+  assert.deepEqual(
+    covered.map((leg) => [leg.instrument, leg.direction, leg.quantity, leg.multiplier]),
+    [
+      ["underlying", "long", 100, 1],
+      ["option", "short", 1, 100],
+    ],
+  );
+
+  const condor = buildStrategyPreset("iron-condor", {
+    spot: 100,
+    expiry: 1,
+    multiplier: 100,
+  });
+  assert.deepEqual(
+    condor.map((leg) =>
+      leg.instrument === "option"
+        ? [leg.optionType, leg.direction, leg.strike]
+        : [leg.instrument, leg.direction],
+    ),
+    [
+      ["put", "long", 90],
+      ["put", "short", 95],
+      ["call", "short", 105],
+      ["call", "long", 110],
+    ],
+  );
+});
+
+test("preset builders reject invalid financial context", () => {
+  assert.throws(
+    () => buildStrategyPreset("long-call", { spot: 0, expiry: 1, multiplier: 100 }),
+    /spot/i,
+  );
+  assert.throws(
+    () => buildStrategyPreset("long-call", { spot: 100, expiry: -1, multiplier: 100 }),
+    /expiry/i,
+  );
+  assert.throws(
+    () => buildStrategyPreset("long-call", { spot: 100, expiry: 1, multiplier: 0 }),
+    /multiplier/i,
+  );
+});
+
+test("strategy transfer round-trips through one stable versioned key", () => {
+  const payload = {
+    version: 1 as const,
+    market: {
+      spot: 100,
+      volatility: 0.2,
+      rate: 0.03,
+      dividend: 0,
+      valuationTime: 0,
+    },
+    positions: buildStrategyPreset("covered-call", {
+      spot: 100,
+      expiry: 1,
+      multiplier: 100,
+    }),
+  };
+
+  assert.equal(STRATEGY_TRANSFER_KEY, "tqb-strategy-transfer-v1");
+  assert.equal(STRATEGY_TRANSFER_VERSION, 1);
+  assert.deepEqual(parseStrategyTransfer(serializeStrategyTransfer(payload)), payload);
+});
+
+test("strategy transfer rejects unknown versions and malformed nested fields", () => {
+  assert.equal(parseStrategyTransfer('{"version":2}'), null);
+  assert.equal(parseStrategyTransfer("not-json"), null);
+  assert.equal(
+    parseStrategyTransfer(
+      JSON.stringify({
+        version: 1,
+        market: { spot: 100 },
+        positions: [],
+      }),
+    ),
+    null,
+  );
+  assert.equal(
+    parseStrategyTransfer(
+      JSON.stringify({
+        version: 1,
+        market: {
+          spot: 100,
+          volatility: 0.2,
+          rate: 0.03,
+          dividend: 0,
+          valuationTime: 0,
+        },
+        positions: [{ id: "bad", instrument: "future" }],
+      }),
+    ),
+    null,
+  );
 });
