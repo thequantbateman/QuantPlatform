@@ -1,6 +1,6 @@
 # QuantPlatform Context
 
-> Last validated: 2026-08-21  
+> Last validated: 2026-08-21
 > Validated against commit: `5a2620c`
 
 This is the durable operational map for the repository. It complements mandatory rules in `AGENTS.md`; it does not replace source code, configuration, the human-facing `README.md`, or detailed documents under `docs/`.
