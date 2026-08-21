@@ -7,6 +7,8 @@ const tools = [
   ["02", "Greeks dashboard", "Panel de griegas", "Delta · Gamma · Vega · Theta · Rho", "Delta · Gamma · Vega · Theta · Rho", "/lab?lab=greeks"],
   ["03", "Volatility surface workbench", "Entorno de superficies de volatilidad", "3D · Heatmap · Smile · Term · Scenarios", "3D · Mapa térmico · Sonrisa · Plazo · Escenarios", "/analytics/volatility"],
   ["04", "Yield-curve engine", "Motor de curvas de tipos", "Discount factors · Zeroes · Forwards", "Factores de descuento · Tipos cero · Forwards", "/lab?lab=curve"],
+  ["05", "Portfolio Greeks & hedging", "Griegas y cobertura de cartera", "Aggregate risk · Scenarios · Taylor P&L · Hedge tickets", "Riesgo agregado · Escenarios · P&L de Taylor · Coberturas", "/analytics/portfolio"],
+  ["06", "Options strategy & payoff", "Estrategias y payoff de opciones", "22 presets · Exact breakevens · Settlement · Transfer", "22 presets · Puntos de equilibrio exactos · Liquidación · Transferencia", "/analytics/strategies"],
 ] as const;
 
 export function AnalyticsHub() {

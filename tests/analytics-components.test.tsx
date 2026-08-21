@@ -194,4 +194,13 @@ test("strategy lab exposes taxonomy, exact payoff algebra and portfolio transfer
     "single expiry",
   ]) assert.match(html, new RegExp(marker, "i"), marker);
   assert.match(html, /role="tab"[^>]+aria-controls="strategy-panel-profit"/i);
+
+  const spanish = renderToStaticMarkup(
+    <I18nProvider initialLocale="es">
+      <QuantBatemanProvider><StrategyPayoffLab /></QuantBatemanProvider>
+    </I18nProvider>,
+  );
+  for (const marker of ["BENEFICIO AL VENCIMIENTO", "Acotadas", "Cóndor de hierro", "Patas de la estrategia", "Abrir en Laboratorio de Carteras"]) {
+    assert.match(spanish, new RegExp(marker, "i"), marker);
+  }
 });

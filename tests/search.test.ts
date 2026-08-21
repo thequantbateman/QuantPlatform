@@ -65,3 +65,11 @@ test("search limits results and preserves input order for equal relevance", () =
   assert.deepEqual(searchPlatformItems(fixtures, "alpha", { limit: 2 }).map((item) => item.id), ["first", "second"]);
   assert.deepEqual(searchPlatformItems(fixtures, "alpha", { limit: 0 }), []);
 });
+
+test("core search indexes portfolio and strategy analytics once", () => {
+  const items = createCoreSearchItems("en");
+  assert.equal(items.filter((item) => item.href === "/analytics/portfolio").length, 1);
+  assert.equal(items.filter((item) => item.href === "/analytics/strategies").length, 1);
+  assert.equal(searchPlatformItems(items, "delta gamma hedge", { limit: 5 })[0]?.href, "/analytics/portfolio");
+  assert.equal(searchPlatformItems(items, "iron condor payoff", { limit: 5 })[0]?.href, "/analytics/strategies");
+});
