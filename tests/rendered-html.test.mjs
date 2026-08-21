@@ -79,6 +79,7 @@ test("renders key product routes without external services", async () => {
     ["/learn/volatility/heston-model", "Heston"],
     ["/analytics/volatility", "ONE LINKED STATE"],
     ["/analytics/portfolio", "Aggregate risk"],
+    ["/analytics/strategies", "Settlement by leg"],
     ["/lab?lab=surface", "ONE LINKED STATE"],
   ]) {
     const response = await render(path);

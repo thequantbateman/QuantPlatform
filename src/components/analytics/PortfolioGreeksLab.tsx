@@ -111,14 +111,14 @@ export function PortfolioGreeksLab() {
     try {
       localStorage.setItem("tqb-lab-context", JSON.stringify({ section: "portfolio", model: "Black-Scholes", outputs: ["Greeks", "scenario P&L", "hedges"] }));
       if (new URLSearchParams(window.location.search).get("from") !== "strategy") return;
-      const serialized = localStorage.getItem(STRATEGY_TRANSFER_KEY);
+      const serialized = sessionStorage.getItem(STRATEGY_TRANSFER_KEY);
       if (!serialized) return;
       const payload = parseStrategyTransfer(serialized);
       if (!payload) {
         window.setTimeout(() => setTransferError(true), 0);
         return;
       }
-      localStorage.removeItem(STRATEGY_TRANSFER_KEY);
+      sessionStorage.removeItem(STRATEGY_TRANSFER_KEY);
       window.setTimeout(() => {
         setMarket(payload.market);
         setPositions(payload.positions);
@@ -205,7 +205,7 @@ export function PortfolioGreeksLab() {
 
       <section className="portfolio-panel portfolio-decay" aria-labelledby="portfolio-decay-title"><header><div><span>05 · THETA</span><h2 id="portfolio-decay-title">{copy({ en: "Time decay", es: "Decaimiento temporal" })}</h2></div><p>{copy({ en: "Full repricing along calendar time with spot, volatility and rates held constant.", es: "Revaloración completa al avanzar el calendario, manteniendo constantes spot, volatilidad y tipos." })}</p></header><LineChart x={decay.map((point) => point.elapsedDays)} series={[{ name: "Model value", values: decay.map((point) => point.modelValue) }, { name: "P&L", values: decay.map((point) => point.pnl) }]} xLabel={copy({ en: "Elapsed days", es: "Días transcurridos" })} yLabel={copy({ en: "Portfolio value / P&L", es: "Valor de cartera / P&L" })} xFormatter={(value) => `${value.toFixed(0)}d`} yFormatter={money} description={copy({ en: "Portfolio model value and P&L under pure calendar decay.", es: "Valor de modelo y P&L de la cartera bajo puro paso del calendario." })} showTable /></section>
 
-      <footer className="portfolio-method"><div><span>{copy({ en: "MODEL BOUNDARY", es: "LÍMITE DEL MODELO" })}</span><p>{copy({ en: "European options, Black–Scholes valuation, constant rates/dividend yield/volatility per scenario, no transaction costs, liquidity, early exercise or volatility-surface dynamics. Greeks are local sensitivities; scenario P&L is the full repricing authority.", es: "Opciones europeas, valoración Black–Scholes, tipos/dividendos/volatilidad constantes por escenario, sin costes de transacción, liquidez, ejercicio anticipado ni dinámica de superficie. Las griegas son sensibilidades locales; el P&L de escenario por revaloración completa es la autoridad." })}</p></div><nav aria-label={copy({ en: "Related Academy lessons", es: "Lecciones relacionadas de la Academia" })}><a href="/learn/greeks-hedging/delta-gamma-vega-hedging">{copy({ en: "Delta–Gamma–Vega hedging", es: "Cobertura Delta–Gamma–Vega" })} →</a><a href="/learn/greeks-hedging/pnl-attribution">{copy({ en: "P&L attribution", es: "Atribución de P&L" })} →</a></nav></footer>
+      <footer className="portfolio-method"><div><span>{copy({ en: "MODEL BOUNDARY", es: "LÍMITE DEL MODELO" })}</span><p>{copy({ en: "European options, Black–Scholes valuation, constant rates/dividend yield/volatility per scenario, no transaction costs, liquidity, early exercise or volatility-surface dynamics. Greeks are local sensitivities; scenario P&L is the full repricing authority.", es: "Opciones europeas, valoración Black–Scholes, tipos/dividendos/volatilidad constantes por escenario, sin costes de transacción, liquidez, ejercicio anticipado ni dinámica de superficie. Las griegas son sensibilidades locales; el P&L de escenario por revaloración completa es la autoridad." })}</p></div><nav aria-label={copy({ en: "Related Academy lessons", es: "Lecciones relacionadas de la Academia" })}><a href="/learn/risk/first-order-greeks">{copy({ en: "First-order Greeks", es: "Griegas de primer orden" })} →</a><a href="/learn/risk/hedging-pnl-attribution">{copy({ en: "P&L attribution", es: "Atribución de P&L" })} →</a></nav></footer>
     </div>
   </main>;
 }
