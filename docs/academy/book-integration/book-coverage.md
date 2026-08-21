@@ -5,9 +5,9 @@ Classification: **A** covered well; **B** needs mathematical depth; **C** explan
 | Ch. | PDF pages | Topic and main sections | Current Academy match | Class | Priority | Integration status |
 |---:|---:|---|---|:---:|:---:|---|
 | Front matter | 8–19 | Preface, curriculum intent, code/exercise usage | Product pedagogy and content architecture | A | P2 | Reviewed; policy captured |
-| 1 | 20–45 | Random variables; density, expectation, variance; characteristic functions; cumulants/moments; stochastic processes; Wiener process; martingales; tower property; elementary processes; Itô integral/isometry; representation theorem | Legacy random variables/Brownian/Itô; deep filtrations and conditional expectation | G/F | P0 | Foundations integration selected |
-| 2 | 46–69 | GBM; Itô processes/lemma; lognormal law; dividends; time-dependent volatility; martingales; P/Q prices; parameter estimation | Legacy GBM-adjacent pages; deep measure-change lessons | G/F | P0 | Foundations integration selected |
-| 3 | 70–99 | Option contracts; replication and PDE; martingale pricing; Feynman–Kac; closed form; Green/characteristic functions; volatility variants; delta hedging | Legacy Black–Scholes/options; deep Greeks and hedging | G/F | P0 | Canonical lesson selected |
+| 1 | 20–45 | Random variables; density, expectation, variance; characteristic functions; cumulants/moments; stochastic processes; Wiener process; martingales; tower property; elementary processes; Itô integral/isometry; representation theorem | Canonical distributions and Brownian/Itô lessons; deep filtrations and conditional expectation | A/F | P0 | Integrated and tested |
+| 2 | 46–69 | GBM; Itô processes/lemma; lognormal law; dividends; time-dependent volatility; martingales; P/Q prices; parameter estimation | Canonical GBM P/Q lesson plus measure-change sequence | A/F | P0 | Integrated and tested |
+| 3 | 70–99 | Option contracts; replication and PDE; martingale pricing; Feynman–Kac; closed form; Green/characteristic functions; volatility variants; delta hedging | Canonical Black–Scholes lesson plus deep Greeks and hedging | A/F | P0 | Integrated and tested |
 | 4 | 100–139 | Implied volatility; prices/densities; smiles; variance swaps; local volatility; no-arbitrage interpolation; simulation | Deep implied vol, smile, surface, local vol, calibration | A/B | P1 | Covered; later targeted derivation audit |
 | 5 | 140–181 | Jump diffusion; Itô with jumps; PIDE; Merton; Lévy triplet; VG/CGMY/NIG; jump hedging | Legacy jump diffusion only | G | P2 | Mapped; defer until PDE/transform spine is complete |
 | 6 | 182–211 | COS density expansion; pricing; payoff coefficients; Greeks; error analysis; integration range; GBM/CGMY/VG results | Deep Fourier-COS and Monte Carlo lessons | B | P1 | Existing lesson; improve convergence explanation later |
@@ -27,12 +27,12 @@ Classification: **A** covered well; **B** needs mathematical depth; **C** explan
 
 | Section | Academy target | Action |
 |---|---|---|
-| 1.1.1–1.1.3 distributions, expectation, characteristic function, moments | `foundation-distributions` | Add one combined canonical lesson; do not fragment into micro-pages |
-| 1.2 Wiener, martingale, tower property | `foundation-brownian-ito`, `foundation-conditional-expectation` | Add Brownian foundation; deepen links to existing conditional expectation |
-| 1.3 Itô integral/isometry/representation | `foundation-brownian-ito` | Teach construction and quadratic variation; representation theorem remains optional depth |
-| 2.1 GBM and Itô lemma | `foundation-gbm-dynamics` | Add canonical lesson with exact solution and lognormal diagnostics |
-| 2.2 dividends/time-dependent vol | `foundation-gbm-dynamics`, volatility track | Include assumptions/extension panel, not a separate lesson |
-| 2.3 P/Q dynamics and estimation | `foundation-gbm-dynamics`, measure-change track | Separate statistical estimation from pricing dynamics |
-| 3.1 option/PDE/martingale | `foundation-black-scholes` | Add classical derivation profile |
-| 3.2 Feynman–Kac/closed form | `foundation-black-scholes` | Inline expandable derivation and analytical check |
-| 3.3 delta hedging | `foundation-black-scholes`, `hedging-pnl` | Link theory to existing hedge lab |
+| 1.1.1–1.1.3 distributions, expectation, characteristic function, moments | `foundation-distributions` | Integrated as one combined canonical lesson; cross-linked to COS |
+| 1.2 Wiener, martingale, tower property | `foundation-brownian-ito`, `foundation-conditional-expectation` | Brownian foundation integrated; existing expectation lesson retained |
+| 1.3 Itô integral/isometry/representation | `foundation-brownian-ito` | Construction, quadratic variation and Itô lemma integrated; representation theorem kept as optional depth |
+| 2.1 GBM and Itô lemma | `foundation-gbm-dynamics` | Exact solution and lognormal diagnostics integrated |
+| 2.2 dividends/time-dependent vol | `foundation-gbm-dynamics`, volatility track | Included as assumptions/extensions rather than a duplicate lesson |
+| 2.3 P/Q dynamics and estimation | `foundation-gbm-dynamics`, measure-change track | Statistical and pricing drifts explicitly separated |
+| 3.1 option/PDE/martingale | `foundation-black-scholes` | Classical replication/PDE derivation integrated |
+| 3.2 Feynman–Kac/closed form | `foundation-black-scholes` | Expectation, closed form and checks integrated inline |
+| 3.3 delta hedging | `foundation-black-scholes`, `hedging-pnl` | Existing hedge lab linked from the theory lesson |

@@ -10,31 +10,72 @@ type Seed = {
   relatedTopics?: string[];
   difficulty?: Difficulty;
   type?: ContentType;
+  assumptions?: string[];
+  deskView?: string;
 };
 
 const slugify = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
 function createEntry(seed: Seed): ContentEntry {
   const slug = slugify(seed.title);
+  const type = seed.type ?? "concept";
   return {
     ...seed,
     slug,
     category: seed.assetClass === "Foundations" ? "Foundations" : seed.assetClass,
     difficulty: seed.difficulty ?? "foundation",
-    type: seed.type ?? "concept",
+    type,
     prerequisites: seed.assetClass === "Foundations" ? [] : ["Risk-Neutral Pricing"],
     relatedTopics: seed.relatedTopics ?? [],
     labs: seed.title.includes("Curve") || seed.title.includes("Rate") || seed.title.includes("Discount") ? ["yield-curve"] : seed.assetClass === "EQ" || seed.assetClass === "FX" ? ["black-scholes", "greeks"] : [],
     tags: [seed.assetClass, seed.type ?? "concept", seed.difficulty ?? "foundation"],
     authors: ["TheQuantBateman Research"],
     lastReviewed: "2026-08-10",
-    assumptions: [
-      "Educational conventions are stated explicitly and may simplify market quotation or settlement details.",
-      "Rates are continuously compounded unless the section says otherwise.",
-      "Inputs are deterministic in the base model.",
-    ],
-    deskView: `Start with the quote convention, then ask which ${seed.assetClass} risk survives the hedge. A number without its convention is merely well-dressed ambiguity.`,
+    assumptions: seed.assumptions ?? assumptionsFor(type),
+    deskView: seed.deskView ?? deskViewFor(seed.assetClass, type),
   };
+}
+
+function assumptionsFor(type: ContentType): string[] {
+  if (type === "instrument") return [
+    "Contract dates, calendars, settlement, notionals and payoff currency are part of the valuation input.",
+    "Discounting and projection conventions must match the collateral and quotation framework.",
+    "The displayed payoff omits legal terms and lifecycle events unless stated otherwise.",
+  ];
+  if (type === "model") return [
+    "The state dynamics and valuation measure are stated independently of the calibration instruments.",
+    "Parameters are treated as deterministic over the pricing run unless the model says otherwise.",
+    "A calibration fit does not validate out-of-sample dynamics or hedge performance.",
+  ];
+  if (type === "method" || type === "lab") return [
+    "The numerical target, discretization and stopping rule must be fixed before comparing outputs.",
+    "Convergence is assessed against bias, variance or residual tolerances rather than visual smoothness.",
+    "Finite precision, boundary treatment and input conditioning can dominate model error.",
+  ];
+  if (type === "market-note") return [
+    "The venue, timestamp, executable side and data status are part of every market observation.",
+    "Midpoints and derived probabilities are analytical coordinates, not guaranteed executable levels.",
+    "Licensing, freshness and resolution rules determine how the observation may be used.",
+  ];
+  if (type === "research") return [
+    "The proposed method is compared with an established baseline on held-out scenarios.",
+    "Parameter uncertainty and extrapolation are reported rather than hidden by one fit metric.",
+    "Production use requires independent validation, monitoring and a documented fallback.",
+  ];
+  return [
+    "Definitions, units and information sets are fixed before the mathematical relationship is applied.",
+    "Rates and volatilities use decimal units and time uses year fractions unless stated otherwise.",
+    "The relationship is local to its stated assumptions and should not be extrapolated mechanically.",
+  ];
+}
+
+function deskViewFor(assetClass: AssetClass, type: ContentType): string {
+  if (type === "instrument") return `Reconcile the contractual payoff before reading the ${assetClass} risk. Small date or convention changes can move cash flows before any model parameter moves.`;
+  if (type === "model") return `A good ${assetClass} calibration explains today's instruments; the hedge reveals whether the assumed dynamics survive tomorrow's move.`;
+  if (type === "method" || type === "lab") return `Report the ${assetClass} number with its convergence evidence. A stable-looking output can still carry discretization bias or an ill-conditioned input.`;
+  if (type === "market-note") return `Start from the executable side and timestamp. Derived ${assetClass} signals are only as reliable as the market state and resolution convention beneath them.`;
+  if (type === "research") return `Keep an established ${assetClass} baseline beside the new method and define the scenario in which the fallback takes control.`;
+  return `State the convention, identify the observable and ask which ${assetClass} risk remains after the proposed hedge.`;
 }
 
 const seeds: Seed[] = [
@@ -89,7 +130,7 @@ const seeds: Seed[] = [
   { assetClass: "Frontier", title: "AAD", description: "Adjoint algorithmic differentiation for many sensitivities at near-constant reverse cost.", intuition: "Record the pricing computation, then propagate sensitivities backwards through it.", mathematics: "\\bar{x}_i=\\partial V/\\partial x_i", marketUse: "Industry-standard technique for large-scale Greeks where the implementation supports it.", difficulty: "front-office", type: "method", relatedTopics: ["Differentiable Pricing", "GPU Monte Carlo"] },
   { assetClass: "Frontier", title: "Differentiable Pricing", description: "Pricing systems designed for gradients across models and parameters.", intuition: "Treat calibration and risk as first-class derivatives of the pricing program.", mathematics: "\\nabla_\\theta V(\\theta)", marketUse: "Emerging infrastructure pattern spanning AAD, automatic differentiation and ML frameworks.", difficulty: "research", type: "research", relatedTopics: ["AAD", "Machine Learning Surrogates"] },
   { assetClass: "Frontier", title: "Machine Learning Surrogates", description: "Fast learned approximations to expensive pricing maps.", intuition: "Pay a training cost once, then approximate repeated model evaluations very quickly inside a controlled domain.", mathematics: "\\hat{V}_\\phi(x) \\approx V_{model}(x)", marketUse: "Active deployment area, but error control and extrapolation governance are essential.", difficulty: "research", type: "research", relatedTopics: ["Deep Hedging", "Differentiable Pricing"] },
-  { assetClass: "Frontier", title: "Deep Hedging", description: "Learn hedging policies under frictions and non-quadratic objectives.", intuition: "Optimise the trading policy directly when transaction costs and constraints break textbook replication.", mathematics: "\\min_\\pi \\; \\rho(\\text{hedging P&L}_\\pi)", marketUse: "Active research and selective experimentation, not a universal replacement for desk risk systems.", difficulty: "research", type: "research", relatedTopics: ["Machine Learning Surrogates", "Neural SDEs"] },
+  { assetClass: "Frontier", title: "Deep Hedging", description: "Learn hedging policies under frictions and non-quadratic objectives.", intuition: "Optimise the trading policy directly when transaction costs and constraints break textbook replication.", mathematics: "\\min_\\pi \\; \\rho(\\text{hedging P\\&L}_\\pi)", marketUse: "Active research and selective experimentation, not a universal replacement for desk risk systems.", difficulty: "research", type: "research", relatedTopics: ["Machine Learning Surrogates", "Neural SDEs"] },
   { assetClass: "Frontier", title: "Neural SDEs", description: "Stochastic differential equations with learned functional components.", intuition: "Keep continuous-time stochastic structure while learning flexible drift or diffusion maps from data.", mathematics: "dX_t=\\mu_\\theta(X_t,t)dt+\\sigma_\\theta(X_t,t)dW_t", marketUse: "Research-stage modelling with challenges in identifiability, stability and governance.", difficulty: "research", type: "research", relatedTopics: ["Rough Volatility", "Bayesian Calibration"] },
   { assetClass: "Frontier", title: "Bayesian Calibration", description: "Infer parameter distributions rather than one best-fit point.", intuition: "Calibration uncertainty is information; retain it instead of hiding it behind one optimiser output.", mathematics: "p(\\theta\\mid y)\\propto p(y\\mid\\theta)p(\\theta)", marketUse: "Research and specialist risk analysis, especially where parameter uncertainty matters.", difficulty: "research", type: "research", relatedTopics: ["Rough Volatility", "Machine Learning Surrogates"] },
   { assetClass: "Frontier", title: "GPU Monte Carlo", description: "Parallel simulation and payoff evaluation on graphics processors.", intuition: "Independent paths are naturally parallel, provided memory movement and branching are controlled.", mathematics: "V\\approx e^{-rT}N^{-1}\\sum_{i=1}^N g(X_T^{(i)})", marketUse: "Industry-standard acceleration in suitable large simulation workloads.", difficulty: "front-office", type: "method", relatedTopics: ["AAD", "Machine Learning Surrogates"] },
@@ -111,15 +152,108 @@ const topicDescriptions: Record<string, string> = {
   "Storage Costs": "Embed physical warehousing, insurance and financing in commodity carry.", Seasonality: "Model recurring calendar patterns in supply, demand and forward prices.", "Roll Yield": "Measure the return from moving exposure along a forward curve.", "Calendar Spreads": "Trade relative value between delivery months.", "Commodity Swaps": "Exchange floating commodity prices for fixed contractual levels.", "Commodity Options": "Attach optionality to forwards, futures or physical indices.", "Mean Reversion": "Model commodity prices returning toward an equilibrium level.", "Spread Options": "Option the difference between related prices.", "Swing Options": "Optimise repeated exercise volumes under operational constraints.", "Weather Derivatives": "Link payoffs to temperature or other weather indices.", "Crack Spreads": "Track refinery margin between crude and products.", "Spark Spreads": "Track power-generation margin between electricity and fuel.", "Real Options": "Value operational flexibility using option-pricing logic.",
 };
 
+const topicMathematics: Record<string, string> = {
+  "Conditional Expectation": "\\mathbb{E}[X\\mid\\mathcal{G}]\\;\\text{ is }\\mathcal{G}\\text{-measurable and }\\;\\mathbb{E}[\\mathbf{1}_A\\mathbb{E}[X\\mid\\mathcal{G}]]=\\mathbb{E}[\\mathbf{1}_A X]",
+  Martingales: "\\mathbb{E}[M_t\\mid\\mathcal{F}_s]=M_s,\\qquad 0\\le s\\le t",
+  "Change of Measure": "\\mathbb{E}^{\\mathbb{Q}}[X]=\\mathbb{E}^{\\mathbb{P}}[Z_T X],\\qquad Z_T=\\frac{d\\mathbb{Q}}{d\\mathbb{P}}\\bigg|_{\\mathcal{F}_T}",
+  "Itô Calculus": "df(t,X_t)=\\left(\\partial_t f+\\mu\\partial_x f+\\tfrac12\\sigma^2\\partial_{xx}f\\right)dt+\\sigma\\partial_x f\\,dW_t",
+  "Monte Carlo": "\\widehat V_0=e^{-rT}\\frac{1}{N}\\sum_{i=1}^{N}g(X_T^{(i)}),\\qquad \\operatorname{SE}(\\widehat V_0)=O(N^{-1/2})",
+  "Variance Reduction": "\\widehat\\mu_{cv}=\\overline X-\\beta(\\overline Y-\\mathbb{E}[Y]),\\qquad \\beta^*=\\frac{\\operatorname{Cov}(X,Y)}{\\operatorname{Var}(Y)}",
+  "Finite Differences": "\\partial_{SS}V(S_i,t)\\approx\\frac{V_{i+1}-2V_i+V_{i-1}}{(\\Delta S)^2}",
+  "PDE Methods": "\\partial_tV+(r-q)S\\partial_SV+\\tfrac12\\sigma^2S^2\\partial_{SS}V-rV=0",
+  "Calibration Basics": "\\theta^*=\\arg\\min_{\\theta\\in\\Theta}\\sum_{i=1}^{m}w_i\\left(V_i^{model}(\\theta)-V_i^{market}\\right)^2",
+  "Interpolation Basics": "y(T)=(1-\\lambda)y(T_i)+\\lambda y(T_{i+1}),\\qquad \\lambda=\\frac{T-T_i}{T_{i+1}-T_i}",
+  "Numerical Stability": "\\kappa(A)=\\lVert A\\rVert\\,\\lVert A^{-1}\\rVert,\\qquad \\frac{\\lVert\\delta x\\rVert}{\\lVert x\\rVert}\\lesssim\\kappa(A)\\frac{\\lVert\\delta b\\rVert}{\\lVert b\\rVert}",
+  "Call-Put Parity": "C_0-P_0=S_0e^{-qT}-Ke^{-rT}",
+  "Dividend Carry": "F_{0,T}=S_0e^{(r-q)T}",
+  "Historical Volatility": "\\widehat\\sigma_{hist}=\\sqrt{A\\,\\frac{1}{n-1}\\sum_{i=1}^{n}(r_i-\\overline r)^2}",
+  "Realized Volatility": "\\sigma_{real}=\\sqrt{A\\sum_{i=1}^{n}r_i^2/n}",
+  "Term Structure": "T\\longmapsto\\sigma_{imp}(K,T)",
+  "Local Volatility": "\\sigma_{loc}^2(K,T)=\\frac{\\partial_TC+(r-q)K\\partial_KC+qC}{\\tfrac12K^2\\partial_{KK}C}",
+  "Stochastic Volatility": "dS_t=(r-q)S_tdt+\\sqrt{v_t}S_t\\,dW_t^S,\\qquad dv_t=a(v_t)dt+b(v_t)dW_t^v",
+  Heston: "dv_t=\\kappa(\\theta-v_t)dt+\\xi\\sqrt{v_t}\\,dW_t^v,\\qquad d\\langle W^S,W^v\\rangle_t=\\rho\\,dt",
+  SABR: "dF_t=\\alpha_tF_t^{\\beta}dW_t^F,\\qquad d\\alpha_t=\\nu\\alpha_t dW_t^{\\alpha},\\qquad d\\langle W^F,W^{\\alpha}\\rangle_t=\\rho\\,dt",
+  "Gamma Scalping": "d\\Pi\\approx\\tfrac12\\Gamma S^2(\\sigma_{real}^2-\\sigma_{imp}^2)dt-\\text{costs}",
+  "Variance Swaps": "K_{var}^2=\\frac{2e^{rT}}{T}\\left(\\int_0^{F_0}\\frac{P(K)}{K^2}dK+\\int_{F_0}^{\\infty}\\frac{C(K)}{K^2}dK\\right)",
+  "Barrier Options": "X_T=(S_T-K)^+\\mathbf{1}_{\\{\\max_{0\\le t\\le T}S_t<H\\}}",
+  "Digital Options": "X_T=Q\\,\\mathbf{1}_{\\{S_T>K\\}},\\qquad V_0=Qe^{-rT}N(d_2)",
+  "American Options": "V_t=\\operatorname*{ess\\,sup}_{\\tau\\in[t,T]}\\mathbb{E}^{\\mathbb{Q}}[e^{-r(\\tau-t)}g(S_\\tau)\\mid\\mathcal{F}_t]",
+  "Early Exercise": "V(t,S)=\\max\\{g(S),\\,C(t,S)\\}",
+  "Volatility Arbitrage": "\\operatorname{PnL}_{hedged}\\approx\\tfrac12\\int_0^T\\Gamma_tS_t^2(\\sigma_{real,t}^2-\\sigma_{imp,t}^2)dt-\\text{costs}",
+  "Forward Points": "\\operatorname{points}_{0,T}=F_{0,T}-S_0=S_0\\left(e^{(r_d-r_f)T}-1\\right)",
+  "ATM Conventions": "K_{ATM}\\in\\left\\{F_{0,T},\\;S_0e^{(r_d-r_f)T+\\frac12\\sigma^2T},\\;K_{\\Delta call+\\Delta put=0}\\right\\}",
+  "Premium-Adjusted Delta": "\\Delta_{pa,call}=\\Delta_{spot}-\\frac{C}{S_0}=\\frac{K}{S_0}e^{-r_dT}N(d_2)",
+  "Smile Construction": "\\{\\sigma_{ATM},RR_{\\Delta},BF_{\\Delta}\\}\\longrightarrow\\{K_i,\\sigma_i\\}\\longrightarrow\\sigma(K,T)",
+  "FX Digitals": "V_0^{dom}=Q_de^{-r_dT}N(d_2)",
+  "FX Barriers": "X_T=g(S_T)\\mathbf{1}_{\\{\\tau_H>T\\}},\\qquad \\tau_H=\\inf\\{t:S_t=H\\}",
+  "Dual-Currency Notes": "X_T=N_d\\mathbf{1}_{\\{S_T\\ge K\\}}+N_fS_T\\mathbf{1}_{\\{S_T<K\\}}",
+  "Quanto Effects": "\\mu_{quanto}=\\mu-\\rho_{S,X}\\sigma_S\\sigma_X",
+  "Triangular Arbitrage": "S_{A/C}=S_{A/B}S_{B/C}",
+  "Cross-Currency Basis": "F_{0,T}=S_0\\frac{P_f(0,T)}{P_d(0,T)}e^{b_{xccy}T}",
+  "Day Count Conventions": "\\alpha(t_1,t_2)=\\frac{\\operatorname{dayCount}(t_1,t_2)}{\\operatorname{basis}}",
+  "Compounding Conventions": "1+R_sT=\\left(1+\\frac{R_m}{m}\\right)^{mT}=e^{R_cT}",
+  "Multi-Curve Framework": "F_x(T_{i-1},T_i)=\\frac{1}{\\delta_i}\\left(\\frac{P_x(0,T_{i-1})}{P_x(0,T_i)}-1\\right),\\qquad PV\\text{ discounted with }P_d",
+  DV01: "DV01=V(y-10^{-4})-V(y)",
+  "Key-Rate Duration": "KRD_j=-\\frac{1}{V}\\frac{\\partial V}{\\partial y_j}",
+  "Carry and Rolldown": "\\operatorname{PnL}_{h}\\approx\\operatorname{carry}_{h}+\\operatorname{rolldown}_{h}+\\sum_j DV01_j\\,\\Delta y_j",
+  Caps: "V_{cap}=\\sum_iN\\delta_iP(0,T_i)\\operatorname{Black76}(F_i,K,\\sigma_i,T_{i-1})",
+  Floors: "V_{floor}=\\sum_iN\\delta_iP(0,T_i)\\operatorname{Black76Put}(F_i,K,\\sigma_i,T_{i-1})",
+  Swaptions: "V_0=A(0)\\left[F_SN(d_1)-KN(d_2)\\right]",
+  "Short-Rate Models": "dr_t=\\mu(t,r_t)dt+\\sigma(t,r_t)dW_t,\\qquad P(t,T)=\\mathbb{E}^{\\mathbb{Q}}[e^{-\\int_t^Tr_sds}\\mid\\mathcal{F}_t]",
+  "Hull-White": "dr_t=[\\theta(t)-ar_t]dt+\\sigma dW_t",
+  LMM: "dL_i(t)=\\mu_i^{\\mathbb{Q}}(t)dt+L_i(t)\\sigma_i(t)dW_t^{\\mathbb{Q}}",
+  "Convexity Adjustments": "\\mathbb{E}[f(X)]\\approx f(\\mathbb{E}[X])+\\tfrac12f''(\\mathbb{E}[X])\\operatorname{Var}(X)",
+  "Negative Rates": "F_t+s>0,\\qquad dF_t=\\sigma(F_t+s)dW_t",
+  "Storage Costs": "F_{0,T}=S_0e^{(r+u-y)T}",
+  Seasonality: "\\log F(0,T)=m(T)+\\sum_{k=1}^{K}\\left[a_k\\cos(2\\pi kT)+b_k\\sin(2\\pi kT)\\right]",
+  "Roll Yield": "\\operatorname{roll}_{t\\to t+h}\\approx F(t,T-h)-F(t,T)",
+  "Calendar Spreads": "X_T=F(T,T_2)-F(T,T_1)",
+  "Commodity Swaps": "PV=N\\sum_i\\delta_iP(0,T_i)\\left(F(0,T_i)-K\\right)",
+  "Commodity Options": "C_0=P(0,T)\\left[F_0N(d_1)-KN(d_2)\\right]",
+  "Mean Reversion": "dX_t=\\kappa(\\theta-X_t)dt+\\sigma dW_t",
+  "Spread Options": "X_T=(S_T^{(1)}-\\lambda S_T^{(2)}-K)^+",
+  "Swing Options": "V_0=\\sup_{q_i\\in\\mathcal{A}}\\mathbb{E}^{\\mathbb{Q}}\\left[\\sum_iP(0,T_i)q_i(S_{T_i}-K)\\right]",
+  "Weather Derivatives": "\\operatorname{HDD}=\\sum_d(T_{base}-T_d)^+,\\qquad X_T=N(\\operatorname{HDD}-K)^+",
+  "Crack Spreads": "\\operatorname{crack}=\\sum_jw_jP_j-\\lambda P_{crude}",
+  "Spark Spreads": "\\operatorname{spark}=P_{power}-hP_{fuel}-eP_{carbon}",
+  "Real Options": "V(t,x)=\\sup_{u\\in\\mathcal{A}}\\mathbb{E}^{\\mathbb{Q}}\\left[\\int_t^Te^{-r(s-t)}\\pi(X_s,u_s)ds+e^{-r(T-t)}G(X_T)\\right]",
+};
+
+const modelTopics = new Set(["Local Volatility", "Stochastic Volatility", "Heston", "SABR", "Short-Rate Models", "Hull-White", "LMM", "Mean Reversion"]);
+const instrumentTopics = new Set(["Variance Swaps", "Barrier Options", "Digital Options", "American Options", "FX Digitals", "FX Barriers", "Dual-Currency Notes", "Caps", "Floors", "Swaptions", "Calendar Spreads", "Commodity Swaps", "Commodity Options", "Spread Options", "Swing Options", "Weather Derivatives", "Real Options"]);
+const methodTopics = new Set(["Monte Carlo", "Variance Reduction", "Finite Differences", "PDE Methods", "Calibration Basics", "Interpolation Basics", "Numerical Stability", "Smile Construction", "Gamma Scalping"]);
+
+function expandedType(title: string): ContentType {
+  if (modelTopics.has(title)) return "model";
+  if (instrumentTopics.has(title)) return "instrument";
+  if (methodTopics.has(title)) return "method";
+  return "concept";
+}
+
+function expandedIntuition(title: string, type: ContentType): string {
+  const description = topicDescriptions[title];
+  if (type === "instrument") return `Start from the payoff, fixing schedule and settlement currency. ${description} The valuation method comes after the contractual exposure is unambiguous.`;
+  if (type === "model") return `Separate state variables, dynamics and valuation measure before looking at a calibration. ${description} A fitted surface is evidence about today's prices, not proof of tomorrow's dynamics.`;
+  if (type === "method") return `Treat the method as an approximation with a measurable error budget. ${description} Inputs, convergence checks and failure conditions belong beside the output.`;
+  return `${description} Fix the information set, units and market convention before using the relationship in pricing or risk.`;
+}
+
+function expandedMarketUse(title: string, assetClass: Exclude<AssetClass, "Frontier">, type: ContentType): string {
+  if (type === "instrument") return `${title} enters ${assetClass} valuation through its contractual cash flows, quotation and lifecycle. Scenario analysis should separate market moves from convention or settlement changes.`;
+  if (type === "model") return `${title} is used to translate liquid ${assetClass} calibration instruments into prices and sensitivities. Residuals, parameter stability and hedge behaviour must be reviewed together.`;
+  if (type === "method") return `${title} supports ${assetClass} pricing or risk when the numerical target, tolerance and benchmark are explicit. Production use requires convergence evidence and reproducible inputs.`;
+  return `${title} connects an observable ${assetClass} quantity to valuation, scenario analysis or hedge interpretation. The desk view depends on units, timestamp and quotation convention.`;
+}
+
 const expandedSeeds: Seed[] = Object.entries(expandedTopics).flatMap(([assetClass, titles]) => titles.map((title) => ({
   assetClass: assetClass as Exclude<AssetClass, "Frontier">,
   title,
   description: topicDescriptions[title],
-  intuition: `${title} becomes useful once its observable quote, state variables and governing convention are kept separate. Build the mental model before selecting the numerical method.`,
-  mathematics: "\\operatorname{Value}=\\mathcal{M}(\\text{state},\\text{parameters},\\text{conventions})",
-  marketUse: `${title} appears in pricing, scenario analysis, risk aggregation or hedge design. Production use requires explicit units, calendars, interpolation and data lineage.`,
+  intuition: expandedIntuition(title, expandedType(title)),
+  mathematics: topicMathematics[title],
+  marketUse: expandedMarketUse(title, assetClass as Exclude<AssetClass, "Frontier">, expandedType(title)),
   difficulty: title.includes("Basics") || ["Call-Put Parity", "Historical Volatility", "Forward Points", "Day Count Conventions", "Storage Costs"].includes(title) ? "foundation" : title.includes("Heston") || title.includes("SABR") || title.includes("LMM") || title.includes("Swing") ? "front-office" : "practitioner",
-  type: title.includes("Options") || ["Caps", "Floors", "Swaptions", "Variance Swaps", "Dual-Currency Notes"].includes(title) ? "instrument" : title.includes("Methods") || title.includes("Monte Carlo") || title.includes("Differences") || title.includes("Reduction") ? "method" : "concept",
+  type: expandedType(title),
 }))) as Seed[];
 
 export const contentCatalog = [...seeds, ...expandedSeeds].map(createEntry);

@@ -6,10 +6,44 @@ import { academyLessons, academyTracks, findAcademyLesson, findAcademyLessonForR
 import { localizeAcademyLesson, localizeAcademyLevel, localizeAcademyTrack } from "../src/content/academy/localization";
 import { academySources } from "../src/content/academy/sources";
 import { academyNarrativeForLesson, academySectionDefinitions } from "../src/content/academy/narrative";
+import { legacyNarrativeForEntry } from "../src/content/narrative";
+import katex from "katex";
 
 test("expanded knowledge graph covers all major asset families", () => {
   assert.ok(contentCatalog.length >= 100);
   for (const asset of ["Foundations", "EQ", "FX", "IR", "COMM", "Frontier"]) assert.ok(contentCatalog.some((entry) => entry.assetClass === asset), asset);
+});
+
+test("legacy topics use specific mathematics instead of a shared placeholder", () => {
+  const placeholder = "\\operatorname{Value}=\\mathcal{M}(\\text{state},\\text{parameters},\\text{conventions})";
+  const generatedTitles = [
+    "Conditional Expectation", "Itô Calculus", "Monte Carlo", "Heston", "SABR",
+    "Premium-Adjusted Delta", "Cross-Currency Basis", "Hull-White", "LMM",
+    "Swing Options", "Weather Derivatives", "Real Options",
+  ];
+
+  for (const title of generatedTitles) {
+    const entry = contentCatalog.find((candidate) => candidate.title === title);
+    assert.ok(entry, title);
+    assert.notEqual(entry.mathematics, placeholder, title);
+  }
+
+  for (const entry of contentCatalog) {
+    assert.doesNotThrow(() => katex.renderToString(entry.mathematics, { throwOnError: true }), entry.title);
+  }
+});
+
+test("legacy articles vary their teaching sequence by content archetype", () => {
+  const examples = ["Conditional Expectation", "Heston", "Interest Rate Swaps", "Monte Carlo", "Bid Ask and Mid", "Rough Volatility"];
+  const narratives = examples.map((title) => {
+    const entry = contentCatalog.find((candidate) => candidate.title === title);
+    assert.ok(entry, title);
+    return legacyNarrativeForEntry(entry, "en");
+  });
+
+  assert.equal(new Set(narratives.map((narrative) => narrative.profile)).size, examples.length);
+  assert.equal(new Set(narratives.map((narrative) => narrative.sections[0].title)).size, examples.length);
+  assert.equal(legacyNarrativeForEntry(contentCatalog.find((entry) => entry.title === "Heston")!, "es").sections[0].title, "Empieza por la dinámica observable.");
 });
 
 test("Spanish localization preserves identifiers and mathematics", () => {
@@ -20,6 +54,19 @@ test("Spanish localization preserves identifiers and mathematics", () => {
   assert.equal(localized.mathematics, source.mathematics);
   assert.notEqual(localized.title, source.title);
   assert.match(localized.marketUse, /mercado/i);
+});
+
+test("Spanish legacy content preserves archetype-specific teaching intent", () => {
+  const heston = localizeEntry(contentCatalog.find((entry) => entry.title === "Heston")!, "es");
+  const monteCarlo = localizeEntry(contentCatalog.find((entry) => entry.title === "Monte Carlo")!, "es");
+  const swing = localizeEntry(contentCatalog.find((entry) => entry.title === "Swing Options")!, "es");
+
+  assert.equal(heston.description, "Modela la varianza como una difusión de raíz cuadrada con reversión a la media.");
+  assert.match(heston.intuition, /variables de estado, la dinámica y la medida/i);
+  assert.match(monteCarlo.intuition, /aproximación con un presupuesto de error/i);
+  assert.match(swing.intuition, /pago, el calendario de fijaciones y la divisa/i);
+  assert.notDeepEqual(heston.assumptions, monteCarlo.assumptions);
+  assert.notEqual(heston.deskView, swing.deskView);
 });
 
 test("market-to-model bridge concepts remain in the knowledge graph", () => {

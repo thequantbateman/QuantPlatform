@@ -4,10 +4,10 @@ Scores are based on current canonical content, rendered structure, formula/deriv
 
 | Domain | Current quality | Book depth | Gap | Action |
 |---|:---:|:---:|:---:|---|
-| Probability distributions and transforms | 2/5 | 5/5 | High | Add one compact canonical foundation; connect moments/CFs to MC and COS |
-| Brownian motion and stochastic integration | 2/5 | 5/5 | High | Replace shallow legacy coverage with path, quadratic variation, Itô integral/lemma sequence |
-| Asset dynamics under P and Q | 2/5 | 4/5 | High | Add GBM lesson separating estimation, drift, discounting, and pricing measure |
-| Black–Scholes pricing and hedging | 2/5 | 5/5 | High | Unify contract, replication, PDE, expectation, solution, and hedge in one deep lesson |
+| Probability distributions and transforms | 4/5 | 5/5 | Low/medium | Canonical foundation integrated; moments/CFs linked to MC and COS |
+| Brownian motion and stochastic integration | 4/5 | 5/5 | Low/medium | Canonical path, quadratic variation and Itô sequence integrated |
+| Asset dynamics under P and Q | 4/5 | 4/5 | Low | Canonical GBM lesson separates estimation, drift, discounting and pricing measure |
+| Black–Scholes pricing and hedging | 4/5 | 5/5 | Low/medium | Contract, replication, PDE, expectation, solution and hedge unified in one lesson |
 | Filtrations and conditional expectation | 4/5 | 4/5 | Medium | Keep strong content; repair prerequisites and cross-links |
 | Measure change, Girsanov, numeraires | 4/5 | 5/5 | Medium | Keep; route new P/Q lesson into this sequence |
 | Implied/local/stochastic volatility | 4/5 | 5/5 | Low/medium | Keep; later audit derivation details and calibration failure modes |
@@ -23,8 +23,9 @@ Scores are based on current canonical content, rendered structure, formula/deriv
 
 ## Cross-cutting weaknesses
 
-1. **One repeated lesson rhythm:** all canonical lessons currently use the same visible headings even when the educational task differs. Add typed narrative profiles while preserving components.
-2. **Generic advanced prerequisites:** 16 generated lessons repeat “Probability and calculus” and “Discounting and no-arbitrage.” Replace them with real dependency concepts.
-3. **Shallow legacy collision:** probability, Brownian motion, Itô calculus, and Black–Scholes exist in the legacy catalog but do not meet the canonical lesson contract. Route their entry points to the four deep foundations.
-4. **Generic generated Python:** part of the advanced family uses a mean-of-array template unrelated to the governing equation. New lessons must use topic-specific deterministic code; later phases should replace remaining generic labs one family at a time.
-5. **Structure before expansion:** advanced gaps are real, but adding them now would perpetuate the weak prerequisite spine.
+1. **Resolved — repeated lesson rhythm:** canonical lessons now select from seven teaching profiles; legacy notes select from six archetypes, all with EN/ES headings.
+2. **Resolved — generic advanced prerequisites:** advanced lessons now carry explicit topic dependencies, including the new stochastic-pricing spine.
+3. **Resolved — shallow legacy collision:** probability, Brownian/Itô, P/Q dynamics and Black–Scholes routes resolve to four canonical foundations.
+4. **Resolved for the new spine — generic Python:** the four new lessons use topic-specific deterministic code and framework-free invariant tests. Remaining generated advanced labs are tracked for family-by-family replacement.
+5. **Resolved — generic legacy mathematics:** 64 generated notes now expose topic-specific, strict-KaTeX-validated formulas plus archetype-specific assumptions and desk interpretation.
+6. **Still active — structure before expansion:** specialist gaps remain real, but jump/Lévy, SLV, hybrids, LMM and cross-currency content stays deferred until its prerequisite track is upgraded.
