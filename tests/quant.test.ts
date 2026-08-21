@@ -12,6 +12,7 @@ import { buildVolSurface, defaultVolSurfaceParameters, educationalVolatility, ne
 import { brownianMarketPriceOfRisk, conditionalBinomialExpectation, girsanovDensity, measureState } from "../src/quant/probability/measureChange";
 import { buildExposureProfile, expectedPositiveExposure, historicalVarEs, unilateralCva } from "../src/quant/risk/exposure";
 import { antitheticVarianceReduction, compareGbmSchemes, monteCarloStandardError } from "../src/quant/simulation/schemes";
+import { brownianPath, discountedTotalReturnExpectation, gbmExpectedSpot, normalCharacteristicFunction } from "../src/quant/foundations";
 
 const closeTo = (actual: number, expected: number, tolerance = 1e-5) => assert.ok(Math.abs(actual - expected) <= tolerance, `${actual} differs from ${expected}`);
 const base = { spot: 100, strike: 100, time: 1, rate: 0.05, dividend: 0, volatility: 0.2 };
@@ -20,6 +21,33 @@ test("normal distribution reference values", () => {
   closeTo(normalPdf(0), 0.3989422804, 1e-10);
   closeTo(normalCdf(0), 0.5, 1e-8);
   closeTo(normalCdf(1.96), 0.9750021, 1e-6);
+});
+
+test("normal characteristic function preserves normalization and analytical moments", () => {
+  const mean = 0.03;
+  const variance = 0.04;
+  assert.deepEqual(normalCharacteristicFunction(0, mean, variance), { real: 1, imaginary: 0 });
+  const value = normalCharacteristicFunction(1.7, mean, variance);
+  const modulus = Math.hypot(value.real, value.imaginary);
+  closeTo(modulus, Math.exp(-0.5 * variance * 1.7 ** 2), 1e-14);
+  assert.throws(() => normalCharacteristicFunction(1, 0, -0.1), /variance/);
+});
+
+test("seeded Brownian paths are deterministic and accumulate time as quadratic variation", () => {
+  const first = brownianPath({ steps: 100_000, horizon: 1, seed: 7 });
+  const second = brownianPath({ steps: 100_000, horizon: 1, seed: 7 });
+  assert.deepEqual(second, first);
+  assert.equal(first.path[0], 0);
+  assert.equal(first.path.length, 100_001);
+  closeTo(first.quadraticVariation, 1, 0.02);
+  assert.throws(() => brownianPath({ steps: 0, horizon: 1, seed: 7 }), /steps/);
+});
+
+test("GBM analytical moments separate physical drift from discounted pricing carry", () => {
+  closeTo(gbmExpectedSpot(100, 0.08, 1.5), 100 * Math.exp(0.08 * 1.5), 1e-12);
+  closeTo(discountedTotalReturnExpectation(100, 0.04, 0.01, 2), 100, 1e-12);
+  assert.throws(() => gbmExpectedSpot(0, 0.08, 1), /spot/);
+  assert.throws(() => discountedTotalReturnExpectation(100, Number.NaN, 0, 1), /finite/);
 });
 
 test("Black-Scholes prices an ATM European call", () => {
