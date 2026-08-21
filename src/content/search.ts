@@ -46,6 +46,22 @@ const coreTools: Array<{
     keywords: ["greeks", "griegas", "delta", "gamma", "vega", "theta", "rho", "analytics", "lab"],
   },
   {
+    id: "portfolio-greeks-hedging",
+    title: { en: "Portfolio Greeks & hedging", es: "Griegas y cobertura de cartera" },
+    description: { en: "Aggregate risk, full repricing, Taylor P&L and hedge tickets", es: "Riesgo agregado, revaloración completa, P&L de Taylor y operaciones de cobertura" },
+    meta: "ANALYTICS · PORTFOLIO",
+    href: "/analytics/portfolio",
+    keywords: ["portfolio", "cartera", "greeks", "griegas", "delta", "gamma", "vega", "hedge", "hedging", "cobertura", "scenario", "pnl", "risk"],
+  },
+  {
+    id: "options-strategy-payoff",
+    title: { en: "Options strategy & payoff", es: "Estrategias y payoff de opciones" },
+    description: { en: "Exact payoff algebra, spreads, settlement and terminal economics", es: "Álgebra exacta de payoff, spreads, liquidación y economía terminal" },
+    meta: "ANALYTICS · STRATEGY",
+    href: "/analytics/strategies",
+    keywords: ["option", "opción", "strategy", "estrategia", "payoff", "profit", "breakeven", "spread", "straddle", "strangle", "collar", "iron condor", "butterfly"],
+  },
+  {
     id: "prediction-workstation",
     title: { en: "Prediction workstation", es: "Estación de mercados de predicción" },
     description: { en: "Live events, L2 books, trades and public analytics", es: "Eventos en vivo, libros L2, operaciones y analítica pública" },

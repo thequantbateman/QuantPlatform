@@ -1,7 +1,9 @@
 # Interactive visualisation QA inventory
 
-Reviewed: 2026-08-13  
-Scope: `/analytics`, `/analytics/volatility`, `/lab`, Academy volatility and rates lessons.  
+Reviewed: 2026-08-21
+
+Scope: `/analytics`, `/analytics/portfolio`, `/analytics/strategies`, `/analytics/volatility`, `/lab`, Academy volatility and rates lessons.
+
 Data mode: all checked visualisations use deterministic educational inputs unless a page explicitly labels an external provider.
 
 ## Analytics and shared Quant Lab
@@ -55,6 +57,20 @@ Browser checks covered filtration/adapted-process content, Girsanov measure swit
 - Interaction: measure buttons changed active drift/numeraire after hydration; all advanced controls use labelled native range inputs.
 - Runtime: no console errors on the inspected Academy, foundations, numerical and xVA routes.
 - Numerical tests: measure identities, seeded common-shock paths, standard-error/antithetic bounds, collateral monotonicity, zero-PD CVA and ES ≥ VaR passed.
+
+## Portfolio and strategy analytics release
+
+| Workspace | Controls exercised | Linked outputs | Quantitative and interaction checks | Status |
+| --- | --- | --- | --- | --- |
+| Portfolio, Greeks & Hedging | leg quantity/multiplier, market state, delta/gamma/vega hedge targets, scenario shocks, heatmap and decay inspector | model/entry value, aggregate desk Greeks, preview/applied hedge tickets, exact repricing, Taylor buckets/residual, nonlinear P&L and time decay | position weights applied once; Black–Scholes reference and boundary tests; exact-versus-Taylor convergence; two-ticket gamma hedge; keyboard chart inspection | Pass |
+| Options Strategy & Payoff | purpose/preset, arbitrary leg editing, profit/payoff/MTM tabs, settlement spot, scenario shocks, expected zone, one-leg comparison and portfolio transfer | terminal profile, exact breakevens/bounds, per-leg settlement, piecewise algebra, current/shocked Greeks and transferred book | all 22 presets validate at one expiry; analytic piecewise metrics do not depend on chart sampling; Arrow/Home/End tab navigation; versioned session transfer reconstructs the same three-leg test book | Pass |
+
+Release browser matrix:
+
+- Viewports: 375×900, 768×900, 1280×900 and 1440×900; both workspaces had zero page-level horizontal overflow.
+- Localisation/theme: authored English and Spanish workspace copy rendered; dark and light themes retained readable chart/control surfaces.
+- Accessibility: semantic tabs, tables, labelled controls, 2px keyboard focus outline, 44px action targets and complete numeric alternatives for canvas/heatmap views.
+- Runtime: no console warnings or errors while editing books, applying hedges, switching profiles or transferring a strategy.
 
 ## Remaining boundaries
 

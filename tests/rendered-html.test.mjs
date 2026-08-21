@@ -78,6 +78,8 @@ test("renders key product routes without external services", async () => {
     ["/learn/rates/interest-rate-swaps", "Interest-rate swaps"],
     ["/learn/volatility/heston-model", "Heston"],
     ["/analytics/volatility", "ONE LINKED STATE"],
+    ["/analytics/portfolio", "Aggregate risk"],
+    ["/analytics/strategies", "Settlement by leg"],
     ["/lab?lab=surface", "ONE LINKED STATE"],
   ]) {
     const response = await render(path);
@@ -136,6 +138,20 @@ test("volatility routes render the same canonical linked surface workbench", asy
     assert.match(html, /aria-pressed="true"[^>]*aria-label="Maturity/i, `${path}: selected heatmap cell`);
     assert.doesNotMatch(html, /CONSTANT σ|surface-canvas|WIREFRAME/i, path);
   }
+});
+
+test("Analytics discovery exposes portfolio and strategy workflows bilingually", async () => {
+  const englishResponse = await render("/analytics");
+  assert.equal(englishResponse.status, 200);
+  const english = await englishResponse.text();
+  assert.match(english, /href="\/analytics\/portfolio"[\s\S]*?Portfolio Greeks &amp; hedging/i);
+  assert.match(english, /href="\/analytics\/strategies"[\s\S]*?Options strategy &amp; payoff/i);
+
+  const spanishResponse = await render("/analytics", { cookie: "tqb-locale=es" });
+  assert.equal(spanishResponse.status, 200);
+  const spanish = await spanishResponse.text();
+  assert.match(spanish, /href="\/analytics\/portfolio"[\s\S]*?Griegas y cobertura de cartera/i);
+  assert.match(spanish, /href="\/analytics\/strategies"[\s\S]*?Estrategias y payoff de opciones/i);
 });
 
 test("canonical Academy lessons server-render compact formulas with bound derivations and visible essentials", async () => {
