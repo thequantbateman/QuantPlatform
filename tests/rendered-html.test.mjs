@@ -73,7 +73,7 @@ test("renders key product routes without external services", async () => {
     ["/markets", "MARKET DATA WORKSTATION"],
     ["/ask", "TOOLS → SOURCES → EXPLANATION"],
     ["/research", "ACTIVE RESEARCH"],
-    ["/learn/equity/black-scholes", "Build the mental model first"],
+    ["/learn/equity/black-scholes", "replicating strategy"],
     ["/learn/foundations/girsanov-risk-neutral-pricing", "Girsanov"],
     ["/learn/rates/interest-rate-swaps", "Interest-rate swaps"],
     ["/learn/volatility/heston-model", "Heston"],
@@ -84,6 +84,42 @@ test("renders key product routes without external services", async () => {
     assert.equal(response.status, 200, path);
     assert.match(await response.text(), new RegExp(expected, "i"), path);
   }
+});
+
+test("book-integrated foundations and legacy aliases resolve to the deep Academy sequence", async () => {
+  for (const [path, marker] of [
+    ["/learn/foundations/distributions-moments-characteristic-functions", "Characteristic function and moments"],
+    ["/learn/foundations/brownian-motion-ito-calculus", "Quadratic variation"],
+    ["/learn/derivatives/gbm-physical-risk-neutral-dynamics", "Discounted total-return martingale"],
+    ["/learn/derivatives/black-scholes-replication-pricing", "Black–Scholes PDE"],
+    ["/learn/foundations/random-variables", "Characteristic function and moments"],
+    ["/learn/foundations/brownian-motion", "Quadratic variation"],
+    ["/learn/foundations/it-calculus", "Itô's lemma"],
+    ["/learn/foundations/risk-neutral-pricing", "GBM dynamics"],
+    ["/learn/equity/black-scholes", "Black–Scholes PDE"],
+  ]) {
+    const response = await render(path);
+    assert.equal(response.status, 200, path);
+    const html = await response.text();
+    assert.match(html, new RegExp(marker, "i"), path);
+    assert.doesNotMatch(html, /data-narrative-profile=/i, `${path}: canonical Academy renderer`);
+  }
+});
+
+test("non-overlapping legacy notes render topic-specific bilingual narratives", async () => {
+  const englishResponse = await render("/learn/commodities/seasonality");
+  assert.equal(englishResponse.status, 200);
+  const english = await englishResponse.text();
+  assert.match(english, /data-narrative-profile="concept"/i);
+  assert.match(english, /Name the object before manipulating it\./i);
+  assert.match(english, /recurring calendar patterns/i);
+  assert.doesNotMatch(english, /Build the mental model|operatorname\{Value\}/i);
+
+  const spanishResponse = await render("/learn/commodities/seasonality", { cookie: "tqb-locale=es" });
+  assert.equal(spanishResponse.status, 200);
+  const spanish = await spanishResponse.text();
+  assert.match(spanish, /Nombra el objeto antes de manipularlo\./i);
+  assert.match(spanish, /patrones periódicos de oferta, demanda y precios forward/i);
 });
 
 test("volatility routes render the same canonical linked surface workbench", async () => {

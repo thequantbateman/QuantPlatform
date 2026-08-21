@@ -14,7 +14,7 @@ Last updated: 2026-08-21
 | Foundation content | Complete | Four canonical bilingual lessons added; Academy now has 45 lessons and 121 formulas |
 | Numerical invariants | Complete | Distribution, Brownian, GBM and discounted-total-return helpers added to framework-free `src/quant` with deterministic tests |
 | Legacy overlap cleanup | Complete | Five shallow stochastic-pricing routes resolve to canonical lessons; 64 generated topics now use topic-specific formulas and archetype-aware explanations |
-| Integration validation | Pending | Full gates, responsive EN/ES browser QA, review |
+| Integration validation | Complete | Typecheck, lint, 98-key EN/ES audit, 109 TypeScript tests, 9 Python tests, 11 rendered-route tests, five-stage production build and Cloudflare preflight pass; responsive EN/ES QA passed at 375, 768, 1280 and 1440px |
 
 ## Decision log
 

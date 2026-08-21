@@ -652,3 +652,5 @@ body { background-image: linear-gradient(rgb(255 255 255 / 1.4%) 1px, transparen
   .line-chart-figure > figcaption p { text-align: left; }
   .line-chart-help { display: none; }
 }
+
+.concept-layout > .concept-body { min-width: 0; }

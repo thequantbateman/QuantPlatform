@@ -82,6 +82,13 @@ test("touched analytical controls preserve focus, target, contrast and semantic 
   assert.doesNotMatch(responsiveAcademy, /border(?:-(?:top|right|bottom|left))?:\s*1px solid #(30343b|283140|2d333c)/i);
 });
 
+test("legacy Learn articles allow formula content to shrink inside the mobile grid", async () => {
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  const conceptBody = css.match(/\.concept-layout > \.concept-body \{([^}]*)\}/)?.[1] ?? "";
+
+  assert.match(conceptBody, /min-width:\s*0/, "the legacy grid child must release its intrinsic formula width");
+});
+
 test("the Spanish volatility surface has no English playback or scenario chrome", () => {
   const html = renderLocalized(<VolSurfaceLab />, "es");
 
