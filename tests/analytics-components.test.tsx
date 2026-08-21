@@ -4,8 +4,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MarketStateControls } from "../src/components/analytics/MarketStateControls";
 import { PnlHeatmap } from "../src/components/analytics/PnlHeatmap";
 import { PositionEditor } from "../src/components/analytics/PositionEditor";
+import { PortfolioGreeksLab } from "../src/components/analytics/PortfolioGreeksLab";
 import { RiskVector } from "../src/components/analytics/RiskVector";
 import { I18nProvider } from "../src/i18n";
+import { QuantBatemanProvider } from "../src/components/quant-bateman/QuantBatemanProvider";
 import type { OptionPosition } from "../src/quant/portfolio/types";
 
 const call: OptionPosition = {
@@ -147,4 +149,27 @@ test("shared controls render authored Spanish labels", () => {
 
   assert.match(html, /aria-label="Posiciones de la cartera"/i);
   assert.match(html, /Eliminar posición/i);
+});
+
+test("portfolio lab exposes one linked risk, scenario, hedge and decay workflow", () => {
+  const html = renderToStaticMarkup(
+    <I18nProvider initialLocale="en">
+      <QuantBatemanProvider>
+        <PortfolioGreeksLab />
+      </QuantBatemanProvider>
+    </I18nProvider>,
+  );
+
+  assert.match(html, /PORTFOLIO, GREEKS[\s\S]*?HEDGING/i);
+  for (const marker of [
+    "Portfolio positions",
+    "Aggregate risk",
+    "Actual repricing",
+    "Taylor approximation",
+    "Spot × volatility P&amp;L",
+    "Time decay",
+    "SYNTHETIC / EDUCATIONAL",
+  ]) assert.match(html, new RegExp(marker, "i"), marker);
+  assert.match(html, /aria-label="Hedge target"/i);
+  assert.match(html, /href="\/learn\/greeks-hedging\/delta-gamma-vega-hedging"/i);
 });
