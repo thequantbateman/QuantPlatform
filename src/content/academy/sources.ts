@@ -2,6 +2,19 @@ import type { AcademySource } from "./types";
 
 export const academySources: AcademySource[] = [
   {
+    id: "oosterlee-grzelak-2020",
+    name: "Mathematical Modeling and Computation in Finance",
+    author: "Cornelis W. Oosterlee and Lech A. Grzelak",
+    repository: "World Scientific, ISBN 978-1-78634-794-7",
+    license: "Copyright © 2020 World Scientific Publishing Europe Ltd.",
+    licenseUrl: "https://www.worldscientific.com/worldscibooks/10.1142/q0236",
+    url: "https://www.worldscientific.com/worldscibooks/10.1142/q0236",
+    ref: "First edition (2020)",
+    reviewed: "2026-08-21",
+    role: "research",
+    usePolicy: "Academic validation source only. Text, figures, exercises and supplement code are not copied; Academy uses original prose, diagrams and modern implementations.",
+  },
+  {
     id: "grzelak-computational-finance",
     name: "Computational Finance Course",
     author: "L. A. Grzelak",

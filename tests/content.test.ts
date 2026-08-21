@@ -151,3 +151,13 @@ test("every Academy reference resolves to an attributed licensed source", () => 
     assert.match(source.licenseUrl, /^https:\/\//);
   }
 });
+
+test("the textbook is registered as a research-only copyrighted reference", () => {
+  const source = academySources.find((item) => item.id === "oosterlee-grzelak-2020");
+  assert.ok(source);
+  assert.equal(source.role, "research");
+  assert.match(source.name, /Mathematical Modeling and Computation in Finance/);
+  assert.match(source.license, /copyright/i);
+  assert.match(source.usePolicy, /not copied|original prose/i);
+  assert.match(source.url, /^https:\/\//);
+});
