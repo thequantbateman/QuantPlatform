@@ -76,6 +76,16 @@ Dependencies flow inward: routes → components → typed domain modules. Quant 
 4. Add or update targeted tests before broad validation.
 5. Update content review dates and docs when a convention or provider contract changes.
 
+## Session bootstrap and context loading
+
+At the beginning of a new session:
+
+1. Verify the current Git root, branch, status and recent commits.
+2. Read root `CONTEXT.md` after this file.
+3. Classify the task and use the documentation router in `CONTEXT.md`.
+4. Load only the relevant documentation and source; do not scan the repository by default.
+5. Treat current source and configuration as authoritative when context appears stale.
+
 ## Canonical repository and deployment
 
 - The canonical repository is `https://github.com/thequantbateman/QuantPlatform.git`; verify `git remote -v` before any release operation.
