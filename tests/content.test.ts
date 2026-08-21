@@ -5,6 +5,7 @@ import { localizeEntry } from "../src/content/localization";
 import { academyLessons, academyTracks, findAcademyLesson, findAcademyLessonForRoute } from "../src/content/academy/catalog";
 import { localizeAcademyLesson, localizeAcademyLevel, localizeAcademyTrack } from "../src/content/academy/localization";
 import { academySources } from "../src/content/academy/sources";
+import { academyNarrativeForLesson, academySectionDefinitions } from "../src/content/academy/narrative";
 
 test("expanded knowledge graph covers all major asset families", () => {
   assert.ok(contentCatalog.length >= 100);
@@ -160,4 +161,37 @@ test("the textbook is registered as a research-only copyrighted reference", () =
   assert.match(source.license, /copyright/i);
   assert.match(source.usePolicy, /not copied|original prose/i);
   assert.match(source.url, /^https:\/\//);
+});
+
+test("lesson families select distinct pedagogical narratives", () => {
+  const examples = new Map([
+    ["foundation-filtrations", "foundation"],
+    ["vol-heston", "model"],
+    ["rate-swaps", "instrument"],
+    ["numerical-monte-carlo", "numerical-method"],
+    ["risk-exposure-profile", "risk-workflow"],
+  ]);
+  for (const [lessonId, expected] of examples) {
+    const lesson = academyLessons.find((item) => item.id === lessonId);
+    assert.ok(lesson, lessonId);
+    assert.equal(academyNarrativeForLesson(lesson), expected, lessonId);
+  }
+  assert.equal(new Set(academyLessons.map(academyNarrativeForLesson)).size >= 5, true);
+});
+
+test("narrative section headings are authored in English and Spanish", () => {
+  const foundationEn = academySectionDefinitions("foundation", "en");
+  const foundationEs = academySectionDefinitions("foundation", "es");
+  const modelEn = academySectionDefinitions("model", "en");
+  const numericalEn = academySectionDefinitions("numerical-method", "en");
+  const instrumentEn = academySectionDefinitions("instrument", "en");
+  const riskEn = academySectionDefinitions("risk-workflow", "en");
+
+  assert.equal(foundationEn.find((section) => section.id === "intuition")?.title, "Observe the object before formalizing it.");
+  assert.equal(foundationEs.find((section) => section.id === "intuition")?.title, "Observa el objeto antes de formalizarlo.");
+  assert.equal(modelEn.find((section) => section.id === "pricing")?.title, "Calibrate, compute, and challenge the dynamics.");
+  assert.equal(numericalEn.find((section) => section.id === "interactive")?.title, "Change the error budget, not just the picture.");
+  assert.equal(instrumentEn.find((section) => section.id === "market")?.title, "Start from cash flows and quotation.");
+  assert.equal(riskEn.find((section) => section.id === "desk")?.title, "Turn exposure into a controlled decision.");
+  assert.notDeepEqual(foundationEn.map((section) => section.title), modelEn.map((section) => section.title));
 });

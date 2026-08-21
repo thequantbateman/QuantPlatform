@@ -4,6 +4,7 @@ export type AcademyLevel = "foundation" | "intermediate" | "advanced" | "front-o
 export type AcademyDomain = "foundations" | "derivatives" | "volatility" | "rates" | "numerical-finance" | "risk" | "xva" | "macro" | "front-office";
 export type AcademyLabId = AcademyLesson["interactiveLabs"][number]["id"];
 export type AcademyFormulaDepth = 1 | 2 | 3;
+export type AcademyNarrativeProfile = "foundation" | "classical-derivation" | "market-observable" | "instrument" | "model" | "numerical-method" | "risk-workflow";
 
 export interface AcademyFormula {
   label: string;
@@ -72,6 +73,7 @@ export interface AcademyLesson {
   tags: string[];
   estimatedMinutes: number;
   lastReviewed: string;
+  narrativeProfile?: AcademyNarrativeProfile;
   legacyRoutes?: string[];
   intuition: { lead: string; points: string[] };
   marketContext: { why: string; instruments: string[]; quoteConvention: string };
