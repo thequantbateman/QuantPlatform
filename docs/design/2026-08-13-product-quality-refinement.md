@@ -1,8 +1,8 @@
 # Product quality refinement
 
-**Status:** Approved for implementation  
-**Release shape:** One integrated branch and pull request  
-**Scope:** Existing Academy, Analytics, homepage, search and shared design primitives  
+**Status:** Approved for implementation
+**Release shape:** One integrated branch and pull request
+**Scope:** Existing Academy, Analytics, homepage, search and shared design primitives
 **Non-goal:** New Academy topics, tracks, lessons or Analytics modules
 
 ## Outcome
@@ -198,4 +198,3 @@ Creating the pull request is an external write covered by the approved one-PR de
 - EN/ES, keyboard navigation, reduced motion and responsive layouts are preserved.
 - No unnecessary content or module expansion occurs.
 - All automated and browser validation passes before handoff.
-

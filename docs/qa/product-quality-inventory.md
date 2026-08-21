@@ -54,3 +54,17 @@
 - Representative production lessons render between roughly **8,000 and 10,700 pixels** high.
 - The Learn landing page exceeds **15,000 pixels** and presents more than **200 similarly weighted content elements**.
 - Excluded: new curriculum topics, tracks or lessons; new Analytics calculators or market-data providers; account, mastery, collaboration or saved-scenario backends; proprietary competitor content, terminal emulation or licensed-data redistribution; a second math renderer or heavyweight graph dependency without proven necessity; unrelated infrastructure or assistant-character redesign.
+
+## Final disposition
+
+The refinement retained the full inventory and resolved the release-scoped structural defects:
+
+- All 6 tracks, 41 canonical lessons, 114 legacy concepts and 108 canonical formulas remain reachable. Formula depth is now explicit (29 definition, 46 short-derivation and 33 full-derivation formulas), with all 41 lesson derivations bound to their intended formula.
+- Canonical lessons now keep intuition, market context, formulas, labs and desk interpretation visible while placing derivations, notation, assumptions, code and references behind same-page native disclosures. At 1280px, representative heights fell from the 8,000–10,700px baseline to 4,770px (Girsanov), 6,177px (Heston) and 5,409px (interest-rate swaps).
+- The Learn landing retains all canonical and legacy destinations while reducing its measured height from more than 15,000px to 13,030px with track stages closed by default.
+- The two volatility-surface implementations were combined behind the canonical framework-free model. `/analytics/volatility`, `/lab?lab=surface` and the Academy surface lesson now use the same validated grid, controls, scenarios, heatmap, 3D view and numeric fallback; the duplicate kernel and renderer were removed.
+- Financial charts now share validated domains, explicit financial-unit formatters, theme tokens, keyboard inspection and numeric alternatives. Greek matrices expose semantic cells and desk units.
+- The homepage now discovers real platform capabilities through a 10-node, 21-edge, keyboard-accessible knowledge map. Global search includes all 41 canonical lessons and 6 tracks through an on-demand Academy index, with EN/ES ranking and route deduplication.
+- The touched Academy, formula, code, chart and analytical surfaces now share one dark token owner and one light override. EN/ES interface dictionaries contain 98 aligned keys; the reviewed authored-localization boundary is recorded in `docs/i18n-audit.md`.
+
+No new track, lesson, calculator, provider, runtime dependency or public route was introduced.
