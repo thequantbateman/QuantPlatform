@@ -1,4 +1,5 @@
 import type { AcademyDomain, AcademyFormulaDepth, AcademyLabId, AcademyLesson, AcademyLevel, AcademyTrack } from "./types";
+import { foundationCoreLessons } from "./foundationsCore";
 
 type Copy = readonly [en: string, es: string];
 type FormulaSeed = { label: Copy; latex: string; interpretation: Copy };
@@ -69,6 +70,27 @@ function formulaContractFor(seed: LessonSeed): FormulaContract {
   return contract;
 }
 
+type PrerequisiteContract = { labels: Copy[]; lessonIds: string[] };
+
+const prerequisiteContracts: Record<string, PrerequisiteContract> = {
+  "foundation-filtrations": { labels: [c("Distributions and random variables", "Distribuciones y variables aleatorias"), c("Brownian paths and adapted information", "Trayectorias brownianas e información adaptada")], lessonIds: ["foundation-distributions", "foundation-brownian-ito"] },
+  "foundation-conditional-expectation": { labels: [c("Distributions and integrability", "Distribuciones e integrabilidad"), c("Filtrations and measurable information", "Filtraciones e información medible")], lessonIds: ["foundation-distributions", "foundation-filtrations"] },
+  "foundation-measure-change": { labels: [c("Conditional expectation and martingales", "Esperanza condicional y martingalas"), c("GBM under physical and pricing measures", "GBM bajo medidas física y de valoración")], lessonIds: ["foundation-conditional-expectation", "foundation-gbm-dynamics"] },
+  "foundation-girsanov": { labels: [c("Brownian motion and Itô calculus", "Movimiento browniano y cálculo de Itô"), c("Equivalent measures and density processes", "Medidas equivalentes y procesos de densidad")], lessonIds: ["foundation-brownian-ito", "foundation-measure-change"] },
+  "foundation-forward-measures": { labels: [c("Change of numeraire and Girsanov", "Cambio de numerario y Girsanov"), c("Discount factors and forward rates", "Factores de descuento y tipos forward")], lessonIds: ["foundation-girsanov", "rate-discount"] },
+  "numerical-monte-carlo": { labels: [c("Distributions, expectation and variance", "Distribuciones, esperanza y varianza"), c("GBM and risk-neutral pricing", "GBM y valoración neutral al riesgo")], lessonIds: ["foundation-distributions", "foundation-gbm-dynamics"] },
+  "numerical-schemes": { labels: [c("Brownian motion and Itô calculus", "Movimiento browniano y cálculo de Itô"), c("Monte Carlo estimators", "Estimadores Monte Carlo")], lessonIds: ["foundation-brownian-ito", "numerical-monte-carlo"] },
+  "numerical-variance-reduction": { labels: [c("Monte Carlo sampling error", "Error muestral Monte Carlo"), c("Covariance and conditional expectation", "Covarianza y esperanza condicional")], lessonIds: ["numerical-monte-carlo", "foundation-conditional-expectation"] },
+  "numerical-fourier-cos": { labels: [c("Characteristic functions and moments", "Funciones características y momentos"), c("European option payoffs", "Payoffs de opciones europeas")], lessonIds: ["foundation-distributions", "foundation-black-scholes"] },
+  "greeks-first-order": { labels: [c("Black–Scholes pricing and differentiation", "Valoración Black–Scholes y diferenciación"), c("Spot, carry and volatility conventions", "Convenciones de spot, carry y volatilidad")], lessonIds: ["foundation-black-scholes"] },
+  "greeks-higher-order": { labels: [c("First-order Greeks", "Griegas de primer orden"), c("Volatility surface geometry", "Geometría de la superficie de volatilidad")], lessonIds: ["greeks-first-order", "vol-surface"] },
+  "hedging-pnl": { labels: [c("Black–Scholes replication", "Réplica Black–Scholes"), c("Delta, gamma and discrete rebalancing", "Delta, gamma y rebalanceo discreto")], lessonIds: ["foundation-black-scholes", "greeks-first-order"] },
+  "risk-exposure-profile": { labels: [c("Conditional expectation", "Esperanza condicional"), c("Monte Carlo path simulation", "Simulación de trayectorias Monte Carlo")], lessonIds: ["foundation-conditional-expectation", "numerical-monte-carlo"] },
+  "xva-adjustments": { labels: [c("Exposure profiles and discounting", "Perfiles de exposición y descuento"), c("Default probability and recovery", "Probabilidad de default y recuperación")], lessonIds: ["risk-exposure-profile", "rate-discount"] },
+  "risk-var-es": { labels: [c("Loss distributions and quantiles", "Distribuciones de pérdidas y cuantiles"), c("Historical scenarios and sampling", "Escenarios históricos y muestreo")], lessonIds: ["foundation-distributions", "numerical-monte-carlo"] },
+  "risk-model-governance": { labels: [c("Model calibration and numerical diagnostics", "Calibración de modelos y diagnósticos numéricos"), c("Risk measures and decision thresholds", "Métricas de riesgo y umbrales de decisión")], lessonIds: ["vol-calibration", "risk-var-es"] },
+};
+
 const reference = (domain: AcademyDomain) => ({
   sourceId: domain === "xva" ? "grzelak-ir-xva" : "grzelak-computational-finance",
   locator: domain === "xva" ? "Exposure, counterparty credit and xVA notebooks" : "Measure theory, simulation and computational-finance lectures",
@@ -90,6 +112,8 @@ function pythonLab(seed: LessonSeed, locale: 0 | 1): AcademyLesson["implementati
 function buildLesson(seed: LessonSeed, locale: 0 | 1): Omit<AcademyLesson, "localized"> {
   const source = reference(seed.domain);
   const formulaContract = formulaContractFor(seed);
+  const prerequisiteContract = prerequisiteContracts[seed.id];
+  if (!prerequisiteContract) throw new Error(`Missing prerequisite contract for ${seed.id}`);
   return {
     id: seed.id,
     slug: seed.slug,
@@ -98,7 +122,8 @@ function buildLesson(seed: LessonSeed, locale: 0 | 1): Omit<AcademyLesson, "loca
     domain: seed.domain,
     assetClass: seed.assetClass,
     level: seed.level,
-    prerequisites: map([c("Probability and calculus", "Probabilidad y cálculo"), c("Discounting and no-arbitrage", "Descuento y ausencia de arbitraje")], locale),
+    prerequisites: map(prerequisiteContract.labels, locale),
+    prerequisiteLessonIds: prerequisiteContract.lessonIds,
     learningObjectives: map(seed.objectives, locale),
     tags: [seed.domain, seed.lab, "academy-v2"],
     estimatedMinutes: seed.level === "advanced" || seed.level === "front-office" ? 65 : 50,
@@ -296,11 +321,12 @@ const riskSeeds: LessonSeed[] = [
 
 const allSeeds = [...seeds, ...numericalSeeds, ...riskSeeds];
 if (Object.keys(formulaContracts).length !== allSeeds.length) throw new Error("Advanced formula contracts must match lesson seeds exactly");
-export const advancedAcademyLessons: AcademyLesson[] = allSeeds.map((seed) => {
+const generatedAdvancedLessons: AcademyLesson[] = allSeeds.map((seed) => {
   const english = buildLesson(seed, 0);
   const spanish = buildLesson(seed, 1);
   return { ...english, localized: { es: spanish } };
 });
+export const advancedAcademyLessons: AcademyLesson[] = [...foundationCoreLessons, ...generatedAdvancedLessons];
 
 function track(id: string, title: Copy, subtitle: Copy, description: Copy, lessonIds: string[]): AcademyTrack {
   const nodes = lessonIds.map((lessonId, index) => {
@@ -314,7 +340,7 @@ function track(id: string, title: Copy, subtitle: Copy, description: Copy, lesso
   return { id, title: title[0], subtitle: subtitle[0], description: description[0], nodes, localized: { es: { id, title: title[1], subtitle: subtitle[1], description: description[1], nodes: spanishNodes } } };
 }
 
-export const foundationsTrack = track("foundations", c("Probability, measures & pricing", "Probabilidad, medidas y valoración"), c("Information before valuation", "Información antes de valoración"), c("A rigorous route from σ-algebras and filtrations to conditional expectation, Girsanov and forward-measure pricing.", "Una ruta rigurosa desde σ-álgebras y filtraciones hasta esperanza condicional, Girsanov y valoración bajo medidas forward."), ["foundation-filtrations", "foundation-conditional-expectation", "foundation-measure-change", "foundation-girsanov", "foundation-forward-measures"]);
+export const foundationsTrack = track("foundations", c("Probability, measures & pricing", "Probabilidad, medidas y valoración"), c("From random variables to replication", "De variables aleatorias a réplica"), c("A rigorous route from distributions and stochastic calculus through Black–Scholes, conditional expectation, Girsanov and forward-measure pricing.", "Una ruta rigurosa desde distribuciones y cálculo estocástico hasta Black–Scholes, esperanza condicional, Girsanov y valoración bajo medidas forward."), ["foundation-distributions", "foundation-brownian-ito", "foundation-gbm-dynamics", "foundation-black-scholes", "foundation-filtrations", "foundation-conditional-expectation", "foundation-measure-change", "foundation-girsanov", "foundation-forward-measures"]);
 export const numericalFinanceTrack = track("numerical-finance", c("Numerical finance", "Finanzas numéricas"), c("Estimate, discretize, accelerate", "Estimar, discretizar, acelerar"), c("Reproducible Monte Carlo, SDE schemes, variance reduction and transform pricing with visible error controls.", "Monte Carlo reproducible, esquemas EDE, reducción de varianza y valoración por transformadas con controles de error visibles."), ["numerical-monte-carlo", "numerical-schemes", "numerical-variance-reduction", "numerical-fourier-cos"]);
 export const greeksHedgingTrack = track("greeks-hedging", c("Greeks & hedging", "Griegas y cobertura"), c("Sensitivity into realised P&L", "De sensibilidad a P&L realizado"), c("Desk-unit Greeks, nonlinear cross-risk and a discrete hedging loop with explicit costs and residuals.", "Griegas en unidades de mesa, riesgo cruzado no lineal y un bucle de cobertura discreto con costes y residuos explícitos."), ["greeks-first-order", "greeks-higher-order", "hedging-pnl"]);
 export const riskXvaTrack = track("risk-xva", c("Risk & xVA", "Riesgo y xVA"), c("Exposure, tail and governance", "Exposición, cola y gobernanza"), c("Portfolio exposure, counterparty and funding adjustments, tail metrics and the controls that make model outputs defensible.", "Exposición de cartera, ajustes de contraparte y financiación, métricas de cola y controles que hacen defendibles los resultados."), ["risk-exposure-profile", "xva-adjustments", "risk-var-es", "risk-model-governance"]);

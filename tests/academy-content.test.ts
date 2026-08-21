@@ -12,6 +12,10 @@ const analyticsRouteAllowlist = new Set([
 ]);
 
 const reviewedDerivationBindings: Record<string, number> = {
+  "foundation-distributions": 2,
+  "foundation-brownian-ito": 2,
+  "foundation-gbm-dynamics": 1,
+  "foundation-black-scholes": 0,
   "foundation-filtrations": 0,
   "foundation-conditional-expectation": 0,
   "foundation-measure-change": 0,
@@ -56,6 +60,10 @@ const reviewedDerivationBindings: Record<string, number> = {
 };
 
 const reviewedFormulaCounts: Record<string, number> = {
+  "foundation-distributions": 3,
+  "foundation-brownian-ito": 3,
+  "foundation-gbm-dynamics": 3,
+  "foundation-black-scholes": 4,
   "foundation-filtrations": 2,
   "foundation-conditional-expectation": 2,
   "foundation-measure-change": 2,
@@ -104,7 +112,7 @@ test("all Academy formulas declare depth, valid analytics routes, and strict-val
     lesson.mathematics.formulas.map((formula) => ({ lessonId: lesson.id, formula })),
   );
 
-  assert.equal(formulas.length, 108);
+  assert.equal(formulas.length, 121);
   for (const { lessonId, formula } of formulas) {
     assert.ok([1, 2, 3].includes(formula.depth), `${lessonId}:${formula.label}:depth`);
     assert.ok(formula.latex.trim().length > 0, `${lessonId}:${formula.label}:latexBlank`);
@@ -119,7 +127,7 @@ test("all Academy formulas declare depth, valid analytics routes, and strict-val
 });
 
 test("all Academy derivations bind to an existing formula and satisfy their depth contract", () => {
-  assert.equal(academyLessons.length, 41);
+  assert.equal(academyLessons.length, 45);
   assert.deepEqual(
     academyLessons.map((lesson) => lesson.id).sort(),
     Object.keys(reviewedDerivationBindings).sort(),

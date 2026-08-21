@@ -26,6 +26,7 @@ export function AcademyLessonPage({ lesson }: { lesson: AcademyLesson }) {
   const hasCurveWorkbench = localized.id === "rate-curve-bootstrap";
   const trackMeta = ({
     foundations: [pick(locale, { en: "Probability & measures", es: "Probabilidad y medidas" }), "foundations"],
+    derivatives: [pick(locale, { en: "Derivatives foundations", es: "Fundamentos de derivados" }), "foundations"],
     volatility: [pick(locale, { en: "Volatility", es: "Volatilidad" }), "volatility"],
     rates: [pick(locale, { en: "Rates & curves", es: "Tipos y curvas" }), "rates"],
     "numerical-finance": [pick(locale, { en: "Numerical finance", es: "Finanzas numéricas" }), "numerical-finance"],
@@ -33,7 +34,7 @@ export function AcademyLessonPage({ lesson }: { lesson: AcademyLesson }) {
     xva: [pick(locale, { en: "Risk & xVA", es: "Riesgo y xVA" }), "risk-xva"],
   } as Partial<Record<AcademyLesson["domain"], [string, string]>>)[localized.domain] ?? [localized.domain, localized.domain];
   const [trackTitle, trackId] = trackMeta;
-  const isAdvancedTrack = ["foundations", "numerical-finance", "risk", "xva"].includes(localized.domain);
+  const isAdvancedTrack = ["foundations", "derivatives", "numerical-finance", "risk", "xva"].includes(localized.domain);
   const level = localizeAcademyLevel(localized.level, locale);
   const modelComparisonCopy = [lesson.intuition.lead, lesson.marketContext.why, lesson.pricing.method, ...lesson.pricing.limitations].join(" ");
   const hasAuthoredModelComparison = /model comparison/i.test(modelComparisonCopy) && /Heston/i.test(modelComparisonCopy) && /Black.?Scholes/i.test(modelComparisonCopy);

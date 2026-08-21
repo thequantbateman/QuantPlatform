@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createAcademySearchItems } from "../src/content/academy/search";
+import { academyLessons, academyTracks } from "../src/content/academy/catalog";
 import {
   createCoreSearchItems,
   mergeSearchItems,
@@ -13,10 +14,10 @@ import {
 test("Academy search index contains every canonical lesson and track", () => {
   const items = createAcademySearchItems("en");
 
-  assert.equal(items.filter((item) => item.kind === "lesson").length, 41);
-  assert.equal(items.filter((item) => item.kind === "track").length, 6);
-  assert.equal(items.length, 47);
-  assert.equal(new Set(items.map((item) => item.href)).size, 47);
+  assert.equal(items.filter((item) => item.kind === "lesson").length, academyLessons.length);
+  assert.equal(items.filter((item) => item.kind === "track").length, academyTracks.length);
+  assert.equal(items.length, academyLessons.length + academyTracks.length);
+  assert.equal(new Set(items.map((item) => item.href)).size, items.length);
 });
 
 test("Academy ranking finds exact concepts in English and Spanish", () => {

@@ -69,6 +69,7 @@ export interface AcademyLesson {
   assetClass: AssetClass;
   level: AcademyLevel;
   prerequisites: string[];
+  prerequisiteLessonIds?: string[];
   learningObjectives: string[];
   tags: string[];
   estimatedMinutes: number;

@@ -27,7 +27,7 @@ test("market-to-model bridge concepts remain in the knowledge graph", () => {
 });
 
 test("Academy V2 lessons implement the canonical educational contract", () => {
-  assert.equal(academyLessons.length, 41);
+  assert.equal(academyLessons.length, 45);
   for (const lesson of academyLessons) {
     assert.ok(lesson.learningObjectives.length >= 3, lesson.id);
     assert.ok(lesson.mathematics.formulas.length >= 2, lesson.id);
@@ -49,7 +49,7 @@ test("Academy V2 lessons implement the canonical educational contract", () => {
 test("six Academy tracks preserve every canonical lesson destination exactly once", () => {
   assert.equal(academyTracks.length, 6);
   const destinations = academyTracks.flatMap((track) => track.nodes.map((node) => ({ trackId: track.id, node })));
-  assert.equal(destinations.length, 41);
+  assert.equal(destinations.length, 45);
   assert.equal(new Set(destinations.map(({ node }) => node.academyLessonId)).size, academyLessons.length);
   assert.equal(new Set(destinations.map(({ node }) => node.href)).size, academyLessons.length);
   for (const { trackId, node } of destinations) {
@@ -84,7 +84,7 @@ test("flagship rates track is sequenced from discounting through HJM", () => {
 
 test("advanced Academy tracks connect foundations, numerics, Greeks and xVA", () => {
   const expected = new Map([
-    ["foundations", ["foundation-filtrations", "foundation-forward-measures"]],
+    ["foundations", ["foundation-distributions", "foundation-forward-measures"]],
     ["numerical-finance", ["numerical-monte-carlo", "numerical-fourier-cos"]],
     ["greeks-hedging", ["greeks-first-order", "hedging-pnl"]],
     ["risk-xva", ["risk-exposure-profile", "risk-model-governance"]],
@@ -95,6 +95,45 @@ test("advanced Academy tracks connect foundations, numerics, Greeks and xVA", ()
     assert.equal(track.nodes[0].academyLessonId, boundaries[0]);
     assert.equal(track.nodes.at(-1)?.academyLessonId, boundaries[1]);
     assert.ok(track.nodes.every((node) => findAcademyLesson(node.href.split("/").at(-1) ?? "")), trackId);
+  }
+});
+
+test("the stochastic-pricing foundation closes the textbook dependency gap", () => {
+  const expectedIds = [
+    "foundation-distributions",
+    "foundation-brownian-ito",
+    "foundation-gbm-dynamics",
+    "foundation-black-scholes",
+  ];
+  const track = academyTracks.find((item) => item.id === "foundations");
+  assert.ok(track);
+  assert.deepEqual(track.nodes.slice(0, 4).map((node) => node.academyLessonId), expectedIds);
+
+  for (const id of expectedIds) {
+    const lesson = academyLessons.find((item) => item.id === id);
+    assert.ok(lesson, id);
+    assert.equal(lesson.references.some((reference) => reference.sourceId === "oosterlee-grzelak-2020"), true, id);
+    assert.ok(lesson.localized?.es?.title, `${id}:Spanish title`);
+    assert.equal(lesson.localized?.es?.derivation?.steps.length, lesson.derivation.steps.length, `${id}:Spanish derivation`);
+    for (const prerequisiteId of lesson.prerequisiteLessonIds ?? []) {
+      assert.ok(academyLessons.some((candidate) => candidate.id === prerequisiteId), `${id}:${prerequisiteId}`);
+    }
+  }
+});
+
+test("legacy stochastic-pricing routes resolve to canonical deep lessons", () => {
+  assert.equal(findAcademyLessonForRoute("foundations", "random-variables")?.id, "foundation-distributions");
+  assert.equal(findAcademyLessonForRoute("foundations", "brownian-motion")?.id, "foundation-brownian-ito");
+  assert.equal(findAcademyLessonForRoute("foundations", "it-calculus")?.id, "foundation-brownian-ito");
+  assert.equal(findAcademyLessonForRoute("foundations", "risk-neutral-pricing")?.id, "foundation-gbm-dynamics");
+  assert.equal(findAcademyLessonForRoute("equity", "black-scholes")?.id, "foundation-black-scholes");
+});
+
+test("advanced lessons no longer repeat generic prerequisite placeholders", () => {
+  const advanced = academyLessons.filter((lesson) => ["foundations", "numerical-finance", "risk", "xva"].includes(lesson.domain));
+  assert.ok(advanced.length > 16);
+  for (const lesson of advanced) {
+    assert.notDeepEqual(lesson.prerequisites, ["Probability and calculus", "Discounting and no-arbitrage"], lesson.id);
   }
 });
 

@@ -160,7 +160,7 @@ test("Academy landing progressively reveals all canonical track stages", async (
   const html = await response.text();
   assert.equal((html.match(/<details class="academy-track-disclosure"/g) ?? []).length, 6);
   assert.equal((html.match(/class="academy-track-start"/g) ?? []).length, 6);
-  assert.equal((html.match(/class="deep"/g) ?? []).length, 41);
+  assert.equal((html.match(/class="deep"/g) ?? []).length, 45);
   assert.match(html, /id="academy-catalog"/);
   const legacyDestinations = (html.match(/class="concept-card"/g) ?? []).length;
   assert.ok(legacyDestinations >= 100);
