@@ -131,6 +131,7 @@ export interface MarketMakingOptionTrade {
   multiplier: number;
   strike: number;
   maturity: number;
+  referencePrice: number;
   executionPrice: number;
   executionHalfSpread: number;
 }
@@ -143,6 +144,7 @@ export interface MarketMakingUnderlyingTrade {
   dealerDirection: "long" | "short";
   quantity: number;
   multiplier: 1;
+  referencePrice: number;
   executionPrice: number;
   executionCostBps: number;
 }
@@ -171,9 +173,17 @@ The book aggregates:
 
 Aggregation occurs per underlying first and then across the book. Cross-underlying delta and gamma totals are displayed only with their instrument labels; the UI must not imply that unlike underlying units are economically fungible.
 
-### Transaction costs
+### Spread edge and hedge friction
 
-For an option trade with half-spread `h_i`, the execution cost is
+Every trade stores the model/reference mid and the actual execution price. For signed dealer weight `w_i`, its inception liquidity P&L is
+
+\[
+L_i=w_i(P_i^{mid}-P_i^{exec}).
+\]
+
+Client flow is executed so `L_i` is positive: the dealer sells at ask when the client buys and buys at bid when the client sells. Hedge flow crosses the spread so `L_i` is negative. The interface reports positive client spread capture and positive hedge friction separately.
+
+For a hedge option with half-spread `h_i`, hedge friction is
 
 \[
 C_i^{option}=q_i m_i h_i.
@@ -185,7 +195,7 @@ For an underlying hedge with execution cost `c_i` in basis points,
 C_i^{spot}=q_i S_i\frac{c_i}{10{,}000}.
 \]
 
-Costs are non-negative and charged independently of direction. Zero-cost settings are valid for comparison exercises.
+Zero-spread settings are valid for comparison exercises. Spread is represented through execution price and is never charged a second time as a separate cash flow.
 
 ### Hedge proposals
 
@@ -266,7 +276,7 @@ where `V_n` is the marked option/client book, `H_n` is the marked hedge inventor
 Every executed hedge:
 
 1. exchanges signed notional cash at the execution price;
-2. charges the declared transaction cost;
+2. realizes its bid/ask friction through the difference between reference and execution price;
 3. updates the hedge inventory;
 4. leaves an auditable ledger entry.
 
