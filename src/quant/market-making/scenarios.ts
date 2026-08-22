@@ -19,7 +19,6 @@ export interface MarketMakingScenarioExplain {
   approximate: number;
   residual: number;
 }
-
 function cloneMarket(market: MarketMakingMarketState): MarketMakingMarketState {
   return {
     valuationTime: market.valuationTime,
@@ -119,4 +118,3 @@ export function explainMarketMakingScenario(
     residual: cleanZero(actual - approximate),
   };
 }
-

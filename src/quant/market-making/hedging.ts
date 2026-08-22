@@ -25,7 +25,6 @@ export interface SuccessfulMarketMakingHedgeProposal {
   theoreticalOptionQuantity?: number;
   roundedOptionQuantity?: number;
 }
-
 export type MarketMakingHedgeProposal =
   | SuccessfulMarketMakingHedgeProposal
   | {
@@ -227,4 +226,3 @@ export function applyMarketMakingHedge(
 ): MarketMakingTrade[] {
   return proposal.trades.map((trade) => ({ ...trade }));
 }
-

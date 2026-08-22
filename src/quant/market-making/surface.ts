@@ -5,7 +5,6 @@ export interface MarketMakingVolatilityPoint {
   strike: number;
   remainingTime: number;
 }
-
 function requireFinite(value: number, label: string): void {
   if (!Number.isFinite(value)) throw new RangeError(`${label} must be finite.`);
 }
@@ -44,4 +43,3 @@ export function marketMakingVolatility(
     surface.termSlope * (point.remainingTime - surface.referenceMaturity);
   return Math.max(surface.minimumVolatility, volatility);
 }
-

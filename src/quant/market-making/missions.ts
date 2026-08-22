@@ -22,7 +22,6 @@ export interface MarketMakingMissionContext {
   comparedHedged?: boolean;
   diagnostics?: MarketMakingHigherOrderDiagnostics;
 }
-
 export interface MarketMakingMissionResult {
   complete: boolean;
   reason:
@@ -107,4 +106,3 @@ export function evaluateMarketMakingMission(
     }
   }
 }
-
