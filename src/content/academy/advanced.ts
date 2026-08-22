@@ -55,7 +55,7 @@ const formulaContracts: Record<string, FormulaContract> = {
   "numerical-fourier-cos": { formulaDepths: [1, 3], derivationFormulaIndex: 1, derivationDepth: 3 },
   "greeks-first-order": { formulaDepths: [2, 1], formulaAnalyticsHrefs: ["/lab?lab=greeks", "/lab?lab=greeks"], derivationFormulaIndex: 0, derivationDepth: 2 },
   "greeks-higher-order": { formulaDepths: [2, 1], formulaAnalyticsHrefs: ["/lab?lab=greeks", "/lab?lab=greeks"], derivationFormulaIndex: 0, derivationDepth: 2 },
-  "hedging-pnl": { formulaDepths: [2, 2], formulaAnalyticsHrefs: ["/lab?lab=greeks", "/lab?lab=greeks"], derivationFormulaIndex: 0, derivationDepth: 2 },
+  "hedging-pnl": { formulaDepths: [2, 2], formulaAnalyticsHrefs: ["/lab?lab=greeks", "/lab?lab=market-making"], derivationFormulaIndex: 0, derivationDepth: 2 },
   "risk-exposure-profile": { formulaDepths: [2, 1], derivationFormulaIndex: 0, derivationDepth: 2 },
   "xva-adjustments": { formulaDepths: [3, 2], derivationFormulaIndex: 0, derivationDepth: 3 },
   "risk-var-es": { formulaDepths: [1, 2], derivationFormulaIndex: 1, derivationDepth: 2 },

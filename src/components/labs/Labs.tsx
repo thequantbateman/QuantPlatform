@@ -11,10 +11,11 @@ import { bootstrapCurve, type CurveNode } from "@/src/quant/curves/rates";
 import { pick, useI18n } from "@/src/i18n";
 import { useQuantBateman } from "@/src/components/quant-bateman/useQuantBateman";
 import { validateWithQuantEngine, type QuantEngineState } from "@/src/data/quantEngineClient";
+import { MarketMakingLab } from "./MarketMakingLab";
 
-type LabId = "vanilla" | "black-scholes" | "greeks" | "surface" | "curve";
+type LabId = "vanilla" | "black-scholes" | "greeks" | "surface" | "curve" | "market-making";
 
-const labIds: LabId[] = ["vanilla", "black-scholes", "greeks", "surface", "curve"];
+const labIds: LabId[] = ["vanilla", "black-scholes", "greeks", "surface", "curve", "market-making"];
 
 export function Labs({ initialLab }: { initialLab?: string }) {
   const { t, locale } = useI18n();
@@ -25,10 +26,25 @@ export function Labs({ initialLab }: { initialLab?: string }) {
     { id: "greeks" as const, index: "03", label: t("lab.greeks"), description: t("lab.greeksDesc") },
     { id: "surface" as const, index: "04", label: t("lab.vol"), description: t("lab.volDesc") },
     { id: "curve" as const, index: "05", label: t("lab.curve"), description: t("lab.curveDesc") },
+    { id: "market-making" as const, index: "06", label: t("lab.marketMaking"), description: t("lab.marketMakingDesc") },
   ];
   const [active, setActive] = useState<LabId>(initialLab && labIds.includes(initialLab as LabId) ? initialLab as LabId : "black-scholes");
   useEffect(() => { const requested = new URLSearchParams(window.location.search).get("lab") as LabId | null; if (requested && labIds.includes(requested)) window.setTimeout(() => setActive(requested), 0); }, []);
   useEffect(() => { setPageContext({ section: "quant lab", action: active }); }, [active, setPageContext]);
+  const selectLab = (lab: LabId, focus = false) => {
+    setActive(lab);
+    const url = new URL(window.location.href);
+    url.searchParams.set("lab", lab);
+    window.history.replaceState({}, "", url);
+    if (focus) window.setTimeout(() => document.getElementById(`lab-tab-${lab}`)?.focus(), 0);
+  };
+  const onLabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, lab: LabId) => {
+    const index = labIds.indexOf(lab);
+    const next = event.key === "Home" ? 0 : event.key === "End" ? labIds.length - 1 : event.key === "ArrowRight" ? (index + 1) % labIds.length : event.key === "ArrowLeft" ? (index - 1 + labIds.length) % labIds.length : -1;
+    if (next < 0) return;
+    event.preventDefault();
+    selectLab(labIds[next], true);
+  };
   return (
     <div className="lab-page">
       <header className="page-hero section-shell compact-hero">
@@ -37,14 +53,15 @@ export function Labs({ initialLab }: { initialLab?: string }) {
         <p>{t("lab.copy")}</p>
       </header>
       <div className="lab-tabs section-shell" role="tablist" aria-label={pick(locale, { en: "Quant labs", es: "Laboratorios quant" })}>
-        {labTabs.map((lab) => <button type="button" role="tab" aria-selected={active === lab.id} className={active === lab.id ? "active" : ""} onClick={() => setActive(lab.id)} key={lab.id}><span>{lab.index}</span><strong>{lab.label}</strong><small>{lab.description}</small></button>)}
+        {labTabs.map((lab) => <button type="button" role="tab" id={`lab-tab-${lab.id}`} aria-controls={`lab-panel-${lab.id}`} aria-selected={active === lab.id} tabIndex={active === lab.id ? 0 : -1} className={active === lab.id ? "active" : ""} onClick={() => selectLab(lab.id)} onKeyDown={(event) => onLabKeyDown(event, lab.id)} key={lab.id}><span>{lab.index}</span><strong>{lab.label}</strong><small>{lab.description}</small></button>)}
       </div>
-      <section className="lab-workspace section-shell">
+      <section className="lab-workspace section-shell" role="tabpanel" id={`lab-panel-${active}`} aria-labelledby={`lab-tab-${active}`}>
         {active === "vanilla" && <VanillaOptionLab />}
         {active === "black-scholes" && <BlackScholesLab />}
         {active === "greeks" && <GreeksLab />}
         {active === "surface" && <LazyVolSurfaceLab compact />}
         {active === "curve" && <YieldCurveLab />}
+        {active === "market-making" && <MarketMakingLab />}
       </section>
     </div>
   );

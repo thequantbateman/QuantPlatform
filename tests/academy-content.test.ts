@@ -8,6 +8,7 @@ const analyticsRouteAllowlist = new Set([
   "/lab?lab=vanilla",
   "/lab?lab=greeks",
   "/lab?lab=curve",
+  "/lab?lab=market-making",
   "/analytics/volatility",
 ]);
 
@@ -124,6 +125,11 @@ test("all Academy formulas declare depth, valid analytics routes, and strict-val
       `${lessonId}:${formula.label}:latex`,
     );
   }
+});
+
+test("discrete hedging formula opens the market-making replay laboratory", () => {
+  const lesson = academyLessons.find((candidate) => candidate.id === "hedging-pnl");
+  assert.equal(lesson?.mathematics.formulas[1]?.analyticsHref, "/lab?lab=market-making");
 });
 
 test("all Academy derivations bind to an existing formula and satisfy their depth contract", () => {

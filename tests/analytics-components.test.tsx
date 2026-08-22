@@ -7,6 +7,7 @@ import { PositionEditor } from "../src/components/analytics/PositionEditor";
 import { PortfolioGreeksLab } from "../src/components/analytics/PortfolioGreeksLab";
 import { RiskVector } from "../src/components/analytics/RiskVector";
 import { StrategyPayoffLab } from "../src/components/analytics/StrategyPayoffLab";
+import { MarketMakingLab } from "../src/components/labs/MarketMakingLab";
 import { I18nProvider } from "../src/i18n";
 import { QuantBatemanProvider } from "../src/components/quant-bateman/QuantBatemanProvider";
 import type { OptionPosition } from "../src/quant/portfolio/types";
@@ -203,4 +204,59 @@ test("strategy lab exposes taxonomy, exact payoff algebra and portfolio transfer
   for (const marker of ["BENEFICIO AL VENCIMIENTO", "Acotadas", "Cóndor de hierro", "Patas de la estrategia", "Abrir en Laboratorio de Carteras"]) {
     assert.match(spanish, new RegExp(marker, "i"), marker);
   }
+});
+
+test("market-making lab exposes one dealer workflow with costs, repricing and replay", () => {
+  const html = renderToStaticMarkup(
+    <I18nProvider initialLocale="en">
+      <QuantBatemanProvider>
+        <MarketMakingLab />
+      </QuantBatemanProvider>
+    </I18nProvider>,
+  );
+
+  assert.match(html, /MARKET-MAKING DESK/i);
+  for (const marker of [
+    "Morning market",
+    "Client flow",
+    "Dealer blotter",
+    "Book risk",
+    "Hedge decision",
+    "Snapshot &amp; shock",
+    "Hedge replay",
+    "Client side",
+    "Dealer side",
+    "Client spread capture",
+    "Hedge friction",
+    "Exact repricing",
+    "Local Greek approximation",
+    "Cash / wealth reconciliation",
+    "Delta-band benchmark",
+    "SYNTHETIC / EDUCATIONAL",
+    "MODEL BOUNDARY",
+  ]) assert.match(html, new RegExp(marker, "i"), marker);
+
+  assert.equal((html.match(/data-mm-stage=/g) ?? []).length, 6);
+  assert.match(html, /role="tab"[^>]+aria-controls="mm-panel-market"/i);
+  assert.match(html, /role="tabpanel"[^>]+id="mm-panel-replay"/i);
+  assert.match(html, /<table[^>]+aria-label="Dealer blotter"/i);
+  assert.match(html, /<table[^>]+aria-label="Replay ledger"/i);
+  assert.match(html, /aria-live="polite"/i);
+
+  const spanish = renderToStaticMarkup(
+    <I18nProvider initialLocale="es">
+      <QuantBatemanProvider><MarketMakingLab /></QuantBatemanProvider>
+    </I18nProvider>,
+  );
+  for (const marker of [
+    "Mesa de market making",
+    "Mercado de apertura",
+    "Flujo de clientes",
+    "Riesgo del libro",
+    "Decisión de cobertura",
+    "Foto y escenario",
+    "Repetición de coberturas",
+    "Datos sintéticos / educativos",
+    "Inicio",
+  ]) assert.match(spanish, new RegExp(marker, "i"), marker);
 });

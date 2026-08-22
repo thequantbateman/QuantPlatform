@@ -1,4 +1,5 @@
 import { validateMarketMakingMarketState, valueMarketMakingBook } from "./book";
+import { proposeMarketMakingDeltaHedge } from "./hedging";
 import type {
   MarketMakingMarketState,
   MarketMakingTrade,
@@ -39,6 +40,7 @@ export interface MarketMakingReplayState {
   initialWealth: number;
   pnl: number;
   ledger: MarketMakingReplayLedgerEntry[];
+  history: Array<{ label: string; wealth: number; pnl: number }>;
 }
 
 function cloneMarket(market: MarketMakingMarketState): MarketMakingMarketState {
@@ -126,6 +128,7 @@ export function startMarketMakingReplay(
     initialWealth: wealth,
     pnl: 0,
     ledger: [],
+    history: [{ label: "Initial", wealth, pnl: 0 }],
   };
 }
 
@@ -161,6 +164,10 @@ export function advanceMarketMakingReplay(
     wealth,
     pnl: cleanZero(wealth - state.initialWealth),
     ledger: [...state.ledger.map((item) => ({ ...item })), entry],
+    history: [
+      ...state.history.map((point) => ({ ...point })),
+      { label: event.label, wealth, pnl: cleanZero(wealth - state.initialWealth) },
+    ],
   };
 }
 
@@ -205,6 +212,10 @@ export function executeMarketMakingReplayHedge(
     wealth,
     pnl: cleanZero(wealth - state.initialWealth),
     ledger: [...state.ledger.map((item) => ({ ...item })), entry],
+    history: [
+      ...state.history.map((point) => ({ ...point })),
+      { label, wealth, pnl: cleanZero(wealth - state.initialWealth) },
+    ],
   };
 }
 
@@ -213,3 +224,36 @@ export function replayReconciliation(state: MarketMakingReplayState): number {
   return cleanZero(state.wealth - state.initialWealth - explained);
 }
 
+export function runMarketMakingDeltaBenchmark(
+  trades: readonly MarketMakingTrade[],
+  market: MarketMakingMarketState,
+  financingRate: number,
+  events: readonly MarketMakingReplayEvent[],
+  underlyingId: string,
+  executionCostBps: number,
+  deltaBand: number,
+): MarketMakingReplayState {
+  requireFinite(deltaBand, "Delta band");
+  if (deltaBand < 0) throw new RangeError("Delta band cannot be negative.");
+
+  return events.reduce((state, event) => {
+    const advanced = advanceMarketMakingReplay(state, event);
+    const underlying = valueMarketMakingBook(advanced.trades, advanced.market).byUnderlying
+      .find((item) => item.underlyingId === underlyingId);
+    if (!underlying) throw new RangeError(`Unknown underlying: ${underlyingId}.`);
+    if (Math.abs(underlying.greeks.delta) <= deltaBand) return advanced;
+
+    const proposal = proposeMarketMakingDeltaHedge(
+      advanced.trades,
+      advanced.market,
+      underlyingId,
+      executionCostBps,
+    );
+    if (proposal.status === "unavailable") throw new RangeError(`Benchmark hedge unavailable: ${proposal.reason}.`);
+    return executeMarketMakingReplayHedge(
+      advanced,
+      proposal.tickets,
+      `Delta-band hedge after ${event.label}`,
+    );
+  }, startMarketMakingReplay(trades, market, financingRate));
+}

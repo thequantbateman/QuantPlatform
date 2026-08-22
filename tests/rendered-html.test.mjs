@@ -80,6 +80,7 @@ test("renders key product routes without external services", async () => {
     ["/analytics/volatility", "ONE LINKED STATE"],
     ["/analytics/portfolio", "Aggregate risk"],
     ["/analytics/strategies", "Settlement by leg"],
+    ["/lab?lab=market-making", "MARKET-MAKING DESK"],
     ["/lab?lab=surface", "ONE LINKED STATE"],
   ]) {
     const response = await render(path);
@@ -140,18 +141,20 @@ test("volatility routes render the same canonical linked surface workbench", asy
   }
 });
 
-test("Analytics discovery exposes portfolio and strategy workflows bilingually", async () => {
+test("Analytics discovery exposes portfolio, strategy and market-making workflows bilingually", async () => {
   const englishResponse = await render("/analytics");
   assert.equal(englishResponse.status, 200);
   const english = await englishResponse.text();
   assert.match(english, /href="\/analytics\/portfolio"[\s\S]*?Portfolio Greeks &amp; hedging/i);
   assert.match(english, /href="\/analytics\/strategies"[\s\S]*?Options strategy &amp; payoff/i);
+  assert.match(english, /href="\/lab\?lab=market-making"[\s\S]*?Market-making hedge replay/i);
 
   const spanishResponse = await render("/analytics", { cookie: "tqb-locale=es" });
   assert.equal(spanishResponse.status, 200);
   const spanish = await spanishResponse.text();
   assert.match(spanish, /href="\/analytics\/portfolio"[\s\S]*?Griegas y cobertura de cartera/i);
   assert.match(spanish, /href="\/analytics\/strategies"[\s\S]*?Estrategias y payoff de opciones/i);
+  assert.match(spanish, /href="\/lab\?lab=market-making"[\s\S]*?Cobertura y repetición de market making/i);
 });
 
 test("canonical Academy lessons server-render compact formulas with bound derivations and visible essentials", async () => {

@@ -17,6 +17,7 @@ import { calculateMarketMakingDiagnostics } from "../src/quant/market-making/dia
 import {
   advanceMarketMakingReplay,
   executeMarketMakingReplayHedge,
+  runMarketMakingDeltaBenchmark,
   replayReconciliation,
   startMarketMakingReplay,
   type MarketMakingReplayEvent,
@@ -424,6 +425,34 @@ test("executed hedges reconcile once and higher spread cannot improve identical-
     assert.ok(Math.abs(lowState.ledger.at(-1)!.reconciliation) < 1e-9);
     assert.ok(highState.pnl < lowState.pnl);
   }
+});
+
+test("delta-band benchmark rebalances deterministically and reconciles every event", () => {
+  const events = [replayEvent, { ...replayEvent, id: "follow-through", label: "Follow-through" }];
+  const left = runMarketMakingDeltaBenchmark(
+    seedRetailBook(),
+    market,
+    0.03,
+    events,
+    "retail",
+    4,
+    0.5,
+  );
+  const right = runMarketMakingDeltaBenchmark(
+    seedRetailBook(),
+    market,
+    0.03,
+    events,
+    "retail",
+    4,
+    0.5,
+  );
+
+  assert.deepEqual(left, right);
+  assert.equal(left.stepIndex, events.length);
+  assert.ok(left.ledger.some((entry) => entry.kind === "hedge"));
+  assert.ok(left.ledger.every((entry) => Math.abs(entry.reconciliation) < 1e-8));
+  assert.ok(Math.abs(replayReconciliation(left)) < 1e-8);
 });
 
 test("mission predicates require financial invariants rather than button clicks", () => {

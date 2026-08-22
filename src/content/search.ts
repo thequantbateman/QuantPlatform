@@ -62,6 +62,14 @@ const coreTools: Array<{
     keywords: ["option", "opción", "strategy", "estrategia", "payoff", "profit", "breakeven", "spread", "straddle", "strangle", "collar", "iron condor", "butterfly"],
   },
   {
+    id: "market-making-hedge-replay",
+    title: { en: "Market-making hedge replay", es: "Cobertura y repetición de market making" },
+    description: { en: "Client flow, dealer Greeks, hedge friction, scenarios and cash reconciliation", es: "Flujo cliente, griegas del dealer, fricción de cobertura, escenarios y conciliación de caja" },
+    meta: "ANALYTICS · MARKET MAKING",
+    href: "/lab?lab=market-making",
+    keywords: ["market maker", "market making", "client flow", "dealer", "hedge", "hedging", "cobertura", "delta", "vega", "replay", "blotter", "liquidity", "spread"],
+  },
+  {
     id: "prediction-workstation",
     title: { en: "Prediction workstation", es: "Estación de mercados de predicción" },
     description: { en: "Live events, L2 books, trades and public analytics", es: "Eventos en vivo, libros L2, operaciones y analítica pública" },

@@ -1,6 +1,6 @@
 # Interactive visualisation QA inventory
 
-Reviewed: 2026-08-21
+Reviewed: 2026-08-22
 
 Scope: `/analytics`, `/analytics/portfolio`, `/analytics/strategies`, `/analytics/volatility`, `/lab`, Academy volatility and rates lessons.
 
@@ -64,6 +64,7 @@ Browser checks covered filtration/adapted-process content, Girsanov measure swit
 | --- | --- | --- | --- | --- |
 | Portfolio, Greeks & Hedging | leg quantity/multiplier, market state, delta/gamma/vega hedge targets, scenario shocks, heatmap and decay inspector | model/entry value, aggregate desk Greeks, preview/applied hedge tickets, exact repricing, Taylor buckets/residual, nonlinear P&L and time decay | position weights applied once; Black–Scholes reference and boundary tests; exact-versus-Taylor convergence; two-ticket gamma hedge; keyboard chart inspection | Pass |
 | Options Strategy & Payoff | purpose/preset, arbitrary leg editing, profit/payoff/MTM tabs, settlement spot, scenario shocks, expected zone, one-leg comparison and portfolio transfer | terminal profile, exact breakevens/bounds, per-leg settlement, piecewise algebra, current/shocked Greeks and transferred book | all 22 presets validate at one expiry; analytic piecewise metrics do not depend on chart sampling; Arrow/Home/End tab navigation; versioned session transfer reconstructs the same three-leg test book | Pass |
+| Market-Making Hedging | synthetic morning state, client side/quote, dealer blotter, delta/gamma/vega hedge choice, snapshot shocks and deterministic replay | signed client spread, hedge friction, per-underlying Greeks, cross-Greeks, exact/local P&L, cash/wealth ledger and delta-band comparator | client/dealer sign converts once; costs enter once through execution prices; rounded option hedge repairs delta; snapshots detach; replay and benchmark reconcile within tolerance | Pass |
 
 Release browser matrix:
 
