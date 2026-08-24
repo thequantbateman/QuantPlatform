@@ -14,6 +14,10 @@ import {
   blackScholesInputFromScenario,
   curveNodesFromScenario,
   greeksStateFromScenario,
+  marketMakingMissionFromScenario,
+  portfolioGuidedStateFromScenario,
+  strategyGuidedStateFromScenario,
+  surfaceSourceFromScenario,
   vanillaInputFromScenario,
 } from "../src/analytics/guidance/adapters";
 import type { BlackScholesInput } from "../src/quant/models/blackScholes";
@@ -151,4 +155,21 @@ test("curve scenario adapter creates a valid, ordered and unique curve", () => {
   assert.deepEqual(nodes.map(({ time }) => time), [0.25, 1, 2, 5, 10]);
   assert.equal(new Set(nodes.map(({ time }) => time)).size, nodes.length);
   assert.equal(nodes[2].quote, 0.0371);
+});
+
+test("advanced workflow adapters reuse canonical scenario and mission identifiers", () => {
+  const portfolio = analyticsScenarios.find(({ id }) => id === "portfolio-spot-vol-shock");
+  const strategy = analyticsScenarios.find(({ id }) => id === "strategy-long-straddle");
+  const surface = analyticsScenarios.find(({ id }) => id === "surface-term-inversion");
+  const marketMaking = analyticsScenarios.find(({ id }) => id === "market-making-hedge-friction");
+  assert.ok(portfolio && strategy && surface && marketMaking);
+  assert.deepEqual(portfolioGuidedStateFromScenario(portfolio, "delta", { spotMove: 0, volatilityMove: 0, elapsedDays: 0, rateMove: 0 }), {
+    hedgeTarget: "delta",
+    scenario: { spotMove: -10, volatilityMove: 0.08, elapsedDays: 7, rateMove: 0 },
+  });
+  assert.deepEqual(strategyGuidedStateFromScenario(strategy), {
+    presetId: "long-straddle", view: "profit", settlementSpot: 100, volatilityShock: 0.05,
+  });
+  assert.equal(surfaceSourceFromScenario(surface), "term-inversion");
+  assert.equal(marketMakingMissionFromScenario(marketMaking), "delta-discipline");
 });

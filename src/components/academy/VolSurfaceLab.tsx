@@ -6,6 +6,11 @@ import { formatYear } from "@/src/components/charts/chartModel";
 import { pick, useI18n } from "@/src/i18n";
 import { VolSurfaceCanvas } from "./VolSurfaceCanvas";
 import { buildVolSurface, defaultVolSurfaceParameters, educationalVolatility, nearestSurfacePoint, type VolSurfaceParameters, type VolSurfacePoint, type VolSurfaceScenario } from "@/src/quant/volatility/volSurface";
+import { AnalyticsGuide } from "@/src/components/analytics/AnalyticsGuide";
+import { useAnalyticsGuidance } from "@/src/components/analytics/useAnalyticsGuidance";
+import { findAnalyticsScenario } from "@/src/analytics/guidance/scenarios";
+import { surfaceSourceFromScenario } from "@/src/analytics/guidance/adapters";
+import type { AnalyticsPrimitive, AnalyticsScenario } from "@/src/analytics/guidance/types";
 
 type View = "heatmap" | "3d" | "smile" | "term";
 const views: readonly View[] = ["heatmap", "3d", "smile", "term"];
@@ -29,6 +34,8 @@ export function VolSurfaceLab({ compact = false }: { compact?: boolean }) {
   const [moneyness, setMoneyness] = useState(1);
   const [playing, setPlaying] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null);
+  const [beforeMetrics, setBeforeMetrics] = useState<Record<string, AnalyticsPrimitive> | null>(null);
   const grid = useMemo(() => view === "3d"
     ? buildVolSurface(params, Array.from({ length: 19 }, (_, index) => 7 / 365 + index * ((2 - 7 / 365) / 18)), Array.from({ length: 31 }, (_, index) => 0.7 + index * 0.02))
     : buildVolSurface(params), [params, view]);
@@ -36,6 +43,7 @@ export function VolSurfaceLab({ compact = false }: { compact?: boolean }) {
   const currentScenario = scenarios.find((scenario) => scenario.id === params.scenario) ?? scenarios[0];
   const smile = useMemo(() => Array.from({ length: 41 }, (_, index) => 0.7 + index * 0.015).map((ratio) => ({ x: ratio, y: educationalVolatility(ratio, maturity, params) })), [maturity, params]);
   const term = useMemo(() => Array.from({ length: 41 }, (_, index) => 7 / 365 + index * ((2 - 7 / 365) / 40)).map((time) => ({ x: time, y: educationalVolatility(moneyness, time, params) })), [moneyness, params]);
+  const { askAboutThis, publish, updateContext } = useAnalyticsGuidance({ labId: "volatility-surface", model: "Deterministic educational implied-volatility surface" });
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -56,7 +64,9 @@ export function VolSurfaceLab({ compact = false }: { compact?: boolean }) {
 
   const update = <K extends keyof VolSurfaceParameters>(key: K, value: VolSurfaceParameters[K]) => setParams((current) => ({ ...current, [key]: value }));
   const selectPoint = useCallback((point: VolSurfacePoint) => { setMaturity(point.maturity); setMoneyness(point.moneyness); }, []);
-  const selectScenario = (scenario: VolSurfaceScenario) => { setPlaying(false); setParams((current) => ({ ...current, scenario, phase: scenario === "normalization" ? 0 : scenario === "base" ? 0 : 1 })); };
+  useEffect(() => { updateContext({ scenarioId: activeScenarioId ?? undefined, inputs: { spot: params.spot, atmVol: params.atmVol, skew: params.skew, curvature: params.curvature, termSlope: params.termSlope, phase: params.phase, scenario: params.scenario }, metrics: { selectedVolatility: selected.volatility, selectedStrike: selected.strike, selectedMaturity: selected.maturity, selectedMoneyness: selected.moneyness } }); }, [activeScenarioId, params, selected, updateContext]);
+  const applyGuidedScenario = (scenario: AnalyticsScenario) => { const source = surfaceSourceFromScenario(scenario); const phase = source === "base" || source === "normalization" ? 0 : 1; const next = { ...params, scenario: source, phase }; const nextGrid = buildVolSurface(next); const nextSelected = nearestSurfacePoint(nextGrid, moneyness, maturity); setBeforeMetrics({ selectedVolatility: selected.volatility, selectedStrike: selected.strike }); setPlaying(false); setParams(next); setActiveScenarioId(scenario.id); publish({ kind: "scenario-loaded", scenarioId: scenario.id, inputs: { spot: next.spot, atmVol: next.atmVol, skew: next.skew, curvature: next.curvature, termSlope: next.termSlope, phase: next.phase, scenario: next.scenario }, metrics: { selectedVolatility: nextSelected.volatility, selectedStrike: nextSelected.strike } }); };
+  const resetGuidedScenario = () => { const scenario = activeScenarioId ? findAnalyticsScenario(activeScenarioId) : undefined; if (scenario) applyGuidedScenario(scenario); };
   const selectViewFromKeyboard = (event: ReactKeyboardEvent<HTMLButtonElement>, current: View) => {
     const currentIndex = views.indexOf(current);
     const nextIndex = event.key === "Home" ? 0
@@ -73,6 +83,7 @@ export function VolSurfaceLab({ compact = false }: { compact?: boolean }) {
 
   return <div className={`academy-vol-lab ${compact ? "is-compact" : ""}`}>
     <header className="vol-lab-header"><div><span>{pick(locale, { en: "VOL SURFACE LAB · ONE LINKED STATE", es: "LAB DE SUPERFICIE · UN ESTADO CONECTADO" })}</span><h3>{pick(locale, { en: "Implied volatility surface", es: "Superficie de volatilidad implícita" })}</h3><p>{pick(locale, { en: "Inspect the same deterministic grid as a heatmap, rotatable surface, smile or term slice.", es: "Inspecciona la misma malla determinista como heatmap, superficie rotatoria, sonrisa o corte temporal." })}</p></div><div className="vol-data-label"><b>{pick(locale, { en: "SYNTHETIC / EDUCATIONAL", es: "SINTÉTICO / EDUCATIVO" })}</b><span>{pick(locale, { en: "NOT MARKET DATA · NOT A PREDICTION", es: "NO SON DATOS DE MERCADO · NO ES UNA PREDICCIÓN" })}</span></div></header>
+    <AnalyticsGuide labId="volatility-surface" activeScenarioId={activeScenarioId} snapshots={beforeMetrics ? { before: beforeMetrics, after: { selectedVolatility: selected.volatility, selectedStrike: selected.strike } } : null} onApply={applyGuidedScenario} onReset={resetGuidedScenario} onManual={() => setActiveScenarioId(null)} onAsk={askAboutThis} />
     <div className="vol-lab-tabs" role="tablist" aria-label={pick(locale, { en: "Volatility surface views", es: "Vistas de la superficie de volatilidad" })}>{views.map((item) => <button role="tab" id={`vol-surface-tab-${item}`} aria-controls={`vol-surface-panel-${item}`} aria-selected={view === item} tabIndex={view === item ? 0 : -1} className={view === item ? "active" : ""} type="button" onClick={() => setView(item)} onKeyDown={(event) => selectViewFromKeyboard(event, item)} key={item}>{({ heatmap: pick(locale, { en: "HEATMAP", es: "MAPA TÉRMICO" }), "3d": "3D", smile: pick(locale, { en: "SMILE", es: "SONRISA" }), term: pick(locale, { en: "TERM STRUCTURE", es: "ESTRUCTURA TEMPORAL" }) })[item]}</button>)}</div>
     <div className="vol-lab-layout"><aside className="vol-lab-controls">
       <header><span>{pick(locale, { en: "SURFACE STATE", es: "ESTADO DE LA SUPERFICIE" })}</span><button type="button" onClick={() => { setPlaying(false); setParams(defaultVolSurfaceParameters); setMaturity(0.5); setMoneyness(1); }}>{pick(locale, { en: "RESET", es: "RESTABLECER" })}</button></header>
@@ -81,7 +92,6 @@ export function VolSurfaceLab({ compact = false }: { compact?: boolean }) {
       <Control label={pick(locale, { en: "Skew", es: "Sesgo" })} value={params.skew} min={-0.8} max={0.3} step={0.01} format={(value) => value.toFixed(2)} onChange={(value) => update("skew", value)} />
       <Control label={pick(locale, { en: "Curvature", es: "Curvatura" })} value={params.curvature} min={0} max={1.5} step={0.01} format={(value) => value.toFixed(2)} onChange={(value) => update("curvature", value)} />
       <Control label={pick(locale, { en: "Term slope", es: "Pendiente temporal" })} value={params.termSlope} min={-0.15} max={0.18} step={0.005} format={(value) => value.toFixed(3)} onChange={(value) => update("termSlope", value)} />
-      <div className="vol-scenario-picker"><span>{pick(locale, { en: "CONTROLLED SCENARIO", es: "ESCENARIO CONTROLADO" })}</span>{scenarios.map((scenario) => <button type="button" aria-pressed={params.scenario === scenario.id} className={params.scenario === scenario.id ? "active" : ""} onClick={() => selectScenario(scenario.id)} key={scenario.id}><b>{scenario[locale].label}</b><small>{scenario[locale].note}</small></button>)}</div>
       <div className="vol-playback"><div><button type="button" aria-label={reducedMotion ? pick(locale, { en: "Autoplay unavailable with reduced motion", es: "Reproducción automática no disponible con movimiento reducido" }) : undefined} onClick={() => setPlaying((current) => !current)} disabled={params.scenario === "base" || reducedMotion}>{playing ? pick(locale, { en: "PAUSE", es: "PAUSA" }) : pick(locale, { en: "PLAY", es: "REPRODUCIR" })}</button><output>T{Math.round(params.phase * 4)}</output></div><input aria-label={pick(locale, { en: "Scenario time", es: "Tiempo del escenario" })} type="range" min="0" max="1" step="0.01" value={params.phase} onChange={(event) => { setPlaying(false); update("phase", Number(event.target.value)); }} /><p>{currentScenario[locale].note}. {pick(locale, { en: "Controlled simulation only.", es: "Simulación controlada únicamente." })}</p></div>
     </aside><div className="vol-lab-output">
       <div className="vol-lab-readout"><div><span>{pick(locale, { en: "SELECTED NODE", es: "NODO SELECCIONADO" })}</span><b>{selected.maturity < 0.1 ? `${Math.round(selected.maturity * 365)}D` : `${selected.maturity.toFixed(2)}Y`}</b></div><div><span>{pick(locale, { en: "STRIKE / MONEYNESS", es: "STRIKE / MONETICIDAD" })}</span><b>{selected.strike.toFixed(1)} / {selected.moneyness.toFixed(2)}</b></div><div><span>{pick(locale, { en: "IMPLIED VOL", es: "VOL. IMPLÍCITA" })}</span><b>{(selected.volatility * 100).toFixed(2)}%</b></div><div><span>{pick(locale, { en: "SCENARIO SPOT", es: "SPOT DEL ESCENARIO" })}</span><b>{(selected.strike / selected.moneyness).toFixed(1)}</b></div></div>

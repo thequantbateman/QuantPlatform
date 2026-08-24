@@ -31,6 +31,11 @@ import { MarketStateControls } from "./MarketStateControls";
 import { PnlHeatmap } from "./PnlHeatmap";
 import { PositionEditor, type PositionPatch } from "./PositionEditor";
 import { RiskVector } from "./RiskVector";
+import { AnalyticsGuide } from "./AnalyticsGuide";
+import { useAnalyticsGuidance } from "./useAnalyticsGuidance";
+import { findAnalyticsScenario } from "@/src/analytics/guidance/scenarios";
+import { portfolioGuidedStateFromScenario } from "@/src/analytics/guidance/adapters";
+import type { AnalyticsPrimitive, AnalyticsScenario } from "@/src/analytics/guidance/types";
 
 type HedgeTarget = "delta" | "gamma" | "vega";
 
@@ -104,6 +109,8 @@ export function PortfolioGreeksLab() {
   const [scenario, setScenario] = useState<PortfolioScenario>({ spotMove: -5, volatilityMove: 0.03, elapsedDays: 7, rateMove: 0.0025 });
   const [selectedCell, setSelectedCell] = useState({ row: 2, column: 2 });
   const [transferError, setTransferError] = useState(false);
+  const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null);
+  const [beforeMetrics, setBeforeMetrics] = useState<Record<string, AnalyticsPrimitive> | null>(null);
   const idCounter = useRef(0);
 
   useEffect(() => {
@@ -138,6 +145,10 @@ export function PortfolioGreeksLab() {
   const decay = useMemo(() => buildTimeDecayProfile(positions, market, elapsedDays), [positions, market, elapsedDays]);
   const selectedOption = positions.find((position): position is OptionPosition => position.id === selectedId && position.instrument === "option") ?? positions.find((position): position is OptionPosition => position.instrument === "option") ?? DEFAULT_HEDGE_OPTION;
   const proposal = useMemo<HedgeProposal>(() => hedgeTarget === "delta" ? proposeDeltaHedge(positions, market) : proposeOptionHedge(positions, market, { ...selectedOption, id: "hedge-candidate", direction: "long", quantity: 1 }, hedgeTarget), [hedgeTarget, market, positions, selectedOption]);
+  const { askAboutThis, publish, updateContext } = useAnalyticsGuidance({ labId: "portfolio", model: "Black–Scholes portfolio full repricing and local Greeks" });
+  const guidanceMetrics = useMemo<Record<string, AnalyticsPrimitive>>(() => ({ modelValue: valuation.modelValue, unrealizedPnl: valuation.unrealizedPnl, delta: valuation.greeks.delta, gamma: valuation.greeks.gamma, vega: valuation.greeks.vega, theta: valuation.greeks.theta, rho: valuation.greeks.rho, scenarioPnl: pnl.actual, approximationResidual: pnl.residual }), [pnl.actual, pnl.residual, valuation]);
+  const guidanceInputs = useMemo<Record<string, AnalyticsPrimitive>>(() => ({ spot: market.spot, volatility: market.volatility, rate: market.rate, dividend: market.dividend, positionCount: positions.length, hedgeTarget, spotMove: scenario.spotMove, volatilityMove: scenario.volatilityMove, elapsedDays: scenario.elapsedDays, rateMove: scenario.rateMove }), [hedgeTarget, market, positions.length, scenario]);
+  useEffect(() => { updateContext({ scenarioId: activeScenarioId ?? undefined, inputs: guidanceInputs, metrics: guidanceMetrics }); }, [activeScenarioId, guidanceInputs, guidanceMetrics, updateContext]);
 
   const addPosition = (instrument: "call" | "put" | "underlying") => {
     idCounter.current += 1;
@@ -161,6 +172,9 @@ export function PortfolioGreeksLab() {
   const money = (value: number) => formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const copy = <T,>(values: { en: T; es: T }): T => pick(locale, values);
   const buckets = ["delta", "gamma", "vega", "theta", "rho", "residual"] as const;
+  const applyScenario = (guidedScenario: AnalyticsScenario) => { const next = portfolioGuidedStateFromScenario(guidedScenario, hedgeTarget, scenario); const nextPnl = explainPortfolioPnl(positions, market, next.scenario); const nextMetrics = { ...guidanceMetrics, scenarioPnl: nextPnl.actual, approximationResidual: nextPnl.residual }; setBeforeMetrics(guidanceMetrics); setHedgeTarget(next.hedgeTarget); setScenario(next.scenario); setActiveScenarioId(guidedScenario.id); publish({ kind: "scenario-loaded", scenarioId: guidedScenario.id, inputs: { ...guidanceInputs, hedgeTarget: next.hedgeTarget, spotMove: next.scenario.spotMove, volatilityMove: next.scenario.volatilityMove, elapsedDays: next.scenario.elapsedDays, rateMove: next.scenario.rateMove }, metrics: nextMetrics }); };
+  const resetScenario = () => { const guidedScenario = activeScenarioId ? findAnalyticsScenario(activeScenarioId) : undefined; if (guidedScenario) applyScenario(guidedScenario); };
+  const executeHedge = () => { if (proposal.status !== "ok") return; const next = applyHedgeProposal(proposal); const nextValuation = valuePortfolio(next, market); setPositions(next); setSelectedId(proposal.tickets[0].id); publish({ kind: "hedge-applied", scenarioId: activeScenarioId ?? undefined, inputs: { ...guidanceInputs, hedgeTarget }, metrics: { ...guidanceMetrics, delta: nextValuation.greeks.delta, gamma: nextValuation.greeks.gamma, vega: nextValuation.greeks.vega } }); };
 
   return <main className="portfolio-lab">
     <header className="portfolio-lab-hero section-shell">
@@ -169,6 +183,7 @@ export function PortfolioGreeksLab() {
     </header>
 
     <div className="portfolio-lab-body section-shell">
+      <AnalyticsGuide labId="portfolio" activeScenarioId={activeScenarioId} snapshots={beforeMetrics ? { before: beforeMetrics, after: guidanceMetrics } : null} onApply={applyScenario} onReset={resetScenario} onManual={() => setActiveScenarioId(null)} onAsk={askAboutThis} />
       {transferError && <p className="analytics-inline-warning" role="status">{copy({ en: "The transferred strategy was invalid, so the default portfolio was preserved.", es: "La estrategia transferida no era válida; se mantuvo la cartera predeterminada." })}</p>}
       <section className="portfolio-panel portfolio-positions" aria-labelledby="portfolio-positions-title">
         <header><div><span>01 · {copy({ en: "BOOK", es: "CARTERA" })}</span><h2 id="portfolio-positions-title">{copy({ en: "Portfolio positions", es: "Posiciones de la cartera" })}</h2></div><div className="portfolio-actions"><button type="button" onClick={() => addPosition("call")}>+ Call</button><button type="button" onClick={() => addPosition("put")}>+ Put</button><button type="button" onClick={() => addPosition("underlying")}>+ {copy({ en: "Underlying", es: "Subyacente" })}</button><button type="button" onClick={() => { setPositions(INITIAL_POSITIONS); setMarket(INITIAL_MARKET); setSelectedId(INITIAL_POSITIONS[0].id); }}>{copy({ en: "Reset", es: "Restablecer" })}</button></div></header>
@@ -187,7 +202,7 @@ export function PortfolioGreeksLab() {
 
       <section className="portfolio-panel portfolio-hedge" aria-labelledby="portfolio-hedge-title">
         <header><div><span>02 · {copy({ en: "HEDGE", es: "COBERTURA" })}</span><h2 id="portfolio-hedge-title">{copy({ en: "Hedge preview", es: "Previsualización de cobertura" })}</h2></div><label><span>{copy({ en: "Hedge target", es: "Objetivo de cobertura" })}</span><select aria-label="Hedge target" value={hedgeTarget} onChange={(event) => setHedgeTarget(event.currentTarget.value as HedgeTarget)}><option value="delta">Delta</option><option value="gamma">Gamma + Delta</option><option value="vega">Vega + Delta</option></select></label></header>
-        {proposal.status === "ok" ? <><RiskVector label={copy({ en: "Risk after proposed hedge", es: "Riesgo tras la cobertura propuesta" })} greeks={proposal.after.greeks} comparison={proposal.before.greeks} /><div className="hedge-ticket"><div><span>{copy({ en: "Proposed tickets", es: "Operaciones propuestas" })}</span>{proposal.tickets.map((ticket) => <code key={ticket.id}>{formatTicket(ticket)}</code>)}</div><button type="button" onClick={() => { setPositions(applyHedgeProposal(proposal)); setSelectedId(proposal.tickets[0].id); }}>{copy({ en: "Apply hedge", es: "Aplicar cobertura" })}</button></div></> : <p className="analytics-inline-warning" role="status">{copy({ en: `Hedge unavailable: ${proposal.reason}. Select an option with material sensitivity.`, es: `Cobertura no disponible: ${proposal.reason}. Selecciona una opción con sensibilidad material.` })}</p>}
+        {proposal.status === "ok" ? <><RiskVector label={copy({ en: "Risk after proposed hedge", es: "Riesgo tras la cobertura propuesta" })} greeks={proposal.after.greeks} comparison={proposal.before.greeks} /><div className="hedge-ticket"><div><span>{copy({ en: "Proposed tickets", es: "Operaciones propuestas" })}</span>{proposal.tickets.map((ticket) => <code key={ticket.id}>{formatTicket(ticket)}</code>)}</div><button type="button" onClick={executeHedge}>{copy({ en: "Apply hedge", es: "Aplicar cobertura" })}</button></div></> : <p className="analytics-inline-warning" role="status">{copy({ en: `Hedge unavailable: ${proposal.reason}. Select an option with material sensitivity.`, es: `Cobertura no disponible: ${proposal.reason}. Selecciona una opción con sensibilidad material.` })}</p>}
       </section>
 
       <section className="portfolio-panel portfolio-scenario" aria-labelledby="portfolio-scenario-title">

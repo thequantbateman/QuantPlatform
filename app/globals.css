@@ -827,7 +827,7 @@ body { background-image: linear-gradient(rgb(255 255 255 / 1.4%) 1px, transparen
   .mm-scenario-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }.mm-scenario-controls .mm-control:nth-child(2n) { border-right: 0; }.mm-scenario-controls .mm-control:last-child { grid-column: 1/-1; }
 }
 @media (max-width: 700px) {
-  body:has(.market-making-lab) .qb-assistant { display: none; }
+  .market-making-lab { padding-bottom: 92px; }
   .mm-header, .mm-mission-bar, .mm-market-layout, .mm-flow-layout, .mm-hedge-layout, .mm-method-boundary { grid-template-columns: 1fr; }.mm-provenance { justify-items: start; text-align: left; }
   .mm-mission-bar > label { border-right: 0; border-bottom: 1px solid var(--border); }.mm-underlying-list, .mm-client-ticket, .mm-hedge-controls { border-right: 0; border-bottom: 1px solid var(--border); }
   .mm-underlying-list { display: grid; grid-template-columns: repeat(3, 1fr); overflow-x: auto; }.mm-underlying-list > span { grid-column: 1/-1; }.mm-underlying-list button { min-width: 130px; border-right: 1px solid var(--border); }

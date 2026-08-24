@@ -2,6 +2,10 @@ import type { BlackScholesInput, OptionType } from "@/src/quant/models/blackScho
 import type { CurveNode } from "@/src/quant/curves/rates";
 import type { VanillaInput, VanillaMode } from "@/src/quant/pricing/vanilla";
 import type { AnalyticsPrimitive, AnalyticsScenario } from "./types";
+import type { PortfolioScenario } from "@/src/quant/portfolio/scenarios";
+import type { StrategyPresetId } from "@/src/quant/strategies/presets";
+import type { VolSurfaceScenario } from "@/src/quant/volatility/volSurface";
+import type { MarketMakingMissionId } from "@/src/quant/market-making/missions";
 
 const optionTypes = new Set<OptionType>(["call", "put"]);
 const vanillaModes = new Set<VanillaMode>(["equity", "fx", "forward"]);
@@ -93,4 +97,61 @@ export function vanillaInputContext(input: VanillaInput): Record<string, Analyti
 export function curveInputContext(nodes: readonly CurveNode[]): Record<string, AnalyticsPrimitive> {
   const entries = nodes.slice(0, 6).map(({ tenor, quote }) => [`quote${tenor}`, quote] as const);
   return Object.fromEntries(entries);
+}
+
+export type GuidedHedgeTarget = "delta" | "gamma" | "vega";
+
+export function portfolioGuidedStateFromScenario(
+  scenario: AnalyticsScenario,
+  currentHedgeTarget: GuidedHedgeTarget,
+  currentScenario: PortfolioScenario,
+): { hedgeTarget: GuidedHedgeTarget; scenario: PortfolioScenario } {
+  const source = scenario.initialInputs;
+  const target = source.hedgeTarget;
+  const nested = typeof source.scenario === "object" && source.scenario !== null ? source.scenario as Record<string, unknown> : {};
+  return {
+    hedgeTarget: typeof target === "string" && ["delta", "gamma", "vega"].includes(target) ? target as GuidedHedgeTarget : currentHedgeTarget,
+    scenario: {
+      spotMove: finite(nested, "spotMove", currentScenario.spotMove),
+      volatilityMove: finite(nested, "volatilityMove", currentScenario.volatilityMove),
+      elapsedDays: finite(nested, "elapsedDays", currentScenario.elapsedDays),
+      rateMove: finite(nested, "rateMove", currentScenario.rateMove),
+    },
+  };
+}
+
+export type GuidedStrategyView = "profit" | "payoff" | "mtm";
+const strategyViews = new Set<GuidedStrategyView>(["profit", "payoff", "mtm"]);
+
+export function strategyGuidedStateFromScenario(scenario: AnalyticsScenario): {
+  presetId: StrategyPresetId;
+  view: GuidedStrategyView;
+  settlementSpot: number;
+  volatilityShock?: number;
+  expectedRangeLow?: number;
+  expectedRangeHigh?: number;
+} {
+  const source = scenario.initialInputs;
+  if (typeof scenario.sourceId !== "string") throw new RangeError(`Scenario ${scenario.id} requires a strategy preset.`);
+  const view = typeof source.view === "string" && strategyViews.has(source.view as GuidedStrategyView) ? source.view as GuidedStrategyView : "profit";
+  return {
+    presetId: scenario.sourceId as StrategyPresetId,
+    view,
+    settlementSpot: finite(source, "settlementSpot", 100),
+    ...(typeof source.volatilityShock === "number" && Number.isFinite(source.volatilityShock) ? { volatilityShock: source.volatilityShock } : {}),
+    ...(typeof source.expectedRangeLow === "number" && Number.isFinite(source.expectedRangeLow) ? { expectedRangeLow: source.expectedRangeLow } : {}),
+    ...(typeof source.expectedRangeHigh === "number" && Number.isFinite(source.expectedRangeHigh) ? { expectedRangeHigh: source.expectedRangeHigh } : {}),
+  };
+}
+
+const surfaceScenarios = new Set<VolSurfaceScenario>(["base", "spot-crash", "vol-spike", "term-inversion", "skew-steepening", "normalization"]);
+export function surfaceSourceFromScenario(scenario: AnalyticsScenario): VolSurfaceScenario {
+  if (typeof scenario.sourceId !== "string" || !surfaceScenarios.has(scenario.sourceId as VolSurfaceScenario)) throw new RangeError(`Scenario ${scenario.id} requires a canonical surface source.`);
+  return scenario.sourceId as VolSurfaceScenario;
+}
+
+const marketMakingMissions = new Set<MarketMakingMissionId>(["client-flow", "delta-discipline", "short-vega-repair", "volatility-shock", "theta-passage", "rate-shock", "convexity", "cross-effects"]);
+export function marketMakingMissionFromScenario(scenario: AnalyticsScenario): MarketMakingMissionId {
+  if (typeof scenario.sourceId !== "string" || !marketMakingMissions.has(scenario.sourceId as MarketMakingMissionId)) throw new RangeError(`Scenario ${scenario.id} requires a canonical market-making mission.`);
+  return scenario.sourceId as MarketMakingMissionId;
 }

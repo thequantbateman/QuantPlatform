@@ -28,6 +28,11 @@ import {
   STRATEGY_TRANSFER_KEY,
   STRATEGY_TRANSFER_VERSION,
 } from "@/src/quant/strategies/transfer";
+import { AnalyticsGuide } from "./AnalyticsGuide";
+import { useAnalyticsGuidance } from "./useAnalyticsGuidance";
+import { findAnalyticsScenario } from "@/src/analytics/guidance/scenarios";
+import { strategyGuidedStateFromScenario } from "@/src/analytics/guidance/adapters";
+import type { AnalyticsPrimitive, AnalyticsScenario } from "@/src/analytics/guidance/types";
 
 type StrategyView = "profit" | "payoff" | "mtm";
 const STRATEGY_VIEWS: StrategyView[] = ["profit", "payoff", "mtm"];
@@ -84,6 +89,8 @@ export function StrategyPayoffLab() {
   const [elapsedDays, setElapsedDays] = useState(30);
   const [comparison, setComparison] = useState<PortfolioPosition[] | null>(null);
   const [comparisonArmed, setComparisonArmed] = useState(false);
+  const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null);
+  const [beforeMetrics, setBeforeMetrics] = useState<Record<string, AnalyticsPrimitive> | null>(null);
   const idCounter = useRef(0);
   const copy = <T,>(values: { en: T; es: T }): T => pick(locale, values);
   const money = (value: number) => formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -105,6 +112,10 @@ export function StrategyPayoffLab() {
     : positions.reduce((sum, position) => sum + (view === "payoff" ? terminalLegPayoff(position, spot) : terminalLegProfit(position, spot)), 0)), [market, positions, terminalSpots, view]);
   const comparisonValues = useMemo(() => comparison ? terminalSpots.map((spot) => comparison.reduce((sum, position) => sum + terminalLegProfit(position, spot), 0)) : null, [comparison, terminalSpots]);
   const settlementRows = positions.map((position) => ({ position, payoff: terminalLegPayoff(position, settlementSpot), entryCashflow: -positionWeight(position) * (position.instrument === "option" ? position.premium : position.entryPrice), profit: terminalLegProfit(position, settlementSpot) }));
+  const { askAboutThis, publish, updateContext } = useAnalyticsGuidance({ labId: "strategies", model: "Exact piecewise terminal payoff with Black–Scholes mark-to-market" });
+  const guidanceMetrics = useMemo<Record<string, AnalyticsPrimitive>>(() => ({ modelValue: valuation.modelValue, delta: valuation.greeks.delta, gamma: valuation.greeks.gamma, vega: valuation.greeks.vega, theta: valuation.greeks.theta, legCount: positions.length, breakevenCount: result.analysis?.breakevens.length ?? 0, netEntryCashflow: result.analysis?.netEntryCashflow ?? 0 }), [positions.length, result.analysis, valuation]);
+  const guidanceInputs = useMemo<Record<string, AnalyticsPrimitive>>(() => ({ presetId: presetId ?? "custom", view, spot: market.spot, volatility: market.volatility, settlementSpot, volatilityShock: volShock, elapsedDays, expectedFloor, expectedCeiling }), [elapsedDays, expectedCeiling, expectedFloor, market, presetId, settlementSpot, view, volShock]);
+  useEffect(() => { updateContext({ scenarioId: activeScenarioId ?? undefined, inputs: guidanceInputs, metrics: guidanceMetrics }); }, [activeScenarioId, guidanceInputs, guidanceMetrics, updateContext]);
 
   const selectPreset = (id: StrategyPresetId) => {
     const next = buildStrategyPreset(id, { spot: market.spot, expiry: market.valuationTime + 1, multiplier: 100 });
@@ -115,6 +126,8 @@ export function StrategyPayoffLab() {
     setComparison(null);
     setComparisonArmed(false);
   };
+  const applyScenario = (guidedScenario: AnalyticsScenario) => { const next = strategyGuidedStateFromScenario(guidedScenario); const nextPositions = buildStrategyPreset(next.presetId, { spot: market.spot, expiry: market.valuationTime + 1, multiplier: 100 }); const nextValuation = valuePortfolio(nextPositions, market); const nextAnalysis = analyzeTerminalStrategy(nextPositions); setBeforeMetrics(guidanceMetrics); setPresetId(next.presetId); setPurpose(strategyPresets.find((preset) => preset.id === next.presetId)?.purpose ?? "directional"); setPositions(nextPositions); setSelectedId(nextPositions[0].id); setView(next.view); setSettlementSpot(next.settlementSpot); if (next.volatilityShock !== undefined) setVolShock(next.volatilityShock); if (next.expectedRangeLow !== undefined) setExpectedFloor(next.expectedRangeLow); if (next.expectedRangeHigh !== undefined) setExpectedCeiling(next.expectedRangeHigh); setComparison(null); setComparisonArmed(false); setActiveScenarioId(guidedScenario.id); publish({ kind: "scenario-loaded", scenarioId: guidedScenario.id, inputs: { ...guidanceInputs, presetId: next.presetId, view: next.view, settlementSpot: next.settlementSpot }, metrics: { modelValue: nextValuation.modelValue, delta: nextValuation.greeks.delta, gamma: nextValuation.greeks.gamma, vega: nextValuation.greeks.vega, legCount: nextPositions.length, breakevenCount: nextAnalysis.breakevens.length, netEntryCashflow: nextAnalysis.netEntryCashflow } }); };
+  const resetScenario = () => { const guidedScenario = activeScenarioId ? findAnalyticsScenario(activeScenarioId) : undefined; if (guidedScenario) applyScenario(guidedScenario); };
 
   const changePosition = (id: string, patch: PositionPatch) => {
     if (comparisonArmed) { setComparison(positions.map((position) => ({ ...position }))); setComparisonArmed(false); }
@@ -158,6 +171,7 @@ export function StrategyPayoffLab() {
   return <main className="strategy-lab">
     <header className="strategy-lab-hero section-shell"><div><span className="eyebrow">ANALYTICS · EXACT TERMINAL ALGEBRA</span><h1>OPTIONS STRATEGY<br /><em>&amp; PAYOFF.</em></h1></div><div><p>{copy({ en: "Compose European-option legs, inspect exact terminal economics, then separate expiry geometry from today’s mark-to-market risk.", es: "Combina opciones europeas, inspecciona la economía exacta al vencimiento y separa la geometría terminal del riesgo de valor de mercado actual." })}</p><span>SYNTHETIC / EDUCATIONAL · SINGLE EXPIRY</span></div></header>
     <div className="strategy-lab-body section-shell">
+      <AnalyticsGuide labId="strategies" activeScenarioId={activeScenarioId} snapshots={beforeMetrics ? { before: beforeMetrics, after: guidanceMetrics } : null} onApply={applyScenario} onReset={resetScenario} onManual={() => setActiveScenarioId(null)} onAsk={askAboutThis} />
       <section className="strategy-taxonomy" aria-label={copy({ en: "Strategy taxonomy", es: "Taxonomía de estrategias" })}>
         <header><div><span>01 · {copy({ en: "PURPOSE", es: "OBJETIVO" })}</span><h2>{copy({ en: "Start with economic intent", es: "Empieza por la intención económica" })}</h2></div><p>{copy({ en: "Presets seed the editable book; they are examples, not recommendations.", es: "Los presets inicializan la cartera editable; son ejemplos, no recomendaciones." })}</p></header>
         <div className="strategy-purpose-tabs">{PURPOSES.map((item) => <button type="button" key={item} aria-pressed={purpose === item} onClick={() => setPurpose(item)}>{PURPOSE_LABELS[item][locale]}</button>)}</div>

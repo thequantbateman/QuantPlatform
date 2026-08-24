@@ -105,6 +105,22 @@ test("core pricing labs server-render guidance bound to the selected calculation
   }
 });
 
+test("advanced Analytics workflows server-render guidance bound to canonical state", async () => {
+  for (const [path, labId, scenarioId] of [
+    ["/analytics/volatility", "volatility-surface", "surface-base"],
+    ["/analytics/portfolio", "portfolio", "portfolio-delta-neutral"],
+    ["/analytics/strategies", "strategies", "strategy-bull-call"],
+    ["/lab?lab=market-making", "market-making", "market-making-client-inventory"],
+  ]) {
+    const response = await render(path);
+    assert.equal(response.status, 200, path);
+    const html = await response.text();
+    assert.match(html, new RegExp(`data-analytics-guide="${labId}"`, "i"), path);
+    assert.match(html, new RegExp(`data-analytics-scenario="${scenarioId}"`, "i"), path);
+    assert.match(html, /GUIDED EXPERIMENT[\s\S]*?Change one assumption with intent[\s\S]*?Return to manual/i, path);
+  }
+});
+
 test("book-integrated foundations and legacy aliases resolve to the deep Academy sequence", async () => {
   for (const [path, marker] of [
     ["/learn/foundations/distributions-moments-characteristic-functions", "Characteristic function and moments"],

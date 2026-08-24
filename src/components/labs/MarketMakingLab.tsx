@@ -3,6 +3,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { pick, useI18n } from "@/src/i18n";
+import { marketMakingMissionFromScenario } from "@/src/analytics/guidance/adapters";
+import { findAnalyticsScenario } from "@/src/analytics/guidance/scenarios";
+import type { AnalyticsPrimitive, AnalyticsScenario } from "@/src/analytics/guidance/types";
+import { AnalyticsGuide } from "@/src/components/analytics/AnalyticsGuide";
+import { useAnalyticsGuidance } from "@/src/components/analytics/useAnalyticsGuidance";
 import { useQuantBateman } from "@/src/components/quant-bateman/useQuantBateman";
 import { createClientOptionTrade, valueMarketMakingBook } from "@/src/quant/market-making/book";
 import { calculateMarketMakingDiagnostics } from "@/src/quant/market-making/diagnostics";
@@ -118,12 +123,10 @@ export function MarketMakingLab() {
     elapsedDays: 10,
   });
   const [activeMission, setActiveMission] = useState<MarketMakingMissionId>("client-flow");
+  const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null);
+  const [beforeMetrics, setBeforeMetrics] = useState<Record<string, AnalyticsPrimitive> | null>(null);
   const [replay, setReplay] = useState(() => startMarketMakingReplay(seed.trades, seed.market, 0.03));
   const idCounter = useRef(seed.trades.length);
-
-  useEffect(() => {
-    setPageContext({ section: "market-making lab", instrument: "European options", action: activeStage });
-  }, [activeStage, setPageContext]);
 
   const copy = useCallback(<T,>(values: { en: T; es: T }): T => pick(locale, values), [locale]);
   const money = (value: number) => formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -195,6 +198,37 @@ export function MarketMakingLab() {
     comparedHedged: hasHedge,
     diagnostics,
   });
+  const { askAboutThis, publish, updateContext } = useAnalyticsGuidance({ labId: "market-making", model: "European option inventory · exact repricing + local Greeks" });
+  const guidanceInputs = useMemo<Record<string, AnalyticsPrimitive>>(() => ({
+    underlying: selectedUnderlyingId,
+    spot: selectedUnderlying.spot,
+    atmVolatility: selectedUnderlying.surface.atmVolatility,
+    workflowStage: activeStage,
+    mission: activeMission,
+    trades: trades.length,
+    hedgeTarget,
+    spotMove: scenario.spotMovePercent,
+    volatilityMove: scenario.volatilityLevelMove,
+    rateMove: scenario.rateMove,
+    elapsedDays: scenario.elapsedDays,
+  }), [activeMission, activeStage, hedgeTarget, scenario, selectedUnderlying, selectedUnderlyingId, trades.length]);
+  const guidanceMetrics = useMemo<Record<string, AnalyticsPrimitive>>(() => ({
+    modelValue: valuation.modelValue,
+    unrealizedPnl: valuation.unrealizedPnl,
+    spreadCapture: valuation.clientSpreadCapture,
+    hedgeFriction: valuation.hedgeFriction,
+    delta: selectedRisk?.greeks.delta ?? 0,
+    gamma: selectedRisk?.greeks.gamma ?? 0,
+    vega: selectedRisk?.greeks.vega ?? 0,
+    exactScenarioPnl: currentScenario.actual,
+    localScenarioPnl: currentScenario.approximate,
+    attributionResidual: currentScenario.residual,
+  }), [currentScenario, selectedRisk, valuation]);
+
+  useEffect(() => {
+    updateContext({ scenarioId: activeScenarioId ?? undefined, inputs: guidanceInputs, metrics: guidanceMetrics });
+    setPageContext({ section: "market-making lab", instrument: "European options", action: activeStage });
+  }, [activeScenarioId, activeStage, guidanceInputs, guidanceMetrics, setPageContext, updateContext]);
 
   const replayEvents = useMemo<MarketMakingReplayEvent[]>(() => MARKET_MAKING_REPLAY_EVENTS.map((event) => {
     const sourceShock = event.shocks.retail;
@@ -298,9 +332,22 @@ export function MarketMakingLab() {
   const applyHedge = () => {
     if (proposal.status !== "ok") return;
     const next = applyMarketMakingHedge(proposal);
+    const nextRisk = valueMarketMakingBook(next, market).byUnderlying.find((item) => item.underlyingId === selectedUnderlyingId);
     setBookHistory((history) => [...history, cloneTrades(trades)]);
     setTrades(next);
     resetReplay(next, market);
+    publish({
+      kind: "hedge-applied",
+      scenarioId: activeScenarioId ?? undefined,
+      inputs: guidanceInputs,
+      metrics: {
+        beforeDelta: selectedRisk?.greeks.delta ?? 0,
+        afterDelta: nextRisk?.greeks.delta ?? 0,
+        beforeVega: selectedRisk?.greeks.vega ?? 0,
+        afterVega: nextRisk?.greeks.vega ?? 0,
+        hedgeFriction: proposal.estimatedHedgeFriction,
+      },
+    });
   };
   const undoLast = () => {
     const previous = bookHistory.at(-1);
@@ -327,11 +374,47 @@ export function MarketMakingLab() {
     [copy({ en: "residual", es: "residual" }), scenarioExplain.residual],
   ] as const;
 
+  const applyGuidedScenario = (guidedScenario: AnalyticsScenario) => {
+    const nextMission = marketMakingMissionFromScenario(guidedScenario);
+    setBeforeMetrics(guidanceMetrics);
+    setActiveScenarioId(guidedScenario.id);
+    setActiveMission(nextMission);
+    if (nextMission === "client-flow") {
+      setActiveStage("flow");
+      setClientDirectionConfirmed(false);
+    } else if (nextMission === "delta-discipline") {
+      setActiveStage("hedge");
+      setHedgeTarget("delta");
+    } else {
+      setActiveStage("scenario");
+      setScenario((current) => ({
+        ...current,
+        spotMovePercent: Math.abs(current.spotMovePercent) < 0.02 ? 0.05 : current.spotMovePercent,
+        volatilityLevelMove: Math.abs(current.volatilityLevelMove) < 0.01 ? 0.03 : current.volatilityLevelMove,
+      }));
+    }
+    publish({ kind: "scenario-loaded", scenarioId: guidedScenario.id, inputs: guidanceInputs, metrics: guidanceMetrics });
+  };
+  const resetGuidedScenario = () => {
+    const selected = activeScenarioId ? findAnalyticsScenario(activeScenarioId) : undefined;
+    if (selected) applyGuidedScenario(selected);
+  };
+
   return <div className="market-making-lab">
     <header className="mm-header">
       <div><h2>{copy({ en: "MARKET-MAKING DESK", es: "Mesa de market making" })}</h2><p>{copy({ en: "Take client flow, inherit dealer risk, choose a hedge and reconcile what actually happened.", es: "Recibe flujo de clientes, asume riesgo de dealer, elige una cobertura y concilia lo que ocurrió realmente." })}</p></div>
       <div className="mm-provenance"><strong>{copy({ en: "SYNTHETIC / EDUCATIONAL", es: "Datos sintéticos / educativos" })}</strong><span>Black–Scholes · ACT/365-like · {copy({ en: "continuous rates", es: "tipos continuos" })}</span></div>
     </header>
+
+    <AnalyticsGuide
+      labId="market-making"
+      activeScenarioId={activeScenarioId}
+      snapshots={beforeMetrics ? { before: beforeMetrics, after: guidanceMetrics } : null}
+      onApply={applyGuidedScenario}
+      onReset={resetGuidedScenario}
+      onManual={() => { setActiveScenarioId(null); setBeforeMetrics(null); }}
+      onAsk={askAboutThis}
+    />
 
     <div className="mm-mission-bar">
       <label><span>{copy({ en: "Guided mission", es: "Misión guiada" })}</span><select value={activeMission} onChange={(event) => setActiveMission(event.currentTarget.value as MarketMakingMissionId)}>{MISSION_IDS.map((id) => <option value={id} key={id}>{missionLabels[id]}</option>)}</select></label>
