@@ -387,4 +387,4 @@ git commit -m "docs: require licensed source intake"
 
 Run: `git status --short && git log --oneline main..HEAD`
 
-Expected: clean working tree and a focused sequence of implementation commits ready for review, merge, push, and deployment only after explicit user confirmation.
+Expected: clean working tree and a focused sequence of implementation commits. In this solo-developer repository, merge the validated feature branch into local `main` without another confirmation. Push and production deployment remain explicit external operations.
