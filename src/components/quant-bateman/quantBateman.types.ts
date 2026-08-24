@@ -24,6 +24,7 @@ export interface QuantBatemanPageContext {
   section?: string;
   instrument?: string;
   action?: string;
+  analytics?: AnalyticsAssistantContext;
 }
 
 export interface QuantBatemanRendererProps {
@@ -59,4 +60,8 @@ export interface QuantBatemanContextValue {
   setOutfit: (outfit: QuantBatemanOutfit) => void;
   setRenderer: (renderer: QuantBatemanRenderer) => void;
   setPageContext: (context: QuantBatemanPageContext) => void;
+  setAnalyticsContext: (context: AnalyticsAssistantContext) => void;
+  clearAnalyticsContext: () => void;
+  publishAnalyticsEvent: (event: AnalyticsEvent) => void;
 }
+import type { AnalyticsAssistantContext, AnalyticsEvent } from "@/src/analytics/guidance/types";

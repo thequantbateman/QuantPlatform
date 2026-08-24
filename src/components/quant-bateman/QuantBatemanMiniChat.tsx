@@ -43,9 +43,11 @@ export function QuantBatemanMiniChat() {
         <div><span>QUANT BATEMAN</span><strong>{busy ? pick(locale, { en: "Checking sources", es: "Consultando fuentes" }) : pick(locale, { en: "Quick analysis", es: "Análisis rápido" })}</strong></div>
         <button type="button" onClick={qb.close} aria-label={pick(locale, { en: "Close assistant", es: "Cerrar asistente" })}>×</button>
       </header>
-      <div className="qb-mini-context">
+      <div className="qb-mini-context" data-analytics-context={qb.pageContext.analytics ? "true" : undefined}>
         <span>{qb.pageContext.section || pick(locale, { en: "Platform context", es: "Contexto de plataforma" })}</span>
-        <small>{qb.pageContext.instrument || qb.pageContext.pathname || pick(locale, { en: "Current page", es: "Página actual" })}</small>
+        <small>{qb.pageContext.analytics
+          ? `${qb.pageContext.analytics.model ?? qb.pageContext.analytics.labId} · ${(qb.pageContext.analytics.scenarioId ?? pick(locale, { en: "manual", es: "manual" })).replaceAll("-", " ")}`
+          : qb.pageContext.instrument || qb.pageContext.pathname || pick(locale, { en: "Current page", es: "Página actual" })}</small>
       </div>
       {response ? <div className="qb-mini-answer"><p>{response.answer}</p><small>{response.provider} · {response.tool}</small></div> : <p className="qb-mini-intro">{pick(locale, { en: "Ask about the current page, a model, or a displayed market input.", es: "Pregunta sobre la página, un modelo o un input de mercado mostrado." })}</p>}
       <form onSubmit={submit}>

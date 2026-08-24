@@ -6,6 +6,9 @@ export const quantBatemanConfig = {
   transitionMs: 160,
   safeMargins: { top: 92, right: 16, bottom: 18, left: 16 },
   snapToEdge: false,
+  analyticsInsightDebounceMs: 420,
+  analyticsPriorityHoldMs: 4_000,
+  analyticsTalkingDurationMs: 5_200,
   transientDurationMs: {
     success: 3_200,
     warning: 4_000,
