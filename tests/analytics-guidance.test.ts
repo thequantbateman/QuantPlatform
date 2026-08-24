@@ -10,6 +10,14 @@ import { serializeAnalyticsContext } from "../src/analytics/guidance/context";
 import { resolveAnalyticsInsight } from "../src/analytics/guidance/insights";
 import type { MarketMakingMissionId } from "../src/quant/market-making/missions";
 import type { VolSurfaceScenario } from "../src/quant/volatility/volSurface";
+import {
+  blackScholesInputFromScenario,
+  curveNodesFromScenario,
+  greeksStateFromScenario,
+  vanillaInputFromScenario,
+} from "../src/analytics/guidance/adapters";
+import type { BlackScholesInput } from "../src/quant/models/blackScholes";
+import type { VanillaInput } from "../src/quant/pricing/vanilla";
 
 const LAB_IDS: readonly AnalyticsLabId[] = [
   "vanilla",
@@ -105,3 +113,42 @@ test("assistant Analytics context is bounded and strips unsupported values", () 
   assert.ok(!("positions" in value));
 });
 
+test("core scenario adapters map authored inputs into real pricing contracts", () => {
+  const vanillaCurrent: VanillaInput = { mode: "equity", underlying: "AAPL", spot: 100, forward: 100, strike: 100, time: 1, rate: 0.03, foreignRate: 0.01, volatility: 0.2, type: "put", notional: 5 };
+  const fx = analyticsScenarios.find(({ id }) => id === "vanilla-fx-carry");
+  assert.ok(fx);
+  assert.deepEqual(vanillaInputFromScenario(fx, vanillaCurrent), {
+    ...vanillaCurrent,
+    mode: "fx",
+    spot: 1.08,
+    strike: 1.1,
+    time: 1,
+    rate: 0.04,
+    foreignRate: 0.025,
+    volatility: 0.12,
+    type: "call",
+  });
+
+  const optionCurrent: BlackScholesInput = { spot: 90, strike: 95, time: 1, rate: 0.02, dividend: 0, volatility: 0.3, type: "put" };
+  const expiry = analyticsScenarios.find(({ id }) => id === "black-scholes-atm-expiry");
+  assert.ok(expiry);
+  assert.deepEqual(blackScholesInputFromScenario(expiry, optionCurrent), {
+    spot: 100, strike: 100, time: 0.08, rate: 0.03, dividend: 0.01, volatility: 0.2, type: "call",
+  });
+
+  const greekScenario = analyticsScenarios.find(({ id }) => id === "greeks-gamma-theta");
+  assert.ok(greekScenario);
+  const greekState = greeksStateFromScenario(greekScenario, optionCurrent, "delta");
+  assert.equal(greekState.selectedGreek, "theta");
+  assert.equal(greekState.input.time, 0.12);
+});
+
+test("curve scenario adapter creates a valid, ordered and unique curve", () => {
+  const scenario = analyticsScenarios.find(({ id }) => id === "curve-one-bp-node");
+  assert.ok(scenario);
+  const nodes = curveNodesFromScenario(scenario);
+  assert.deepEqual(nodes.map(({ tenor }) => tenor), ["3M", "1Y", "2Y", "5Y", "10Y"]);
+  assert.deepEqual(nodes.map(({ time }) => time), [0.25, 1, 2, 5, 10]);
+  assert.equal(new Set(nodes.map(({ time }) => time)).size, nodes.length);
+  assert.equal(nodes[2].quote, 0.0371);
+});

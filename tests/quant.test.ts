@@ -73,6 +73,22 @@ test("Black-Scholes handles low volatility, short maturity, ITM and OTM", () => 
   closeTo(expiry.price, 0, 1e-10);
 });
 
+test("guided Black-Scholes experiments preserve local versus finite-risk interpretation", () => {
+  const shortDated = blackScholes({ ...base, time: 0.08, rate: 0.03, dividend: 0.01, type: "call" });
+  const longDated = blackScholes({ ...base, time: 2, rate: 0.03, dividend: 0.01, type: "call" });
+  assert.ok(shortDated.gamma > longDated.gamma, "ATM gamma should concentrate toward expiry");
+  assert.ok(longDated.vega > shortDated.vega, "ATM vega should be broader at long maturity");
+
+  const state = { ...base, strike: 105, rate: 0.03, dividend: 0.01, volatility: 0.18, type: "call" as const };
+  const reference = blackScholes(state);
+  const onePoint = blackScholes({ ...state, volatility: state.volatility + 0.01 }).price - reference.price;
+  const tenPoints = blackScholes({ ...state, volatility: state.volatility + 0.1 }).price - reference.price;
+  const onePointResidual = Math.abs(onePoint - reference.vega);
+  const tenPointResidual = Math.abs(tenPoints - reference.vega * 10);
+  assert.ok(Number.isFinite(onePointResidual) && Number.isFinite(tenPointResidual));
+  assert.ok(onePointResidual < tenPointResidual, "finite repricing should diverge further from local vega for a larger shock");
+});
+
 test("zero rates and discount factors invert", () => {
   const discount = discountFactor(0.0375, 7.25);
   closeTo(zeroRate(discount, 7.25), 0.0375, 1e-12);

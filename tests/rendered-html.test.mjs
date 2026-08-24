@@ -89,6 +89,22 @@ test("renders key product routes without external services", async () => {
   }
 });
 
+test("core pricing labs server-render guidance bound to the selected calculation", async () => {
+  for (const [path, labId, scenarioId] of [
+    ["/lab?lab=vanilla", "vanilla", "vanilla-equity-carry"],
+    ["/lab?lab=black-scholes", "black-scholes", "black-scholes-atm-expiry"],
+    ["/lab?lab=greeks", "greeks", "greeks-through-strike"],
+    ["/lab?lab=curve", "yield-curve", "curve-normal-inverted"],
+  ]) {
+    const response = await render(path);
+    assert.equal(response.status, 200, path);
+    const html = await response.text();
+    assert.match(html, new RegExp(`data-analytics-guide="${labId}"`, "i"), path);
+    assert.match(html, new RegExp(`data-analytics-scenario="${scenarioId}"`, "i"), path);
+    assert.match(html, /GUIDED EXPERIMENT[\s\S]*?Change one assumption with intent[\s\S]*?Return to manual/i, path);
+  }
+});
+
 test("book-integrated foundations and legacy aliases resolve to the deep Academy sequence", async () => {
   for (const [path, marker] of [
     ["/learn/foundations/distributions-moments-characteristic-functions", "Characteristic function and moments"],

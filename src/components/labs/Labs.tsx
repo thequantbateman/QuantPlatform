@@ -12,6 +12,19 @@ import { pick, useI18n } from "@/src/i18n";
 import { useQuantBateman } from "@/src/components/quant-bateman/useQuantBateman";
 import { validateWithQuantEngine, type QuantEngineState } from "@/src/data/quantEngineClient";
 import { MarketMakingLab } from "./MarketMakingLab";
+import { AnalyticsGuide } from "@/src/components/analytics/AnalyticsGuide";
+import { useAnalyticsGuidance } from "@/src/components/analytics/useAnalyticsGuidance";
+import {
+  blackScholesInputFromScenario,
+  curveInputContext,
+  curveNodesFromScenario,
+  greeksStateFromScenario,
+  optionInputContext,
+  vanillaInputContext,
+  vanillaInputFromScenario,
+} from "@/src/analytics/guidance/adapters";
+import { findAnalyticsScenario } from "@/src/analytics/guidance/scenarios";
+import type { AnalyticsPrimitive, AnalyticsScenario } from "@/src/analytics/guidance/types";
 
 type LabId = "vanilla" | "black-scholes" | "greeks" | "surface" | "curve" | "market-making";
 
@@ -82,17 +95,22 @@ const vanillaDefaults: VanillaInput = { mode: "equity", underlying: "AAPL", spot
 const metricOptions: GreekMetric[] = ["price", "delta", "gamma", "vega", "theta", "rho"];
 const metricAxisLabel = (metric: GreekMetric): string => ({ price: "PV (currency units)", delta: "Delta (per 1 spot unit)", gamma: "Gamma (per spot unit²)", vega: "Vega (per 1 vol point)", theta: "Theta (per day)", rho: "Rho (per 100bp)" })[metric];
 const formatMetricValue = (metric: GreekMetric, value: number): string => Math.abs(value) < 0.0001 ? value.toExponential(2) : value.toFixed(metric === "gamma" ? 6 : 5);
+const analyticsMetricContext = (analytics: ReturnType<typeof blackScholes> | ReturnType<typeof priceVanilla>): Record<string, AnalyticsPrimitive> => ({ price: analytics.price, delta: analytics.delta, gamma: analytics.gamma, vega: analytics.vega, theta: analytics.theta, rho: analytics.rho });
 
 function VanillaOptionLab() {
-  const { locale } = useI18n(); const qb = useQuantBateman(); const [input, setInput] = useState<VanillaInput>(vanillaDefaults); const [advanced, setAdvanced] = useState(false); const [metric, setMetric] = useState<GreekMetric>("vega"); const [codeTab, setCodeTab] = useState<"formula" | "python" | "test">("formula"); const [ivPrice, setIvPrice] = useState(12); const [ivMessage, setIvMessage] = useState(""); const [engineState, setEngineState] = useState<QuantEngineState>("fallback"); const [lineage, setLineage] = useState({ source: "TQB frozen scenario", status: "DEMO", asOf: "static", dataMode: "DEMO" });
+  const { locale } = useI18n(); const qb = useQuantBateman(); const [input, setInput] = useState<VanillaInput>(vanillaDefaults); const [advanced, setAdvanced] = useState(false); const [metric, setMetric] = useState<GreekMetric>("vega"); const [codeTab, setCodeTab] = useState<"formula" | "python" | "test">("formula"); const [ivPrice, setIvPrice] = useState(12); const [ivMessage, setIvMessage] = useState(""); const [engineState, setEngineState] = useState<QuantEngineState>("fallback"); const [lineage, setLineage] = useState({ source: "TQB frozen scenario", status: "DEMO", asOf: "static", dataMode: "DEMO" }); const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null); const [beforeMetrics, setBeforeMetrics] = useState<Record<string, AnalyticsPrimitive> | null>(null);
   useEffect(() => { const query = new URLSearchParams(window.location.search); const mode = query.get("mode") as VanillaMode | null; const spot = Number(query.get("spot")); const symbol = query.get("symbol"); const source = query.get("source"); const status = query.get("status"); const asOf = query.get("asOf"); const dataMode = query.get("dataMode"); if (source || status || asOf || dataMode) window.setTimeout(() => setLineage((current) => ({ source: source ?? current.source, status: status ?? current.status, asOf: asOf ?? current.asOf, dataMode: dataMode ?? current.dataMode })), 0); if (mode && ["equity", "fx", "forward"].includes(mode)) window.setTimeout(() => setInput((current) => ({ ...current, mode, spot: Number.isFinite(spot) && spot > 0 ? spot : current.spot, forward: Number.isFinite(spot) && spot > 0 ? spot : current.forward, strike: Number.isFinite(spot) && spot > 0 ? spot : current.strike, underlying: symbol ?? current.underlying })), 0); }, []);
   useEffect(() => { const controller = new AbortController(); const timer = window.setTimeout(() => { validateWithQuantEngine(input, controller.signal).then(setEngineState).catch(() => setEngineState("fallback")); }, 120); return () => { window.clearTimeout(timer); controller.abort(); }; }, [input]);
-  const analytics = useMemo(() => priceVanilla(input), [input]); const grid = useMemo(() => scenarioGrid(input, metric), [input, metric]); const baseLevel = input.mode === "forward" ? input.forward : input.spot; const levels = useMemo(() => Array.from({ length: 61 }, (_, index) => baseLevel * (0.65 + index * 0.012)), [baseLevel]); const riskValues = useMemo(() => levels.map((level) => priceVanilla({ ...input, spot: level, forward: level })[metric]), [levels, input, metric]); const payoff = useMemo(() => levels.map((level) => Math.max((input.type === "call" ? 1 : -1) * (level - input.strike), 0) * input.notional), [levels, input.type, input.strike, input.notional]); const todayValue = useMemo(() => levels.map((level) => priceVanilla({ ...input, spot: level, forward: level }).price), [levels, input]); const model = input.mode === "fx" ? "Garman–Kohlhagen" : input.mode === "forward" ? "Black–76" : "Black–Scholes–Merton";
+  const analytics = useMemo(() => priceVanilla(input), [input]); const grid = useMemo(() => scenarioGrid(input, metric), [input, metric]); const baseLevel = input.mode === "forward" ? input.forward : input.spot; const levels = useMemo(() => Array.from({ length: 61 }, (_, index) => baseLevel * (0.65 + index * 0.012)), [baseLevel]); const riskValues = useMemo(() => levels.map((level) => priceVanilla({ ...input, spot: level, forward: level })[metric]), [levels, input, metric]); const payoff = useMemo(() => levels.map((level) => Math.max((input.type === "call" ? 1 : -1) * (level - input.strike), 0) * input.notional), [levels, input.type, input.strike, input.notional]); const todayValue = useMemo(() => levels.map((level) => priceVanilla({ ...input, spot: level, forward: level }).price), [levels, input]); const model = input.mode === "fx" ? "Garman–Kohlhagen" : input.mode === "forward" ? "Black–76" : "Black–Scholes–Merton"; const { askAboutThis, publish, updateContext } = useAnalyticsGuidance({ labId: "vanilla", model });
+  useEffect(() => { updateContext({ scenarioId: activeScenarioId ?? undefined, inputs: vanillaInputContext(input), metrics: analyticsMetricContext(analytics) }); }, [activeScenarioId, analytics, input, updateContext]);
+  const applyScenario = (scenario: AnalyticsScenario) => { const next = vanillaInputFromScenario(scenario, input); const nextMetrics = analyticsMetricContext(priceVanilla(next)); setBeforeMetrics(analyticsMetricContext(analytics)); setInput(next); setActiveScenarioId(scenario.id); publish({ kind: "scenario-loaded", scenarioId: scenario.id, inputs: vanillaInputContext(next), metrics: nextMetrics }); };
+  const resetScenario = () => { const scenario = activeScenarioId ? findAnalyticsScenario(activeScenarioId) : undefined; if (scenario) applyScenario(scenario); };
   const update = <K extends keyof VanillaInput>(key: K, value: VanillaInput[K]) => setInput((current) => ({ ...current, [key]: value }));
   const solveIv = () => { qb.setState("pricing", "Solving implied volatility..."); try { const common = { marketPrice: ivPrice, strike: input.strike, time: input.time, rate: input.rate, type: input.type }; const result = input.mode === "forward" ? impliedVolatility({ model: "black76", ...common, forward: input.forward }) : impliedVolatility({ model: input.mode === "fx" ? "gk" : "bsm", ...common, spot: input.spot, dividend: input.foreignRate }); setIvMessage(`${(result.volatility * 100).toFixed(4)}% · ${result.iterations} iter · residual ${result.residual.toExponential(2)}`); qb.success("Implied volatility solved."); } catch (error) { const message = error instanceof Error ? error.message : "Solver error"; setIvMessage(message); qb.error(message); } };
   const modeCopy = { equity: { symbol: "AAPL", spot: 218.44, strike: 220, vol: .22 }, fx: { symbol: "EURUSD", spot: 1.1642, strike: 1.17, vol: .095 }, forward: { symbol: "BRENT", spot: 71.84, strike: 72, vol: .28 } };
   return <div className="experiment vanilla-pricer">
     <LabHeader index="01" title={pick(locale, { en: "Vanilla Option Workstation", es: "Estación de Opciones Vanilla" })} copy={pick(locale, { en: "Move from a source-labelled underlying through model, price, risk, scenarios, mathematics and implementation.", es: "Avanza desde un subyacente con fuente hasta modelo, precio, riesgo, escenarios, matemáticas e implementación." })} note={`${model} · ACT/365-like · continuous rates`} />
+    <AnalyticsGuide labId="vanilla" activeScenarioId={activeScenarioId} snapshots={beforeMetrics ? { before: beforeMetrics, after: analyticsMetricContext(analytics) } : null} onApply={applyScenario} onReset={resetScenario} onManual={() => setActiveScenarioId(null)} onAsk={askAboutThis} />
     <div className="pricer-toolbar"><div className="mode-picker">{(["equity", "fx", "forward"] as VanillaMode[]).map((mode) => <button className={input.mode === mode ? "active" : ""} onClick={() => { const seed = modeCopy[mode]; setInput({ ...vanillaDefaults, mode, underlying: seed.symbol, spot: seed.spot, forward: seed.spot, strike: seed.strike, volatility: seed.vol }); }} key={mode}>{mode === "forward" ? "FORWARD / FUTURES" : mode.toUpperCase()}</button>)}</div><label className="mode-toggle"><input type="checkbox" checked={advanced} onChange={(event) => setAdvanced(event.target.checked)} />{advanced ? "ADVANCED" : "SIMPLE"}</label><div className="engine-health" title={engineState === "online" ? "FastAPI response validated" : "Deterministic TypeScript fallback active"}><i /> QUANT ENGINE · {engineState === "online" ? "FASTAPI ONLINE" : "LOCAL FALLBACK"}</div></div>
     <div className="pricer-grid"><aside className="control-panel trade-ticket"><div className="control-heading"><span>TRADE</span><b>{model}</b></div><div className="lineage-row"><span>{input.underlying}</span><strong>{baseLevel.toFixed(baseLevel < 10 ? 4 : 2)}</strong><em>{lineage.status} · {lineage.source}</em></div><div className="segmented"><button className={input.type === "call" ? "active" : ""} onClick={() => update("type", "call")}>Call</button><button className={input.type === "put" ? "active" : ""} onClick={() => update("type", "put")}>Put</button></div><ParameterInput label={input.mode === "forward" ? "Forward" : "Spot"} suffix="MARKET / USER" value={baseLevel} min={baseLevel < 10 ? .5 : 20} max={baseLevel < 10 ? 2 : 400} step={baseLevel < 10 ? .0001 : .5} onChange={(value) => update(input.mode === "forward" ? "forward" : "spot", value)} /><ParameterInput label="Strike" suffix="USER" value={input.strike} min={baseLevel < 10 ? .5 : 20} max={baseLevel < 10 ? 2 : 400} step={baseLevel < 10 ? .0001 : .5} onChange={(value) => update("strike", value)} /><ParameterInput label="Volatility" suffix="USER · decimal" value={input.volatility} min={.001} max={1} step={.001} onChange={(value) => update("volatility", value)} /><ParameterInput label="Time" suffix="years" value={input.time} min={.003} max={5} step={.01} onChange={(value) => update("time", value)} /><ParameterInput label={input.mode === "fx" ? "Domestic rate" : "Rate"} suffix="decimal" value={input.rate} min={-.02} max={.15} step={.001} onChange={(value) => update("rate", value)} />{(advanced || input.mode !== "forward") && <ParameterInput label={input.mode === "fx" ? "Foreign rate" : "Dividend yield"} suffix="decimal" value={input.foreignRate} min={0} max={.15} step={.001} onChange={(value) => update("foreignRate", value)} />}{advanced && <ParameterInput label="Notional" suffix="units" value={input.notional} min={1} max={1000000} step={1} onChange={(value) => update("notional", value)} />}<div className="desk-panel"><span>DATA LINEAGE</span><p>Underlying: {lineage.status} · {lineage.source} · {lineage.dataMode} · {lineage.asOf} · Volatility/rates: USER · PV: MODEL</p></div></aside>
       <div className="output-panel"><div className="pricer-output-head"><div className="metric-grid"><Metric label="PV · MODEL" value={analytics.price} primary /><Metric label="Delta" value={analytics.delta} /><Metric label="Gamma" value={analytics.gamma} /><Metric label="Vega / 1 vol pt" value={analytics.vega} /><Metric label="Theta / day" value={analytics.theta} /><Metric label="Rho / 100bp" value={analytics.rho} /></div></div><div className="diagnostic-strip"><span>FORWARD <b>{analytics.forward.toFixed(4)}</b></span><span>DF <b>{analytics.discountFactor.toFixed(6)}</b></span><span>INTRINSIC <b>{analytics.intrinsicValue.toFixed(4)}</b></span><span>TIME VALUE <b>{analytics.timeValue.toFixed(4)}</b></span><span>MONEYNESS <b>{analytics.moneyness.toFixed(4)}</b></span></div><div className="chart-card"><div className="chart-title"><div><span>RISK EXPLORER</span><strong>{metric.toUpperCase()} vs underlying</strong></div><div className="metric-picker">{metricOptions.map((item) => <button className={metric === item ? "active" : ""} onClick={() => setMetric(item)} key={item}>{item === "price" ? "PV" : item}</button>)}</div></div><LineChart x={levels} series={[{ name: metric, values: riskValues }]} xLabel={input.mode === "forward" ? "Forward" : "Spot"} yLabel={metricAxisLabel(metric)} description={`${metricAxisLabel(metric)} across the current ${input.mode === "forward" ? "forward" : "spot"} range.`} xFormatter={(value) => value.toFixed(baseLevel < 10 ? 4 : 2)} yFormatter={(value) => formatMetricValue(metric, value)} showTable height={300} /></div></div></div>
@@ -107,8 +125,11 @@ function BlackScholesLab() {
   const [input, setInput] = useState(baseOption);
   const [animating, setAnimating] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null);
+  const [beforeMetrics, setBeforeMetrics] = useState<Record<string, AnalyticsPrimitive> | null>(null);
   const animationStartRef = useRef(baseOption.time);
   const analytics = useMemo(() => blackScholes(input), [input]);
+  const { askAboutThis, publish, updateContext } = useAnalyticsGuidance({ labId: "black-scholes", model: "Black–Scholes–Merton" });
   const spots = useMemo(() => Array.from({ length: 61 }, (_, index) => input.strike * (0.45 + index * 0.0185)), [input.strike]);
   const prices = useMemo(() => spots.map((spot) => blackScholes({ ...input, spot }).price), [spots, input]);
   const intrinsic = useMemo(() => spots.map((spot) => Math.max((input.type === "call" ? 1 : -1) * (spot - input.strike), 0)), [spots, input]);
@@ -138,10 +159,15 @@ function BlackScholesLab() {
     return () => cancelAnimationFrame(frame);
   }, [animating]);
 
+  useEffect(() => { updateContext({ scenarioId: activeScenarioId ?? undefined, inputs: optionInputContext(input), metrics: analyticsMetricContext(analytics) }); }, [activeScenarioId, analytics, input, updateContext]);
+
   const update = <K extends keyof BlackScholesInput>(key: K, value: BlackScholesInput[K]) => setInput((current) => ({ ...current, [key]: value }));
+  const applyScenario = (scenario: AnalyticsScenario) => { const next = blackScholesInputFromScenario(scenario, input); const nextMetrics = analyticsMetricContext(blackScholes(next)); setBeforeMetrics(analyticsMetricContext(analytics)); setInput(next); setAnimating(false); setActiveScenarioId(scenario.id); publish({ kind: "scenario-loaded", scenarioId: scenario.id, inputs: optionInputContext(next), metrics: nextMetrics }); };
+  const resetScenario = () => { const scenario = activeScenarioId ? findAnalyticsScenario(activeScenarioId) : undefined; if (scenario) applyScenario(scenario); };
   return (
     <div className="experiment">
       <LabHeader index="01" title={pick(locale, { en: "Black-Scholes Playground", es: "Laboratorio Black–Scholes" })} copy={pick(locale, { en: "Move the state variables, then read price and hedge sensitivities as one connected system.", es: "Mueve las variables de estado y lee precio y sensibilidades de cobertura como un sistema conectado." })} note={pick(locale, { en: "European option · continuous rates/dividend · no transaction costs", es: "Opción europea · tipos/dividendos continuos · sin costes de transacción" })} />
+      <AnalyticsGuide labId="black-scholes" activeScenarioId={activeScenarioId} snapshots={beforeMetrics ? { before: beforeMetrics, after: analyticsMetricContext(analytics) } : null} onApply={applyScenario} onReset={resetScenario} onManual={() => setActiveScenarioId(null)} onAsk={askAboutThis} />
       <div className="lab-grid">
         <aside className="control-panel">
           <div className="control-heading"><span>{pick(locale, { en: "MODEL PARAMETERS", es: "PARÁMETROS DEL MODELO" })}</span><button type="button" onClick={() => setInput(baseOption)}>{pick(locale, { en: "Reset", es: "Restablecer" })}</button></div>
@@ -178,17 +204,24 @@ function GreeksLab() {
   const [greek, setGreek] = useState<GreekKey>("gamma");
   const [input, setInput] = useState(baseOption);
   const [heatmap, setHeatmap] = useState(false);
+  const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null);
+  const [beforeMetrics, setBeforeMetrics] = useState<Record<string, AnalyticsPrimitive> | null>(null);
   const spots = useMemo(() => Array.from({ length: 81 }, (_, index) => 55 + index * 1.125), []);
   const values = useMemo(() => spots.map((spot) => blackScholes({ ...input, spot })[greek]), [spots, input, greek]);
   const analytics = useMemo(() => blackScholes(input), [input]);
+  const { askAboutThis, publish, updateContext } = useAnalyticsGuidance({ labId: "greeks", model: "Black–Scholes analytical Greeks" });
   const current = analytics[greek];
   const heatValues = useMemo(() => greekHeatTimes.map((time) => greekHeatSpots.map((spot) => blackScholes({ ...input, spot, time })[greek])), [input, greek]);
   const heatMax = Math.max(...heatValues.flat().map(Math.abs), 1e-8);
   const update = <K extends keyof BlackScholesInput>(key: K, value: BlackScholesInput[K]) => setInput((currentInput) => ({ ...currentInput, [key]: value }));
   useEffect(() => { localStorage.setItem("tqb-lab-context", JSON.stringify({ model: "Black-Scholes", selectedGreek: greek, ...input, view: heatmap ? "spot-time" : "spot" })); }, [greek, input, heatmap]);
+  useEffect(() => { updateContext({ scenarioId: activeScenarioId ?? undefined, inputs: { ...optionInputContext(input), selectedGreek: greek, view: heatmap ? "spot-time" : "spot" }, metrics: analyticsMetricContext(analytics) }); }, [activeScenarioId, analytics, greek, heatmap, input, updateContext]);
+  const applyScenario = (scenario: AnalyticsScenario) => { const next = greeksStateFromScenario(scenario, input, greek); const nextMetrics = analyticsMetricContext(blackScholes(next.input)); setBeforeMetrics(analyticsMetricContext(analytics)); setInput(next.input); setGreek(next.selectedGreek); setActiveScenarioId(scenario.id); publish({ kind: "scenario-loaded", scenarioId: scenario.id, inputs: { ...optionInputContext(next.input), selectedGreek: next.selectedGreek }, metrics: nextMetrics }); };
+  const resetScenario = () => { const scenario = activeScenarioId ? findAnalyticsScenario(activeScenarioId) : undefined; if (scenario) applyScenario(scenario); };
   return (
     <div className="experiment">
       <LabHeader index="02" title={pick(locale, { en: "Interactive Greeks Dashboard", es: "Panel interactivo de griegas" })} copy={pick(locale, { en: "Read sensitivity as geometry: slope, curvature, volatility exposure and decay.", es: "Lee la sensibilidad como geometría: pendiente, curvatura, exposición a volatilidad y decaimiento." })} note={pick(locale, { en: "Analytical Greeks · Black–Scholes conventions", es: "Griegas analíticas · convenciones Black–Scholes" })} />
+      <AnalyticsGuide labId="greeks" activeScenarioId={activeScenarioId} snapshots={beforeMetrics ? { before: beforeMetrics, after: analyticsMetricContext(analytics) } : null} onApply={applyScenario} onReset={resetScenario} onManual={() => setActiveScenarioId(null)} onAsk={askAboutThis} />
       <div className="lab-grid">
         <aside className="control-panel">
           <div className="control-heading"><span>SENSITIVITY</span><em>∂V</em></div>
@@ -221,20 +254,28 @@ const curveSeed: CurveNode[] = [
   { tenor: "1Y", time: 1, quote: 0.035 }, { tenor: "2Y", time: 2, quote: 0.0362 }, { tenor: "5Y", time: 5, quote: 0.038 },
   { tenor: "10Y", time: 10, quote: 0.0392 }, { tenor: "20Y", time: 20, quote: 0.0387 }, { tenor: "30Y", time: 30, quote: 0.0381 },
 ];
+const curveMetricContext = (curve: ReturnType<typeof bootstrapCurve>): Record<string, AnalyticsPrimitive> => ({ nodeCount: curve.length, frontForward: curve[0]?.forward ?? 0, terminalForward: curve.at(-1)?.forward ?? 0, terminalDiscount: curve.at(-1)?.discount ?? 1 });
 
 function YieldCurveLab() {
   const { locale } = useI18n();
   const [nodes, setNodes] = useState(curveSeed);
+  const [activeScenarioId, setActiveScenarioId] = useState<string | null>(null);
+  const [beforeMetrics, setBeforeMetrics] = useState<Record<string, AnalyticsPrimitive> | null>(null);
   const curve = useMemo(() => bootstrapCurve(nodes), [nodes]);
+  const { askAboutThis, publish, updateContext } = useAnalyticsGuidance({ labId: "yield-curve", model: "Continuously compounded educational zero curve" });
   const setQuote = useCallback((index: number, quote: number) => setNodes((current) => current.map((node, nodeIndex) => nodeIndex === index ? { ...node, quote: Math.max(-0.02, Math.min(0.12, quote)) } : node)), []);
   const transform = (action: "shift" | "steepen" | "flatten" | "bump") => setNodes((current) => current.map((node) => {
     const centred = (node.time - 5) / 30;
     const amount = action === "shift" ? 0.0025 : action === "bump" ? 0.0001 : action === "steepen" ? 0.006 * centred : -0.006 * centred;
     return { ...node, quote: node.quote + amount };
   }));
+  useEffect(() => { updateContext({ scenarioId: activeScenarioId ?? undefined, inputs: curveInputContext(nodes), metrics: curveMetricContext(curve) }); }, [activeScenarioId, curve, nodes, updateContext]);
+  const applyScenario = (scenario: AnalyticsScenario) => { const next = curveNodesFromScenario(scenario); const nextCurve = bootstrapCurve(next); setBeforeMetrics(curveMetricContext(curve)); setNodes(next); setActiveScenarioId(scenario.id); publish({ kind: "scenario-loaded", scenarioId: scenario.id, inputs: curveInputContext(next), metrics: curveMetricContext(nextCurve) }); };
+  const resetScenario = () => { const scenario = activeScenarioId ? findAnalyticsScenario(activeScenarioId) : undefined; if (scenario) applyScenario(scenario); };
   return (
     <div className="experiment">
       <LabHeader index="04" title={pick(locale, { en: "Yield Curve Explorer", es: "Explorador de curva de tipos" })} copy={pick(locale, { en: "Move one node or reshape the entire term structure. Watch discounting and forwards inherit the decision.", es: "Mueve un nodo o transforma toda la estructura temporal. Observa cómo descuento y forwards heredan la decisión." })} note={pick(locale, { en: "Simplified educational zero-quote bootstrap · continuously compounded", es: "Bootstrap educativo simplificado de tipos cero · capitalización continua" })} />
+      <AnalyticsGuide labId="yield-curve" activeScenarioId={activeScenarioId} snapshots={beforeMetrics ? { before: beforeMetrics, after: curveMetricContext(curve) } : null} onApply={applyScenario} onReset={resetScenario} onManual={() => setActiveScenarioId(null)} onAsk={askAboutThis} />
       <div className="curve-actions"><button onClick={() => setNodes(curveSeed)}>{pick(locale, { en: "Reset curve", es: "Restablecer curva" })}</button><button onClick={() => transform("shift")}>{pick(locale, { en: "Parallel +25bp", es: "Paralela +25pb" })}</button><button onClick={() => transform("steepen")}>{pick(locale, { en: "Steepen", es: "Aumentar pendiente" })}</button><button onClick={() => transform("flatten")}>{pick(locale, { en: "Flatten", es: "Aplanar" })}</button><button onClick={() => transform("bump")}>{pick(locale, { en: "Every node +1bp", es: "Cada nodo +1pb" })}</button></div>
       <div className="curve-workspace">
         <div className="chart-card curve-chart-card"><div className="chart-title"><div><span>{pick(locale, { en: "INTERACTIVE ZERO CURVE", es: "CURVA CERO INTERACTIVA" })}</span><strong>{pick(locale, { en: "Drag a node vertically to reprice the structure", es: "Arrastra un nodo verticalmente para revalorar la estructura" })}</strong></div><span className="demo-chip">{pick(locale, { en: "DEMO QUOTES", es: "COTIZACIONES DEMO" })}</span></div><CurveCanvas nodes={nodes} onChange={setQuote} locale={locale} /><div className="curve-series"><span><i /> {pick(locale, { en: "Zero rate", es: "Tipo cero" })}</span><span><i /> {pick(locale, { en: "Forward rate", es: "Tipo forward" })}</span><span><i /> {pick(locale, { en: "Discount factor", es: "Factor de descuento" })}</span></div></div>
