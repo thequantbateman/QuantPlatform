@@ -5,6 +5,7 @@ import { localizeEntry } from "../src/content/localization";
 import { academyLessons, academyTracks, findAcademyLesson, findAcademyLessonForRoute } from "../src/content/academy/catalog";
 import { localizeAcademyLesson, localizeAcademyLevel, localizeAcademyTrack } from "../src/content/academy/localization";
 import { academySources } from "../src/content/academy/sources";
+import { findSourceRecord } from "../src/licensing/registry";
 import { academyNarrativeForLesson, academySectionDefinitions } from "../src/content/academy/narrative";
 import { legacyNarrativeForEntry } from "../src/content/narrative";
 import katex from "katex";
@@ -233,6 +234,12 @@ test("every Academy reference resolves to an attributed licensed source", () => 
   const sourceIds = new Set(academySources.map((source) => source.id));
   for (const lesson of academyLessons) for (const reference of lesson.references) assert.ok(sourceIds.has(reference.sourceId), `${lesson.id}:${reference.sourceId}`);
   for (const source of academySources) {
+    const legalSource = findSourceRecord(source.legalSourceId);
+    assert.ok(legalSource, `${source.id}: missing legal registry record`);
+    assert.equal(source.legalSourceId, source.id);
+    assert.match(legalSource.authorOrOwner, new RegExp(source.author.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").split(";")[0], "i"));
+    assert.equal(legalSource.publicSourceUrl, source.url);
+    assert.equal(legalSource.decision, "REFERENCE_ONLY");
     assert.ok(source.license.length > 0);
     assert.match(source.url, /^https:\/\//);
     assert.match(source.licenseUrl, /^https:\/\//);

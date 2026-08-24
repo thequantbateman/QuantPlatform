@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { ModelComparison, QuantFormula, type QuantFormulaLabels } from "../src/components/academy/AcademyComponents";
+import { ModelComparison, QuantFormula, SourceReferences, type QuantFormulaLabels } from "../src/components/academy/AcademyComponents";
 import type { AcademyDerivation, AcademyFormula } from "../src/content/academy/types";
 
 const englishLabels: QuantFormulaLabels = {
@@ -172,4 +172,20 @@ test("authors the model comparison chrome and row labels in Spanish", () => {
   assert.match(html, /Black–Scholes/);
   assert.match(html, /Heston/);
   assert.doesNotMatch(html, /Primary strength|Primary failure|Hedge implication/);
+});
+
+test("keeps lesson references scholarly and delegates legal notices centrally", () => {
+  const html = renderToStaticMarkup(<SourceReferences locale="en" references={[{
+    sourceId: "oosterlee-grzelak-2020",
+    locator: "Chapter 4 · Monte Carlo methods",
+    url: "https://www.worldscientific.com/worldscibooks/10.1142/q0236",
+    note: "Used for independent validation of the numerical narrative.",
+  }]} />);
+
+  assert.match(html, /Mathematical Modeling and Computation in Finance/);
+  assert.match(html, /Chapter 4 · Monte Carlo methods/);
+  assert.match(html, /Used for independent validation/);
+  assert.equal((html.match(/<a\b/g) ?? []).length, 1);
+  assert.match(html, /OPEN ORIGINAL SOURCE/);
+  assert.doesNotMatch(html, /LICENSE|LICENCIA|LICENSE\.TXT|BSD-3-Clause/i);
 });

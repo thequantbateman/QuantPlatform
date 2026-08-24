@@ -3,6 +3,7 @@ import type { AcademySource } from "./types";
 export const academySources: AcademySource[] = [
   {
     id: "oosterlee-grzelak-2020",
+    legalSourceId: "oosterlee-grzelak-2020",
     name: "Mathematical Modeling and Computation in Finance",
     author: "Cornelis W. Oosterlee and Lech A. Grzelak",
     repository: "World Scientific, ISBN 978-1-78634-794-7",
@@ -16,6 +17,7 @@ export const academySources: AcademySource[] = [
   },
   {
     id: "grzelak-computational-finance",
+    legalSourceId: "grzelak-computational-finance",
     name: "Computational Finance Course",
     author: "L. A. Grzelak",
     repository: "LechGrzelak/Computational-Finance-Course",
@@ -29,6 +31,7 @@ export const academySources: AcademySource[] = [
   },
   {
     id: "grzelak-ir-xva",
+    legalSourceId: "grzelak-ir-xva",
     name: "Financial Engineering: Interest Rates & xVA",
     author: "L. A. Grzelak",
     repository: "LechGrzelak/FinancialEngineering_IR_xVA",
@@ -42,6 +45,7 @@ export const academySources: AcademySource[] = [
   },
   {
     id: "grzelak-quantlib-fork",
+    legalSourceId: "grzelak-quantlib-fork",
     name: "LechGrzelak QuantLib fork",
     author: "QuantLib contributors; fork maintained by L. A. Grzelak",
     repository: "LechGrzelak/QuantLib",
@@ -55,6 +59,7 @@ export const academySources: AcademySource[] = [
   },
   {
     id: "quantlib-upstream",
+    legalSourceId: "quantlib-upstream",
     name: "QuantLib upstream",
     author: "QuantLib contributors",
     repository: "lballabio/QuantLib",

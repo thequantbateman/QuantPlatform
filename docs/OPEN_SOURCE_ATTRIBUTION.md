@@ -1,9 +1,10 @@
 # Open-source attribution policy
 
-| Source | Licence | Current use | Required handling |
-|---|---|---|---|
-| QuantFinanceBook | BSD-3-Clause | Reference only | Cite repository; retain notice if code is ever reused |
-| FinancialEngineering_IR_xVA | BSD-3-Clause | Reference only | Cite repository; retain notice if code is ever reused |
-| QuantLib | QuantLib permissive licence | Reference/optional validation only | Preserve full licence and copyright list if distributed |
+`docs/legal/source-registry.json` is the licensing authority for external material. It distinguishes research-only references from code, assets, media, or data actually copied, adapted, embedded, or redistributed by the application.
 
-All V0 pricing code is an independent implementation of public mathematical formulae. Future changes that copy or adapt source must record file, commit, licence and modification in `THIRD_PARTY_NOTICES.md` before merge.
+- `npm run license:intake -- ...` creates a conservative source draft without storing a private local path.
+- `npm run license:audit` validates policy decisions, evidence, affected files, and notice freshness. It is mandatory in `npm test` and Cloudflare preflight.
+- `npm run license:notices` regenerates `THIRD_PARTY_NOTICES.md` from records whose current use requires public attribution.
+- `/legal/third-party` renders only the safe public notice subset. Research-only references remain in the Academy bibliography and are not duplicated there.
+
+Current pricing and learning implementations are independently written. A future change that copies or adapts external material must update the legal registry and affected paths before merge; generated notices must never be edited by hand.

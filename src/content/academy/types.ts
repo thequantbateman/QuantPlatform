@@ -156,6 +156,7 @@ export interface AcademyTrack {
 
 export interface AcademySource {
   id: string;
+  legalSourceId: string;
   name: string;
   author: string;
   repository: string;

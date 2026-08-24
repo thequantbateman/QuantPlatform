@@ -270,6 +270,22 @@ test("Ask renders a compact approved Quant Bateman chat identity", async () => {
   assert.doesNotMatch(html, /class="qb-assistant"/);
 });
 
+test("centralizes public third-party notices in one compact bilingual route", async () => {
+  for (const [cookie, heading, emptyState] of [
+    [undefined, "Third-party notices", "No third-party source code, document assets, media, or datasets are redistributed"],
+    ["tqb-locale=es", "Avisos de terceros", "La aplicación pública actual no redistribuye código fuente, recursos documentales, contenido multimedia ni conjuntos de datos de terceros"],
+  ]) {
+    const response = await render("/legal/third-party", { cookie });
+    assert.equal(response.status, 200);
+    const html = await response.text();
+    assert.match(html, new RegExp(heading, "i"));
+    assert.match(html, new RegExp(emptyState, "i"));
+    const footer = html.match(/<footer class="site-footer">([\s\S]*?)<\/footer>/)?.[1] ?? "";
+    assert.equal((footer.match(/href="\/legal\/third-party"/g) ?? []).length, 1);
+    assert.doesNotMatch(html, /localFingerprint|sha256:|\/Users\//i);
+  }
+});
+
 test("starter preview is removed and project assets are present", async () => {
   await assert.rejects(access(new URL("app/_sites-preview/SkeletonPreview.tsx", root)));
   const [packageJson, layout, agents] = await Promise.all([
