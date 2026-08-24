@@ -1,0 +1,47 @@
+import { localizedText as t, type AnalyticsScenario } from "../types";
+
+export const portfolioScenarios: readonly AnalyticsScenario[] = [
+  {
+    id: "portfolio-delta-neutral",
+    labId: "portfolio",
+    name: t("Delta-neutral is not risk-neutral", "Delta neutral no significa riesgo neutral"),
+    description: t("Apply the displayed underlying hedge, then inspect the risks that remain.", "Aplica la cobertura mostrada con subyacente e inspecciona los riesgos restantes."),
+    learningObjective: t("Separate first-order spot neutrality from convexity, volatility, carry and discrete-rehedging exposure.", "Separar la neutralidad de spot de primer orden de la convexidad, volatilidad, carry y exposición por rebalanceo discreto."),
+    initialInputs: { hedgeTarget: "delta", scenario: { spotMove: -5, volatilityMove: 0, elapsedDays: 0, rateMove: 0 } },
+    expectedObservation: t("Absolute delta approaches zero after the hedge, while gamma, vega and theta remain material.", "Delta absoluta se aproxima a cero tras la cobertura, mientras gamma, vega y theta siguen siendo materiales."),
+    suggestedInteractions: [t("Apply the proposed delta hedge.", "Aplica la cobertura delta propuesta."), t("Reprice a finite spot move after hedging.", "Revalora un movimiento finito de spot tras cubrir.")],
+    explanation: t("A delta hedge cancels the local ∂V/∂S term at one state. The next move changes delta through gamma and the hedge must be updated.", "Una cobertura delta cancela el término local ∂V/∂S en un estado. El siguiente movimiento cambia delta mediante gamma y exige rebalancear."),
+    modelBoundary: t("The preview excludes execution delay, discrete hedge paths, funding, transaction costs and surface dynamics.", "La previsualización excluye retraso de ejecución, trayectorias discretas, financiación, costes y dinámica de superficie."),
+    difficulty: "practitioner",
+    academyHref: "/learn/risk/hedging-pnl-attribution",
+  },
+  {
+    id: "portfolio-spot-vol-shock",
+    labId: "portfolio",
+    name: t("Spot down, volatility up", "Spot baja, volatilidad sube"),
+    description: t("Stress the book with a joint equity-style shock and reconcile local attribution with full repricing.", "Estresa la cartera con un shock conjunto tipo equity y reconcilia atribución local con revaloración completa."),
+    learningObjective: t("Identify delta, gamma, vega and cross/nonlinear residuals under a finite joint move.", "Identificar delta, gamma, vega y residuos cruzados/no lineales bajo un movimiento conjunto finito."),
+    initialInputs: { scenario: { spotMove: -10, volatilityMove: 0.08, elapsedDays: 7, rateMove: 0 } },
+    expectedObservation: t("Actual repricing and the Taylor estimate diverge as the shock leaves the local expansion point.", "La revaloración exacta y la estimación de Taylor divergen cuando el shock se aleja del punto local de expansión."),
+    suggestedInteractions: [t("Halve both shocks and watch the residual contract.", "Reduce ambos shocks a la mitad y observa cómo se contrae el residuo."), t("Select the matching heatmap cell.", "Selecciona la celda correspondiente del mapa térmico.")],
+    explanation: t("The Taylor attribution is local. Full repricing updates every option state and is therefore the authority for the finite scenario.", "La atribución de Taylor es local. La revaloración completa actualiza cada estado de opción y es la autoridad del escenario finito."),
+    modelBoundary: t("The shock still assumes one flat volatility move and omits skew, liquidity and jump-to-default behavior.", "El shock aún supone un movimiento plano de volatilidad y omite skew, liquidez y salto a default."),
+    difficulty: "front-office",
+    academyHref: "/learn/risk/hedging-pnl-attribution",
+  },
+  {
+    id: "portfolio-static-decay",
+    labId: "portfolio",
+    name: t("Time decay with a static hedge", "Decaimiento temporal con cobertura estática"),
+    description: t("Advance valuation time while spot, volatility and rates remain fixed.", "Avanza el tiempo de valoración manteniendo spot, volatilidad y tipos fijos."),
+    learningObjective: t("Observe theta P&L and the drift of a hedge that is not rebalanced.", "Observar el P&L de theta y la deriva de una cobertura que no se rebalancea."),
+    initialInputs: { hedgeTarget: "delta", scenario: { spotMove: 0, volatilityMove: 0, elapsedDays: 30, rateMove: 0 } },
+    expectedObservation: t("Option value decays and aggregate delta can drift even with an unchanged market snapshot.", "El valor de las opciones decae y delta agregada puede derivar aunque la instantánea de mercado no cambie."),
+    suggestedInteractions: [t("Apply the hedge at day zero, then advance thirty days.", "Aplica la cobertura en el día cero y avanza treinta días."), t("Compare the time profile with the original theta.", "Compara el perfil temporal con la theta inicial.")],
+    explanation: t("Theta is the local calendar derivative. As time advances, moneyness and every Greek are recomputed, so a static hedge does not remain neutral.", "Theta es la derivada local de calendario. Al avanzar el tiempo se recalculan moneyness y todas las griegas, por lo que una cobertura estática deja de ser neutral."),
+    modelBoundary: t("Holding market inputs fixed isolates model decay; it is not a forecast of realized daily P&L.", "Mantener fijos los inputs aísla el decaimiento del modelo; no es una previsión del P&L diario realizado."),
+    difficulty: "practitioner",
+    academyHref: "/learn/risk/first-order-greeks",
+  },
+];
+
