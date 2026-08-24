@@ -1,7 +1,7 @@
 # QuantPlatform Context
 
-> Last validated: 2026-08-21
-> Validated against commit: `5a2620c`
+> Last validated: 2026-08-25
+> Validation scope: current source and release gates
 
 This is the durable operational map for the repository. It complements mandatory rules in `AGENTS.md`; it does not replace source code, configuration, the human-facing `README.md`, or detailed documents under `docs/`.
 
@@ -15,6 +15,7 @@ This is the durable operational map for the repository. It complements mandatory
 - Public source of truth: `https://github.com/thequantbateman/QuantPlatform.git`
 - Development workspace: the current local Git root; never create a parallel application copy.
 - Normal development environment: VS Code + Codex on a focused `codex/<change>` branch unless the user explicitly authorizes work on another branch.
+- After a focused branch is clean and all relevant gates pass, merge it into local `main` without another approval prompt. Pushes, deployments, remote migrations, and other external writes remain explicitly authorized operations.
 - Release path: local Git → GitHub → Cloudflare Workers Builds → production.
 - Production code and infrastructure configuration are changed through reviewed Git history, not by copying files or editing application code in a dashboard.
 
@@ -157,6 +158,9 @@ npm run i18n:audit
 npm test
 npm run build
 npm run cloudflare:preflight
+npm run license:intake -- --file <path> --title <title> --owner <owner> --intent <action>
+npm run license:notices
+npm run license:audit
 ```
 
 Before a product handoff or release, run typecheck, lint, tests, production build, and Cloudflare preflight. Run targeted numerical/provider tests first. Remote migrations and deployment require explicit confirmation and the runbook; they are never implied by a normal code change.
@@ -208,6 +212,7 @@ Load only the group relevant to the task:
 | AI assistant | `docs/AI_ARCHITECTURE.md`, `docs/AI_PRIVACY.md`, `docs/AI_TOOLS.md`, `docs/AI_EVALUATION.md` |
 | Design/avatar | `docs/DESIGN_SYSTEM.md`, `docs/design/quant-bateman-assistant.md`, `docs/AVATAR_ART_DIRECTION.md` |
 | Cloudflare/release/security | `docs/DEPLOYMENT_CLOUDFLARE.md`, `docs/security/DEPLOYMENT_CHECKLIST.md`, `docs/security/PRE_PRODUCTION_SECURITY_AUDIT.md` |
+| External sources/licensing | `docs/legal/README.md`, `docs/legal/source-registry.json`, `docs/OPEN_SOURCE_ATTRIBUTION.md` |
 | Roadmap/research/QA | `docs/ROADMAP.md`, `docs/research/`, `docs/qa/` |
 
 ## New-session bootstrap
