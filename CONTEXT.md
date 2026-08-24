@@ -15,7 +15,7 @@ This is the durable operational map for the repository. It complements mandatory
 - Public source of truth: `https://github.com/thequantbateman/QuantPlatform.git`
 - Development workspace: the current local Git root; never create a parallel application copy.
 - Normal development environment: VS Code + Codex on a focused `codex/<change>` branch unless the user explicitly authorizes work on another branch.
-- After a focused branch is clean and all relevant gates pass, merge it into local `main` without another approval prompt. Pushes, deployments, remote migrations, and other external writes remain explicitly authorized operations.
+- After a focused branch is clean and all relevant gates pass, the solo-developer default is: merge locally → push canonical `main` → run `npm run deploy:cloudflare` → verify `https://thequantbateman.com`, without another approval prompt. Stop on any failed gate or target mismatch. Remote database migrations, secret changes, purchases, destructive operations, and other infrastructure targets remain separately confirmed operations.
 - Release path: local Git → GitHub → Cloudflare Workers Builds → production.
 - Production code and infrastructure configuration are changed through reviewed Git history, not by copying files or editing application code in a dashboard.
 
@@ -163,7 +163,7 @@ npm run license:notices
 npm run license:audit
 ```
 
-Before a product handoff or release, run typecheck, lint, tests, production build, and Cloudflare preflight. Run targeted numerical/provider tests first. Remote migrations and deployment require explicit confirmation and the runbook; they are never implied by a normal code change.
+Before a product handoff or release, run typecheck, lint, tests, production build, and Cloudflare preflight. Run targeted numerical/provider tests first. A clean validated product branch follows the automatic solo release path above; remote migrations remain manual and separately confirmed operations.
 
 ## Non-negotiable architectural invariants
 
