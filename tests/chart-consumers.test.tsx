@@ -7,6 +7,7 @@ import { AdvancedConceptLab } from "../src/components/academy/AdvancedConceptLab
 import { RatesConceptLab } from "../src/components/academy/RatesConceptLab";
 import { VolSurfaceLab } from "../src/components/academy/VolSurfaceLab";
 import { LineChart, type Series } from "../src/components/charts/LineChart";
+import { QuantBatemanProvider } from "../src/components/quant-bateman/QuantBatemanProvider";
 import { academyLessons } from "../src/content/academy/catalog";
 import type { AcademyLabId, AcademyLesson } from "../src/content/academy/types";
 import { I18nProvider, type Locale } from "../src/i18n";
@@ -18,7 +19,7 @@ function lessonForLab(id: AcademyLabId): AcademyLesson {
 }
 
 function renderLocalized(node: React.ReactNode, locale: Locale = "en"): string {
-  return renderToStaticMarkup(<I18nProvider initialLocale={locale}>{node}</I18nProvider>);
+  return renderToStaticMarkup(<I18nProvider initialLocale={locale}><QuantBatemanProvider>{node}</QuantBatemanProvider></I18nProvider>);
 }
 
 function chartReadout(html: string): string {

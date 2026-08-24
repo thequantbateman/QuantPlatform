@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MarketStateControls } from "../src/components/analytics/MarketStateControls";
@@ -46,6 +47,31 @@ test("guided Analytics renders compact academic actions and explanation", () => 
   }
   assert.match(html, /<details[^>]*>/i);
   assert.match(html, /href="\/learn\/risk\/first-order-greeks"/i);
+});
+
+test("guided before-after metrics use authored bilingual financial labels", () => {
+  const html = renderToStaticMarkup(
+    <I18nProvider initialLocale="es">
+      <AnalyticsGuide
+        labId="portfolio"
+        activeScenarioId="portfolio-spot-vol-shock"
+        snapshots={{ before: { modelValue: 10, unrealizedPnl: 2, approximationResidual: 0.1 }, after: { modelValue: 11, unrealizedPnl: 1, approximationResidual: 0.2 } }}
+        onApply={() => undefined}
+        onReset={() => undefined}
+        onManual={() => undefined}
+        onAsk={() => undefined}
+      />
+    </I18nProvider>,
+  );
+  for (const label of ["Valor de modelo", "P&amp;L no realizado", "Residuo de aproximación"]) assert.match(html, new RegExp(label, "i"));
+  assert.doesNotMatch(html, /modelValue|unrealizedPnl|approximationResidual/);
+});
+
+test("guided Analytics mobile rules follow the base contract in the cascade", async () => {
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  const base = css.lastIndexOf(".analytics-guide-detail-grid { display: grid; grid-template-columns: repeat(2, 1fr)");
+  const mobile = css.lastIndexOf(".analytics-guide-header, .analytics-guide-detail-grid { grid-template-columns: 1fr; }");
+  assert.ok(base >= 0 && mobile > base, "mobile guide layout must override the later base declaration");
 });
 
 test("market controls expose decimal inputs with financial labels", () => {

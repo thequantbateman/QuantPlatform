@@ -301,23 +301,12 @@ kbd { border: 1px solid var(--border); border-radius: 4px; padding: 2px 5px; bac
   .analytics-journey { grid-template-columns: repeat(3, 1fr); }
   .analytics-journey span:nth-child(3n) { border-right: 0; }
   .analytics-journey span:nth-child(-n+3) { border-bottom: 1px solid var(--border); }
-  .analytics-guide-scenarios { grid-template-columns: repeat(2, 1fr); }
-  .analytics-guide-scenarios button:nth-child(3n) { border-right: 1px solid var(--border); }
-  .analytics-guide-scenarios button:nth-child(2n) { border-right: 0; }
 }
 
 @media (max-width: 600px) {
   .analytics-journey { grid-template-columns: 1fr; }
   .analytics-journey span, .analytics-journey span:nth-child(3n) { min-height: 48px; border-right: 0; border-bottom: 1px solid var(--border); }
   .analytics-journey span:last-child { border-bottom: 0; }
-  .analytics-guide-header, .analytics-guide-detail-grid { grid-template-columns: 1fr; }
-  .analytics-guide-hint, .analytics-guide-actions { align-items: flex-start; flex-direction: column; padding-block: 12px; }
-  .analytics-guide-actions > div { width: 100%; display: grid; grid-template-columns: 1fr; }
-  .analytics-guide-scenarios { grid-template-columns: 1fr; }
-  .analytics-guide-scenarios button, .analytics-guide-scenarios button:nth-child(2n), .analytics-guide-scenarios button:nth-child(3n) { border-right: 0; }
-  .analytics-guide-detail article { border-right: 0; }
-  .analytics-guide-detail footer { align-items: stretch; flex-direction: column; }
-  .analytics-guide-detail footer a, .analytics-guide-detail footer button { min-height: 44px; display: flex; align-items: center; }
 }
 
 /* v3 quant workstation */
@@ -398,6 +387,21 @@ body { background-image: linear-gradient(rgb(255 255 255 / 1.4%) 1px, transparen
 .analytics-guide-scenarios { display: grid; grid-template-columns: repeat(3, 1fr); }.analytics-guide-scenarios button { min-height: 66px; display: grid; gap: 5px; align-content: center; padding: 12px 14px; border: 0; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); background: transparent; color: var(--ink); text-align: left; cursor: pointer; }.analytics-guide-scenarios button:nth-child(3n) { border-right: 0; }.analytics-guide-scenarios button.active { box-shadow: inset 3px 0 0 var(--accent); background: var(--paper-muted); }.analytics-guide-scenarios button span { font: 700 9px/1.35 ui-monospace, monospace; }.analytics-guide-scenarios button small { color: var(--muted); font: 7px ui-monospace, monospace; text-transform: uppercase; }
 .analytics-guide-actions { min-height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 5px 20px; border-bottom: 1px solid var(--border); }.analytics-guide-actions > div { display: flex; gap: 8px; }.analytics-guide-actions button:disabled { opacity: .45; cursor: default; }
 .analytics-guide-detail > summary { min-height: 48px; display: flex; align-items: center; padding: 10px 20px; color: var(--graphite); font: 700 9px ui-monospace, monospace; cursor: pointer; }.analytics-guide-detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid var(--border); }.analytics-guide-detail article { min-width: 0; padding: 16px 20px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }.analytics-guide-detail article:nth-child(2n) { border-right: 0; }.analytics-guide-detail article p, .analytics-guide-detail article ol { margin: 8px 0 0; color: var(--graphite); font: 12px/1.55 Georgia, serif; }.analytics-guide-detail article ol { padding-left: 18px; }.analytics-guide-snapshot dl { margin: 8px 0 0; }.analytics-guide-snapshot dl div { display: flex; justify-content: space-between; gap: 12px; padding-block: 5px; border-bottom: 1px solid var(--border); font: 8px ui-monospace, monospace; }.analytics-guide-snapshot dd { margin: 0; }.analytics-guide-detail footer { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 10px 20px; }.analytics-guide-detail footer a { font: 700 8px ui-monospace, monospace; text-transform: uppercase; }
+@media (max-width: 1000px) {
+  .analytics-guide-scenarios { grid-template-columns: repeat(2, 1fr); }
+  .analytics-guide-scenarios button:nth-child(3n) { border-right: 1px solid var(--border); }
+  .analytics-guide-scenarios button:nth-child(2n) { border-right: 0; }
+}
+@media (max-width: 600px) {
+  .analytics-guide-header, .analytics-guide-detail-grid { grid-template-columns: 1fr; }
+  .analytics-guide-hint, .analytics-guide-actions { align-items: flex-start; flex-direction: column; padding-block: 12px; }
+  .analytics-guide-actions > div { width: 100%; display: grid; grid-template-columns: 1fr; }
+  .analytics-guide-scenarios { grid-template-columns: 1fr; }
+  .analytics-guide-scenarios button, .analytics-guide-scenarios button:nth-child(2n), .analytics-guide-scenarios button:nth-child(3n) { border-right: 0; }
+  .analytics-guide-detail article { border-right: 0; }
+  .analytics-guide-detail footer { align-items: stretch; flex-direction: column; }
+  .analytics-guide-detail footer a, .analytics-guide-detail footer button { min-height: 44px; display: flex; align-items: center; }
+}
 .concept-bridge { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--border); border-top: 0; }.concept-bridge a { padding: 12px 20px; border-right: 1px solid var(--border); font: 700 8px ui-monospace, monospace; text-align: center; }.concept-bridge a:last-child { border-right: 0; }
 .market-branch { display: flex; justify-content: space-between; gap: 30px; align-items: center; margin-block: 20px; padding: 22px; border: 1px solid var(--border); background: var(--paper-strong); }.market-branch h2 { margin: 8px 0; font: 400 27px Georgia, serif; }.market-branch p { max-width: 700px; margin: 0; color: var(--muted); font-size: 11px; }.market-branch .button { flex: 0 0 auto; }
 
