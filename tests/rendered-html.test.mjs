@@ -145,6 +145,8 @@ test("Analytics discovery exposes portfolio, strategy and market-making workflow
   const englishResponse = await render("/analytics");
   assert.equal(englishResponse.status, 200);
   const english = await englishResponse.text();
+  assert.equal((english.match(/data-analytics-tool=/g) ?? []).length, 7);
+  for (const marker of ["FIRST EXPERIMENT", "PRIMARY OUTPUT", "Instrument", "Sensitivities", "Dealer inventory"]) assert.match(english, new RegExp(marker, "i"), marker);
   assert.match(english, /href="\/analytics\/portfolio"[\s\S]*?Portfolio Greeks &amp; hedging/i);
   assert.match(english, /href="\/analytics\/strategies"[\s\S]*?Options strategy &amp; payoff/i);
   assert.match(english, /href="\/lab\?lab=market-making"[\s\S]*?Market-making hedge replay/i);
@@ -152,6 +154,8 @@ test("Analytics discovery exposes portfolio, strategy and market-making workflow
   const spanishResponse = await render("/analytics", { cookie: "tqb-locale=es" });
   assert.equal(spanishResponse.status, 200);
   const spanish = await spanishResponse.text();
+  assert.equal((spanish.match(/data-analytics-tool=/g) ?? []).length, 7);
+  for (const marker of ["PRIMER EXPERIMENTO", "RESULTADO PRINCIPAL", "Instrumento", "Sensibilidades", "Inventario dealer"]) assert.match(spanish, new RegExp(marker, "i"), marker);
   assert.match(spanish, /href="\/analytics\/portfolio"[\s\S]*?Griegas y cobertura de cartera/i);
   assert.match(spanish, /href="\/analytics\/strategies"[\s\S]*?Estrategias y payoff de opciones/i);
   assert.match(spanish, /href="\/lab\?lab=market-making"[\s\S]*?Cobertura y repetición de market making/i);

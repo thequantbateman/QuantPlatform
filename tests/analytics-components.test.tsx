@@ -11,6 +11,7 @@ import { MarketMakingLab } from "../src/components/labs/MarketMakingLab";
 import { I18nProvider } from "../src/i18n";
 import { QuantBatemanProvider } from "../src/components/quant-bateman/QuantBatemanProvider";
 import type { OptionPosition } from "../src/quant/portfolio/types";
+import { AnalyticsGuide } from "../src/components/analytics/AnalyticsGuide";
 
 const call: OptionPosition = {
   id: "c1",
@@ -23,6 +24,29 @@ const call: OptionPosition = {
   maturity: 1,
   premium: 8,
 };
+
+test("guided Analytics renders compact academic actions and explanation", () => {
+  const html = renderToStaticMarkup(
+    <I18nProvider initialLocale="en">
+      <AnalyticsGuide
+        labId="greeks"
+        activeScenarioId="greeks-through-strike"
+        snapshots={{ before: { gamma: 0.01 }, after: { gamma: 0.04 } }}
+        onApply={() => undefined}
+        onReset={() => undefined}
+        onManual={() => undefined}
+        onAsk={() => undefined}
+      />
+    </I18nProvider>,
+  );
+  assert.match(html, /data-analytics-guide="greeks"/i);
+  assert.match(html, /data-analytics-scenario="greeks-through-strike"/i);
+  for (const marker of ["First try", "Learning objective", "What to change", "What to watch", "Why it moves", "Model boundary", "Ask about this"]) {
+    assert.match(html, new RegExp(marker, "i"), marker);
+  }
+  assert.match(html, /<details[^>]*>/i);
+  assert.match(html, /href="\/learn\/risk\/first-order-greeks"/i);
+});
 
 test("market controls expose decimal inputs with financial labels", () => {
   const html = renderToStaticMarkup(
