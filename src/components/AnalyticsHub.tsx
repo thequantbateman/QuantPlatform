@@ -22,6 +22,7 @@ const analyticsTools: readonly AnalyticsTool[] = [
   { index: "05", labId: "portfolio", title: { en: "Portfolio Greeks & hedging", es: "Griegas y cobertura de cartera" }, question: { en: "How do positions aggregate into risk, scenario P&L and executable hedge tickets?", es: "¿Cómo se agregan las posiciones en riesgo, P&L por escenarios y coberturas ejecutables?" }, output: { en: "Portfolio Greeks, Taylor attribution and hedge comparison", es: "Griegas de cartera, atribución de Taylor y comparación de coberturas" }, difficulty: "front-office", href: "/analytics/portfolio" },
   { index: "06", labId: "strategies", title: { en: "Options strategy & payoff", es: "Estrategias y payoff de opciones" }, question: { en: "Which payoff geometry expresses a market view without hiding tail risk?", es: "¿Qué geometría de payoff expresa una visión de mercado sin ocultar el riesgo de cola?" }, output: { en: "Exact payoff, breakevens, extrema and transferred positions", es: "Payoff exacto, puntos de equilibrio, extremos y posiciones transferidas" }, difficulty: "practitioner", href: "/analytics/strategies" },
   { index: "07", labId: "market-making", title: { en: "Market-making hedge replay", es: "Cobertura y repetición de market making" }, question: { en: "How does client flow become dealer inventory, hedge action and residual P&L?", es: "¿Cómo se convierte el flujo cliente en inventario dealer, cobertura y P&L residual?" }, output: { en: "Dealer inventory, hedge replay and P&L decomposition", es: "Inventario dealer, repetición de coberturas y descomposición de P&L" }, difficulty: "front-office", href: "/lab?lab=market-making" },
+  { index: "08", labId: "fixed-income", title: { en: "Fixed-income spreads & curve analytics", es: "Spreads y analítica de curvas de renta fija" }, question: { en: "What am I measuring, against which curve, and which risk moved the price?", es: "¿Qué estoy midiendo, contra qué curva y qué riesgo movió el precio?" }, output: { en: "Bond cash flows, G/I/Z spreads, rate × credit P&L, KRD, ASW and carry", es: "Flujos del bono, spreads G/I/Z, P&L tipos × crédito, KRD, ASW y carry" }, difficulty: "front-office", href: "/analytics/fixed-income" },
 ];
 
 const journey = [
@@ -31,6 +32,7 @@ const journey = [
   { en: "Portfolio", es: "Cartera" },
   { en: "Strategy", es: "Estrategia" },
   { en: "Dealer inventory", es: "Inventario dealer" },
+  { en: "Fixed-income relative value", es: "Valor relativo de renta fija" },
 ] as const;
 
 export function AnalyticsHub() {

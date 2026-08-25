@@ -70,6 +70,14 @@ const coreTools: Array<{
     keywords: ["market maker", "market making", "client flow", "dealer", "hedge", "hedging", "cobertura", "delta", "vega", "replay", "blotter", "liquidity", "spread"],
   },
   {
+    id: "fixed-income-spreads-curves",
+    title: { en: "Fixed-income spreads & curve analytics", es: "Spreads y analítica de curvas de renta fija" },
+    description: { en: "Bond cash flows, G/I/Z spreads, benchmark and credit risk, KRD, ASW and carry", es: "Flujos del bono, spreads G/I/Z, riesgo benchmark y de crédito, KRD, ASW y carry" },
+    meta: "ANALYTICS · FIXED INCOME",
+    href: "/analytics/fixed-income",
+    keywords: ["bond", "bono", "fixed income", "renta fija", "spread", "g spread", "i spread", "z spread", "yield", "curve", "curva", "dv01", "krd", "cs01", "asw", "asset swap", "carry", "rolldown", "relative value"],
+  },
+  {
     id: "prediction-workstation",
     title: { en: "Prediction workstation", es: "Estación de mercados de predicción" },
     description: { en: "Live events, L2 books, trades and public analytics", es: "Eventos en vivo, libros L2, operaciones y analítica pública" },

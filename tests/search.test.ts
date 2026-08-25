@@ -66,12 +66,14 @@ test("search limits results and preserves input order for equal relevance", () =
   assert.deepEqual(searchPlatformItems(fixtures, "alpha", { limit: 0 }), []);
 });
 
-test("core search indexes portfolio, strategy and market-making analytics once", () => {
+test("core search indexes portfolio, strategy, market-making and fixed-income analytics once", () => {
   const items = createCoreSearchItems("en");
   assert.equal(items.filter((item) => item.href === "/analytics/portfolio").length, 1);
   assert.equal(items.filter((item) => item.href === "/analytics/strategies").length, 1);
   assert.equal(items.filter((item) => item.href === "/lab?lab=market-making").length, 1);
+  assert.equal(items.filter((item) => item.href === "/analytics/fixed-income").length, 1);
   assert.equal(searchPlatformItems(items, "delta gamma hedge", { limit: 5 })[0]?.href, "/analytics/portfolio");
   assert.equal(searchPlatformItems(items, "iron condor payoff", { limit: 5 })[0]?.href, "/analytics/strategies");
   assert.equal(searchPlatformItems(items, "market maker client flow hedge", { limit: 5 })[0]?.href, "/lab?lab=market-making");
+  assert.equal(searchPlatformItems(items, "bond z spread dv01", { limit: 5 })[0]?.href, "/analytics/fixed-income");
 });

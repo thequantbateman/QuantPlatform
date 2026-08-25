@@ -115,7 +115,10 @@ test("touched analytical controls preserve focus, target, contrast and semantic 
   const textEntryFocus = css.match(/\.palette-input-row input:focus-visible[^{]*\{([^}]*)\}/)?.[1] ?? "";
   assert.match(textEntryFocus, /outline:\s*2px solid var\(--focus-ring\)/);
 
-  const responsiveAcademy = css.slice(css.indexOf("@media (max-width: 1100px)"), css.indexOf("/* Market data workstation"));
+  const marketWorkstationStart = css.indexOf("/* market-data workstation */");
+  const academyResponsiveStart = css.lastIndexOf("@media (max-width: 1100px)", marketWorkstationStart);
+  const responsiveAcademy = css.slice(academyResponsiveStart, marketWorkstationStart);
+  assert.ok(academyResponsiveStart >= 0 && marketWorkstationStart > academyResponsiveStart, "Academy responsive contract must be locatable");
   assert.doesNotMatch(responsiveAcademy, /border(?:-(?:top|right|bottom|left))?:\s*1px solid #(30343b|283140|2d333c)/i);
 });
 

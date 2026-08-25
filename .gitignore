@@ -50,6 +50,7 @@ yarn-error.log*
 /.wrangler/
 /outputs/
 /work/
+/.impeccable/
 *.log
 **/.venv/
 **/*.egg-info/

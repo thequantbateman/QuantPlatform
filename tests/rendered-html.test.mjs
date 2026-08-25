@@ -80,6 +80,7 @@ test("renders key product routes without external services", async () => {
     ["/analytics/volatility", "ONE LINKED STATE"],
     ["/analytics/portfolio", "Aggregate risk"],
     ["/analytics/strategies", "Settlement by leg"],
+    ["/analytics/fixed-income", "RATE VS SPREAD RISK"],
     ["/lab?lab=market-making", "MARKET-MAKING DESK"],
     ["/lab?lab=surface", "ONE LINKED STATE"],
   ]) {
@@ -110,6 +111,7 @@ test("advanced Analytics workflows server-render guidance bound to canonical sta
     ["/analytics/volatility", "volatility-surface", "surface-base"],
     ["/analytics/portfolio", "portfolio", "portfolio-delta-neutral"],
     ["/analytics/strategies", "strategies", "strategy-bull-call"],
+    ["/analytics/fixed-income", "fixed-income", "fixed-income-government-term-structure"],
     ["/lab?lab=market-making", "market-making", "market-making-client-inventory"],
   ]) {
     const response = await render(path);
@@ -173,24 +175,26 @@ test("volatility routes render the same canonical linked surface workbench", asy
   }
 });
 
-test("Analytics discovery exposes portfolio, strategy and market-making workflows bilingually", async () => {
+test("Analytics discovery exposes portfolio, strategy, market-making and fixed-income workflows bilingually", async () => {
   const englishResponse = await render("/analytics");
   assert.equal(englishResponse.status, 200);
   const english = await englishResponse.text();
-  assert.equal((english.match(/data-analytics-tool=/g) ?? []).length, 7);
+  assert.equal((english.match(/data-analytics-tool=/g) ?? []).length, 8);
   for (const marker of ["FIRST EXPERIMENT", "PRIMARY OUTPUT", "Instrument", "Sensitivities", "Dealer inventory"]) assert.match(english, new RegExp(marker, "i"), marker);
   assert.match(english, /href="\/analytics\/portfolio"[\s\S]*?Portfolio Greeks &amp; hedging/i);
   assert.match(english, /href="\/analytics\/strategies"[\s\S]*?Options strategy &amp; payoff/i);
   assert.match(english, /href="\/lab\?lab=market-making"[\s\S]*?Market-making hedge replay/i);
+  assert.match(english, /href="\/analytics\/fixed-income"[\s\S]*?Fixed-income spreads &amp; curve analytics/i);
 
   const spanishResponse = await render("/analytics", { cookie: "tqb-locale=es" });
   assert.equal(spanishResponse.status, 200);
   const spanish = await spanishResponse.text();
-  assert.equal((spanish.match(/data-analytics-tool=/g) ?? []).length, 7);
+  assert.equal((spanish.match(/data-analytics-tool=/g) ?? []).length, 8);
   for (const marker of ["PRIMER EXPERIMENTO", "RESULTADO PRINCIPAL", "Instrumento", "Sensibilidades", "Inventario dealer"]) assert.match(spanish, new RegExp(marker, "i"), marker);
   assert.match(spanish, /href="\/analytics\/portfolio"[\s\S]*?Griegas y cobertura de cartera/i);
   assert.match(spanish, /href="\/analytics\/strategies"[\s\S]*?Estrategias y payoff de opciones/i);
   assert.match(spanish, /href="\/lab\?lab=market-making"[\s\S]*?Cobertura y repetición de market making/i);
+  assert.match(spanish, /href="\/analytics\/fixed-income"[\s\S]*?Spreads y analítica de curvas de renta fija/i);
 });
 
 test("canonical Academy lessons server-render compact formulas with bound derivations and visible essentials", async () => {

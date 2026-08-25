@@ -13,6 +13,8 @@ import { I18nProvider } from "../src/i18n";
 import { QuantBatemanProvider } from "../src/components/quant-bateman/QuantBatemanProvider";
 import type { OptionPosition } from "../src/quant/portfolio/types";
 import { AnalyticsGuide } from "../src/components/analytics/AnalyticsGuide";
+import { FixedIncomeLab } from "../src/components/analytics/FixedIncomeLab";
+import { FixedIncomeHeatmap } from "../src/components/analytics/FixedIncomeHeatmap";
 
 const call: OptionPosition = {
   id: "c1",
@@ -254,6 +256,73 @@ test("strategy lab exposes taxonomy, exact payoff algebra and portfolio transfer
   for (const marker of ["BENEFICIO AL VENCIMIENTO", "Acotadas", "Cóndor de hierro", "Patas de la estrategia", "Abrir en Laboratorio de Carteras"]) {
     assert.match(spanish, new RegExp(marker, "i"), marker);
   }
+});
+
+test("fixed-income lab exposes one linked bond, spread, risk, curve and carry workflow", () => {
+  const html = renderToStaticMarkup(
+    <I18nProvider initialLocale="en">
+      <QuantBatemanProvider><FixedIncomeLab /></QuantBatemanProvider>
+    </I18nProvider>,
+  );
+
+  assert.match(html, /FIXED INCOME[\s\S]*?RELATIVE VALUE/i);
+  for (const marker of [
+    "Bond &amp; cash flows",
+    "Spread analytics",
+    "Rate vs spread risk",
+    "Curve &amp; relative value",
+    "Carry &amp; rolldown",
+    "Active benchmark",
+    "G-spread",
+    "I-spread",
+    "Z-spread",
+    "Benchmark DV01",
+    "CS01",
+    "SYNTHETIC / EDUCATIONAL",
+  ]) assert.match(html, new RegExp(marker, "i"), marker);
+  assert.match(html, /data-analytics-guide="fixed-income"/i);
+  assert.match(html, /data-analytics-scenario="fixed-income-government-term-structure"/i);
+  assert.match(html, /role="tab"[^>]+aria-controls="fixed-income-panel-bond"/i);
+  assert.match(html, /href="\/learn\/rates\/discount-factors"/i);
+  assert.match(html, /OAS QUALITY GATE[\s\S]*?NOT MODELED/i);
+
+  const spanish = renderToStaticMarkup(
+    <I18nProvider initialLocale="es">
+      <QuantBatemanProvider><FixedIncomeLab /></QuantBatemanProvider>
+    </I18nProvider>,
+  );
+  for (const marker of ["Bono y flujos", "Analítica de spreads", "Riesgo de tipos frente a spread", "Benchmark activo", "Curvas sin cambios"]) {
+    assert.match(spanish, new RegExp(marker, "i"), marker);
+  }
+});
+
+test("fixed-income risk heatmap exposes every scenario and a numeric alternative", () => {
+  const grid = {
+    rateShiftsBps: [-25, 0],
+    spreadShiftsBps: [0, 25],
+    baseCell: { row: 0, column: 1 },
+    points: [
+      [
+        { rateShiftBps: -25, spreadShiftBps: 0, newPrice: 101.2, pnl: 1.2 },
+        { rateShiftBps: 0, spreadShiftBps: 0, newPrice: 100, pnl: 0 },
+      ],
+      [
+        { rateShiftBps: -25, spreadShiftBps: 25, newPrice: 99.8, pnl: -0.2 },
+        { rateShiftBps: 0, spreadShiftBps: 25, newPrice: 98.6, pnl: -1.4 },
+      ],
+    ],
+  };
+  const html = renderToStaticMarkup(
+    <I18nProvider initialLocale="en">
+      <FixedIncomeHeatmap grid={grid} selected={{ row: 1, column: 0 }} onSelect={() => undefined} />
+    </I18nProvider>,
+  );
+
+  assert.equal((html.match(/<button/g) ?? []).length, 4);
+  assert.match(html, /Benchmark shift -25 bps, credit spread shift 25 bps, new bond price 99\.80, P&amp;L -0\.20/i);
+  assert.match(html, /aria-pressed="true"/i);
+  assert.match(html, /Accessible numeric P&amp;L matrix/i);
+  assert.match(html, /<table/i);
 });
 
 test("market-making lab exposes one dealer workflow with costs, repricing and replay", () => {
