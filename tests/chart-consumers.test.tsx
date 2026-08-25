@@ -105,6 +105,9 @@ test("touched analytical controls preserve focus, target, contrast and semantic 
   assert.ok(codeSurface && codeLineNumber);
   assert.ok(hexContrast(codeLineNumber, codeSurface) >= 4.5, "9px code line numbers must meet WCAG AA contrast");
 
+  const measurePickerBlocks = [...css.matchAll(/\.measure-picker button \{([^}]*)\}/g)].map((match) => match[1]);
+  assert.match(measurePickerBlocks.at(-1) ?? "", /min-height:\s*44px/, "measure selectors need a 44px touch target");
+
   const reset = css.match(/\.vol-lab-controls > header button \{([^}]*)\}/)?.[1] ?? "";
   assert.match(reset, /min-height:\s*44px/);
   assert.match(reset, /min-width:\s*44px/);

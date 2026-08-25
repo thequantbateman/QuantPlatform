@@ -776,7 +776,7 @@ body { background-image: linear-gradient(rgb(255 255 255 / 1.4%) 1px, transparen
 .advanced-control b, .advanced-readouts span, .advanced-readouts small { color: var(--muted); }
 .advanced-control output, .information-timeline span { color: var(--accent-strong); }
 .advanced-control input { accent-color: var(--accent-strong); }
-.measure-picker button { border-color: var(--border-strong); color: var(--muted); }
+.measure-picker button { min-height: 44px; border-color: var(--border-strong); color: var(--muted); }
 .measure-picker button:last-child { border-color: var(--border-strong); }
 .measure-picker button.active { background: var(--accent-strong); color: var(--paper); }
 .advanced-readouts, .advanced-lab .quant-flow > figcaption { background: var(--surface-inset); }
