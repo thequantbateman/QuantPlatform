@@ -48,6 +48,14 @@ Dependencies flow inward: routes → components → typed domain modules. Quant 
 - Reuse axes, formatting, crosshair and tooltip behavior from `src/components/charts/`.
 - Do not imitate a real actor, film character, copyrighted scene or third-party brand asset.
 
+### Interactive surface contract
+
+- Preserve the canonical black/orange editorial identity. Do not introduce fixed navy or another parallel structural palette.
+- Use `--surface-elevated`, `--surface-interactive`, `--surface-inset`, `--surface-plot`, `--surface-active` and `--surface-overlay` for depth. Use `--border`, `--border-strong` and `--accent-soft` for structure and state.
+- Treat `--academy-chart-*` as compatibility aliases over the shared semantic hierarchy. Blue, cyan and heat colors are reserved for data, risk and scenario meaning—not generic containers, grids, cards or selected navigation.
+- Shared component owners must inherit semantic surface, text and border tokens. Do not hardcode their own structural background, ink or muted palette.
+- After frontend visual changes, run the Impeccable detector once and resolve material in-scope findings. Verify representative Academy and Analytics routes in both themes at 375px, 768px, 1280px and 1440px.
+
 ## Content conventions
 
 - Use the `ContentEntry` schema and keep `lastReviewed`, difficulty, type and relationships current.

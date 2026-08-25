@@ -54,4 +54,4 @@ Every workspace uses native labelled controls, deterministic state, exact metric
 
 ## Visual direction
 
-The workbench combines the platform’s warm editorial paper shell with a restrained navy analytical stage, fine scientific grids, amber/oxblood emphasis and concise monospace annotations. The supplied handwritten-equation and surface screenshots informed composition, not branding or copied assets.
+The workbench uses the platform’s neutral, theme-aware interactive hierarchy: warm editorial paper, espresso analytical surfaces, fine scientific grids, orange/oxblood emphasis and concise monospace annotations. Blue, cyan and heat colors remain available only for quantitative encodings. The supplied handwritten-equation and surface screenshots informed composition, not branding or copied assets.
