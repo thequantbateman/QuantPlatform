@@ -80,7 +80,7 @@ test("Academy and Analytics structural surfaces inherit the theme-aware neutral 
   assert.match(darkRoot, /--academy-chart-selected:\s*var\(--surface-active\)/);
 
   for (const owner of ["advanced-lab", "vol-concept-lab", "rates-curve-lab"]) {
-    const blocks = [...css.matchAll(new RegExp(`\\.${owner} \\{([^}]*)\\}`, "g"))].map((match) => match[1]);
+    const blocks = [...css.matchAll(new RegExp(`\\.${owner} {([^}]*)\\}`, "g"))].map((match) => match[1]);
     const finalDeclarations = new Map<string, string>();
     for (const block of blocks) {
       for (const declaration of block.matchAll(/(--(?:ink|muted|border))\s*:\s*([^;]+)/g)) {
@@ -92,7 +92,7 @@ test("Academy and Analytics structural surfaces inherit the theme-aware neutral 
     assert.equal(finalDeclarations.get("--border"), "var(--academy-chart-grid)", `${owner} borders must follow the active theme`);
   }
 
-  const deepStages = [...css.matchAll(/\.track-path a\.deep[^\{]*\{([^}]*)\}/g)].map((match) => match[1]).join("\n");
+  const deepStages = [...css.matchAll(/\.track-path a\.deep[^{]*\{([^}]*)\}/g)].map((match) => match[1]).join("\n");
   assert.match(deepStages, /background:\s*var\(--surface-active\)/);
   assert.doesNotMatch(deepStages, /background:\s*#(?:151a22|1b2331|202834)/i);
 });
