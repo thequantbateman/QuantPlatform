@@ -6,7 +6,8 @@ export type AnalyticsLabId =
   | "yield-curve"
   | "portfolio"
   | "strategies"
-  | "market-making";
+  | "market-making"
+  | "fixed-income";
 
 export interface LocalizedText {
   en: string;
@@ -75,4 +76,3 @@ export interface AnalyticsAssistantContext {
 }
 
 export const localizedText = (en: string, es: string): LocalizedText => ({ en, es });
-

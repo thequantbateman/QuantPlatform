@@ -46,6 +46,15 @@ const METRIC_LABELS: Readonly<Record<string, LocalizedText>> = {
   vega: { en: "Vega", es: "Vega" },
   theta: { en: "Theta", es: "Theta" },
   rho: { en: "Rho", es: "Rho" },
+  bondPrice: { en: "Bond price", es: "Precio del bono" },
+  gSpreadBps: { en: "G-spread (bps)", es: "G-spread (pb)" },
+  iSpreadBps: { en: "I-spread (bps)", es: "I-spread (pb)" },
+  zSpreadBps: { en: "Z-spread (bps)", es: "Z-spread (pb)" },
+  benchmarkDv01: { en: "Benchmark DV01", es: "DV01 benchmark" },
+  cs01: { en: "CS01", es: "CS01" },
+  ratePnl: { en: "Rate P&L", es: "P&L de tipos" },
+  spreadPnl: { en: "Spread P&L", es: "P&L de spread" },
+  totalContribution: { en: "Holding contribution", es: "Contribución de mantenimiento" },
 };
 
 export function AnalyticsGuide({

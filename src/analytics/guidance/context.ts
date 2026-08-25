@@ -9,6 +9,7 @@ const ANALYTICS_LABS = new Set<AnalyticsLabId>([
   "portfolio",
   "strategies",
   "market-making",
+  "fixed-income",
 ]);
 
 function primitiveMap(value: unknown): Record<string, AnalyticsPrimitive> {
@@ -37,4 +38,3 @@ export function serializeAnalyticsContext(value: unknown): AnalyticsAssistantCon
     metrics: primitiveMap(candidate.metrics),
   };
 }
-

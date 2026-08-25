@@ -3,6 +3,7 @@ import { marketMakingScenarios } from "./marketMaking";
 import { portfolioScenarios } from "./portfolio";
 import { strategyScenarios } from "./strategies";
 import { surfaceScenarios } from "./surface";
+import { fixedIncomeScenarios } from "./fixedIncome";
 import type { AnalyticsLabId, AnalyticsScenario } from "../types";
 
 export type { AnalyticsLabId, AnalyticsScenario } from "../types";
@@ -13,6 +14,7 @@ export const analyticsScenarios: readonly AnalyticsScenario[] = [
   ...portfolioScenarios,
   ...strategyScenarios,
   ...marketMakingScenarios,
+  ...fixedIncomeScenarios,
 ];
 
 export function scenariosForLab(labId: AnalyticsLabId): readonly AnalyticsScenario[] {
@@ -22,4 +24,3 @@ export function scenariosForLab(labId: AnalyticsLabId): readonly AnalyticsScenar
 export function findAnalyticsScenario(id: string): AnalyticsScenario | undefined {
   return analyticsScenarios.find((scenario) => scenario.id === id);
 }
-

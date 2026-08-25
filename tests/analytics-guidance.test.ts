@@ -32,10 +32,11 @@ const LAB_IDS: readonly AnalyticsLabId[] = [
   "portfolio",
   "strategies",
   "market-making",
+  "fixed-income",
 ];
 
 test("guided Analytics catalog is complete, bilingual and unique", () => {
-  assert.equal(analyticsScenarios.length, 26);
+  assert.equal(analyticsScenarios.length, 34);
   assert.equal(new Set(analyticsScenarios.map(({ id }) => id)).size, analyticsScenarios.length);
   assert.deepEqual(new Set(analyticsScenarios.map(({ labId }) => labId)), new Set(LAB_IDS));
   for (const scenario of analyticsScenarios) {
@@ -66,6 +67,29 @@ test("surface guidance reuses all canonical scenario identifiers", () => {
 test("market-making guidance reuses typed mission identifiers", () => {
   const expected: readonly MarketMakingMissionId[] = ["client-flow", "delta-discipline", "cross-effects"];
   assert.deepEqual(scenariosForLab("market-making").map(({ sourceId }) => sourceId), expected);
+});
+
+test("fixed-income guidance offers one curated journey rather than disconnected calculators", () => {
+  assert.deepEqual(scenariosForLab("fixed-income").map(({ sourceId }) => sourceId), [
+    "government-term-structure",
+    "corporate-g-to-z",
+    "benchmark-government-vs-swap",
+    "spread-widening",
+    "rate-vs-credit",
+    "curve-steepener",
+    "asset-swap",
+    "carry-rolldown",
+  ]);
+  const context = serializeAnalyticsContext({
+    labId: "fixed-income",
+    scenarioId: "fixed-income-rate-vs-credit",
+    model: "Cash-flow-aware fixed-income repricing",
+    inputs: { bondId: "ACME-7Y", benchmark: "government", spreadMeasure: "z-spread", rateShiftBps: 25, spreadShiftBps: 50 },
+    metrics: { zSpreadBps: 142, benchmarkDv01: 0.061, cs01: 0.058 },
+  });
+  assert.equal(context.labId, "fixed-income");
+  assert.equal(context.inputs.benchmark, "government");
+  assert.equal(context.metrics.zSpreadBps, 142);
 });
 
 test("routine parameter edits do not create assistant chatter", () => {
