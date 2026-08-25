@@ -64,6 +64,39 @@ test("dark Academy chart contexts declare the complete chart token contract", as
   }
 });
 
+test("Academy and Analytics structural surfaces inherit the theme-aware neutral hierarchy", async () => {
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  const darkRoot = css.match(/:root \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  const lightRoot = css.match(/:root\[data-theme="light"\] \{([\s\S]*?)\n\}/)?.[1] ?? "";
+
+  for (const token of ["interactive", "plot", "active", "overlay"]) {
+    assert.match(darkRoot, new RegExp(`--surface-${token}\\s*:`), `dark --surface-${token}`);
+    assert.match(lightRoot, new RegExp(`--surface-${token}\\s*:`), `light --surface-${token}`);
+  }
+  assert.match(darkRoot, /--border-strong\s*:/);
+  assert.match(darkRoot, /--accent-soft\s*:/);
+  assert.match(darkRoot, /--academy-chart-surface:\s*var\(--surface-plot\)/);
+  assert.match(darkRoot, /--academy-chart-panel:\s*var\(--surface-interactive\)/);
+  assert.match(darkRoot, /--academy-chart-selected:\s*var\(--surface-active\)/);
+
+  for (const owner of ["advanced-lab", "vol-concept-lab", "rates-curve-lab"]) {
+    const blocks = [...css.matchAll(new RegExp(`\\.${owner} {([^}]*)\\}`, "g"))].map((match) => match[1]);
+    const finalDeclarations = new Map<string, string>();
+    for (const block of blocks) {
+      for (const declaration of block.matchAll(/(--(?:ink|muted|border))\s*:\s*([^;]+)/g)) {
+        finalDeclarations.set(declaration[1], declaration[2].trim());
+      }
+    }
+    assert.equal(finalDeclarations.get("--ink"), "var(--academy-chart-ink)", `${owner} ink must follow the active theme`);
+    assert.equal(finalDeclarations.get("--muted"), "var(--academy-chart-muted)", `${owner} muted text must follow the active theme`);
+    assert.equal(finalDeclarations.get("--border"), "var(--academy-chart-grid)", `${owner} borders must follow the active theme`);
+  }
+
+  const deepStages = [...css.matchAll(/\.track-path a\.deep[^{]*\{([^}]*)\}/g)].map((match) => match[1]).join("\n");
+  assert.match(deepStages, /background:\s*var\(--surface-active\)/);
+  assert.doesNotMatch(deepStages, /background:\s*#(?:151a22|1b2331|202834)/i);
+});
+
 test("touched analytical controls preserve focus, target, contrast and semantic border contracts", async () => {
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   const root = css.match(/:root \{([\s\S]*?)\n\}/)?.[1] ?? "";
@@ -71,6 +104,9 @@ test("touched analytical controls preserve focus, target, contrast and semantic 
   const codeLineNumber = root.match(/--code-line-number:\s*(#[\da-f]{6})/i)?.[1];
   assert.ok(codeSurface && codeLineNumber);
   assert.ok(hexContrast(codeLineNumber, codeSurface) >= 4.5, "9px code line numbers must meet WCAG AA contrast");
+
+  const measurePickerBlocks = [...css.matchAll(/\.measure-picker button \{([^}]*)\}/g)].map((match) => match[1]);
+  assert.match(measurePickerBlocks.at(-1) ?? "", /min-height:\s*44px/, "measure selectors need a 44px touch target");
 
   const reset = css.match(/\.vol-lab-controls > header button \{([^}]*)\}/)?.[1] ?? "";
   assert.match(reset, /min-height:\s*44px/);

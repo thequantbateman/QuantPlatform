@@ -9,3 +9,5 @@ The market-making laboratory adds signed dealer blotters, per-underlying risk ta
 Terminal payoff charts distinguish payoff from profit after signed entry cash flows. The exact piecewise engine—not the sampled line—owns breakevens and finite/unlimited bounds. Zero P&L, breakevens and any expected zone are financial reference objects; an expected zone is explanatory context, never a recommendation. Mark-to-market series are named separately and must not be presented as terminal outcomes.
 
 Rates and volatility are decimal inputs; UI may display percent. Vega is per one volatility point, theta per day and rho per 100bp. Portfolio values and terminal profit include quantity, direction and multiplier exactly once. Every chart identifies synthetic versus provider-backed data.
+
+Chart and workbench containers follow `docs/DESIGN_SYSTEM.md`: structural surfaces are neutral and theme-aware, while blue, cyan and heat palettes appear only when they encode data, risk or scenario meaning. A chart series may be blue; the card, control rail or plot container around it may not acquire a separate blue theme.
